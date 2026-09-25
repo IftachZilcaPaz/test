@@ -1,0 +1,23 @@
+{
+  "script": "מתכננים טיול? פשוט שולחים הודעה, בוואטסאפ, באינסטגרם, או באתר. משפט אחד, ומקבלים טיסה, מלון ומסלול מלא. ראיתם סרטון בטיקטוק? שִׁלְחוּ את הלינק, וג'רני מוציא ממנו את כל המקומות. חבר שלח רשימת המלצות? מדביקים, ומקבלים מסלול. וכל המסמכים של הטיול איתכם, גם בלי קליטה. ג'רני, עוזר הטיולים החכם שלכם.",
+  "flagged_words": [
+    { "word": "שִׁלְחוּ", "reading": "shilchu", "reason": "imperative 'send', not past tense 'shalchu'" },
+    { "word": "ג'רני", "reading": "jerni", "reason": "brand name Journee, spelled phonetically" }
+  ],
+  "beats": [
+    { "type": "broll", "asset": "roof", "cue": "", "caption": "מתכננים טיול?", "sub": "" },
+    { "type": "slide", "asset": "s7", "cue": "פשוט", "caption": "", "sub": "" },
+    { "type": "slide", "asset": "s8", "cue": "באינסטגרם", "caption": "", "sub": "" },
+    { "type": "slide", "asset": "s9", "cue": "או", "caption": "", "sub": "" },
+    { "type": "slide", "asset": "s12", "cue": "ומקבלים", "caption": "", "sub": "" },
+    { "type": "broll", "asset": "nyc", "cue": "ראיתם", "caption": "ראיתם סרטון\nבטיקטוק?", "sub": "" },
+    { "type": "slide", "asset": "s10", "cue": "שִׁלְחוּ", "caption": "", "sub": "" },
+    { "type": "broll", "asset": "thai", "cue": "חבר", "caption": "חבר שלח\nרשימת המלצות?", "sub": "" },
+    { "type": "slide", "asset": "s11", "cue": "מדביקים", "caption": "", "sub": "" },
+    { "type": "slide", "asset": "s13", "cue": "וכל", "caption": "", "sub": "" },
+    { "type": "slide", "asset": "s6", "cue": "ג'רני", "caption": "", "sub": "" },
+    { "type": "end", "asset": "s14", "cue": "", "caption": "", "sub": "" }
+  ],
+  "new_broll": [],
+  "notes": "All b-roll reused from the library (roof, nyc, thai), so only the voice-over costs credits."
+}

@@ -1,0 +1,16 @@
+{
+  "_about": "Hebrew TTS pronunciation fixes confirmed by the user. 'brands' are applied to scripts automatically (every alias, with prefixes ו/ה/ב/ל/מ/ש/כ). 'words' are context-dependent (כתבו can also be past tense), so they are guidance for the script writer, never auto-replaced.",
+  "brands": [
+    {
+      "brand": "Journee",
+      "tts": "ג'רְנִי",
+      "aliases": ["ג'רני", "ג'ורני", "Journee"],
+      "wrong": "ג'ורני was read as 'jorni'"
+    }
+  ],
+  "words": [
+    { "plain": "כתבו", "tts": "כִּתְבוּ", "when": "imperative 'write!' (not past 'they wrote')", "wrong": "read as 'katvu'" },
+    { "plain": "שלחו", "tts": "שִׁלְחוּ", "when": "imperative 'send!'", "wrong": "pre-emptive" },
+    { "plain": "תכנן", "tts": "תַּכְנֵן", "when": "imperative 'plan!'", "wrong": "pre-emptive" }
+  ]
+}

@@ -5,10 +5,11 @@ description: Build a vertical (9:16) promo/ad video for any app or business with
 
 # Promo video from app screens (Hebrew-first, any app)
 
-Every video is one **spec file** (`video/specs/<name>.json`) rendered by the generic engine
-(`video/engine/`, spec format in its README). You write the spec and generate only the missing
-assets. The engine does captions, edit, sync, mix, speed and QA for 0 credits. Human-facing
-guide, cost tables and the asset library: `video/PLAYBOOK.md`. Examples: `video/specs/journee-ad-*.json`.
+Pipeline: **brief → `video/generator` → review sheet + spec → approval → generate the missing
+assets → `video/engine` renders**. Every video is one spec file (`video/specs/<name>.json`). The
+engine does captions, edit, sync, mix, speed and QA for 0 credits. Shared data, the single source
+of truth: `video/library.json` (reusable b-roll), `video/lexicon.json` (confirmed pronunciations),
+`video/pricing.json` (credits and speech rate). Human guide: `video/PLAYBOOK.md`.
 
 ## Rules
 
@@ -41,44 +42,31 @@ Before any VO generation:
 4. Captions use normal unpointed spelling and the brand's own spelling. Niqqud goes only into
    `voice.script`.
 
-### Lexicon (confirmed by the user; add a row with every correction)
-
-| Intended | Write for TTS | Wrong reading seen |
-|---|---|---|
-| kitvu (imperative "write") | `כִּתְבוּ` | כתבו → *katvu* |
-| shilchu (imperative "send") | `שִׁלְחוּ` | (pre-emptive) |
-| takhnen (imperative "plan") | `תַּכְנֵן` | (pre-emptive) |
-
-Brand names (per client):
-
-| Brand | Write for TTS | Wrong reading seen |
-|---|---|---|
-| Journee | `ג'רְנִי` | ג'ורני → *jorni* |
+Confirmed pronunciations live in `video/lexicon.json`. `brands` are applied to scripts
+automatically by the generator. `words` are context-dependent guidance (כתבו is also a valid past
+tense). Every correction the user makes goes into that file in the same change.
 
 ## Pipeline
 
 1. **Intake.** In Claude Code, chat attachments are local files, so use `media_upload` (`files[]`),
    `curl --data-binary` PUT, then `media_confirm`. Skip duplicate files (compare md5). Classify each
-   image: **raw screenshot → `screen`**, **designed 9:16 slide → `slide`**, **CTA → `end`**.
-2. **Script.** 45–55 words for about 20s before speed-up. Use 6–10 beats: hook question → how it works →
-   what you get → proof points → where it's available → brand line. Run the pronunciation pass,
-   show the script with a credit estimate, and wait for approval.
-3. **Generate only what's missing, in parallel.** VO: `generate_audio_batch` with ElevenLabs and the
-   user's voice (ask, or suggest two from `list_voices`). B-roll: check the library in
-   `video/PLAYBOOK.md` §7 first. For new clips, use `generate_video_batch` with `seedance_2_5`,
-   `9:16`, `720p`, `duration: 5`, `generate_audio: false`. Prompt: the app's domain moment +
-   "cinematic, premium commercial, shallow depth of field, slow camera move, no text, no readable
-   screens", with the palette matched to the brand.
-4. **Write the spec** (`video/specs/<name>.json`). The script goes in exactly as sent to TTS. Every
-   beat after the first gets a `cue`: the first word of the line it illustrates, written exactly
-   as in the script.
+   image: **raw screenshot → `screenshot`**, **designed 9:16 slide → `slide`**, **end card → `cta`**.
+2. **Brief.** Write `video/briefs/<name>.brief.json` from `_template.brief.json` and what the user
+   told you. Ask only for what's missing: CTA, voice, budget.
+3. **Plan.** Run `video/generator/generate.py` on the brief. With Claude API credentials it runs
+   on its own. Without them, you are the model: run `--prompt-only`, write the plan JSON yourself
+   following `<name>.prompt.md` exactly (same system rules, same schema, looking at the screens you
+   uploaded), save it, and run `--from-response`. Either way the deterministic checks run. Show
+   the user `video/briefs/<name>.review.md`: pointed words, beats, cost. Wait for approval.
+4. **Generate only what the spec's `generate` section lists, in parallel:** the VO via
+   `generate_audio_batch` with those exact params, and new b-roll via `generate_video_batch`. Put
+   the URLs into `voice.file` and `assets`. Add each new clip to `video/library.json`.
 5. **Render in the sandbox.** Zip `video/engine` and `video/specs`, upload with `media_upload`
    (type `file`), then `curl` + `unzip` in `sandbox_exec`. Run `render.py spec --plan`, check the cut
    table, then run the full render with `background: true`. Reserve the output upload first and put
    the `curl -f -X PUT` in the same command. Poll with `sleep ≤ 50`. `media_confirm` the result.
 6. **Deliver** the CDN link, the engine report (voice language/confidence, match ratio, blank
-   frames, duration) and the credit spend. Commit the spec and a README entry under
-   `video/<name>/` or the spec file itself.
+   frames, duration) and the actual credit spend. Commit the brief, the spec and the review.
 
 The local container can't reach Higgsfield's CDN, so all media work happens in `sandbox_exec`.
 

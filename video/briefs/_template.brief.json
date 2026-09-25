@@ -1,0 +1,19 @@
+{
+  "name": "client-ad-1",
+  "business": "What the product does, for whom, and its 2-3 strongest concrete features. The script is written only from this text and the screens.",
+  "audience": "Who watches (age, situation, where they are)",
+  "cta": "What to do next, e.g. 'example.com: start free' or 'message us on WhatsApp'",
+  "tone": "e.g. energetic and simple",
+  "language": "he",
+  "targetSeconds": 20,
+  "speed": 1.15,
+  "voice": { "id": "032386ec-491b-5bdc-81ac-49e9a6a2c89d", "name": "Daisy" },
+  "budget": { "credits": 80, "newBrollMax": 2, "resolution": "720p" },
+  "brand": { "background": "#0d0f14", "gradient": ["#10204a", "#14171f", "#3d2166"], "font": "Heebo", "dir": "rtl" },
+  "screens": [
+    { "key": "s1", "kind": "screenshot", "desc": "optional hint: what this screen shows", "url": "https://…/uploaded-screen-1.png" },
+    { "key": "s2", "kind": "slide", "url": "https://…/designed-slide.png" },
+    { "key": "cta", "kind": "cta", "url": "https://…/end-card.png" }
+  ],
+  "notes": "Anything else: claims to avoid, must-mention features, competitors not to name"
+}

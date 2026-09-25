@@ -30,6 +30,26 @@ def tokenize(text: str) -> list[str]:
     return [t for t in (normalize(w) for w in text.split()) if t]
 
 
+class CueCursor:
+    """Resolves cue words/phrases to script token indices, strictly in script order."""
+
+    def __init__(self, script_tokens: list[str]):
+        self.tokens = script_tokens
+        self.pos = 0
+
+    def find(self, cue: str) -> int:
+        """Index of the next occurrence of `cue` at or after the cursor; advances past it."""
+        needle = tokenize(cue)
+        if not needle:
+            raise ValueError(f"cue {cue!r} is empty after normalization")
+        n = len(needle)
+        for i in range(self.pos, len(self.tokens) - n + 1):
+            if self.tokens[i:i + n] == needle:
+                self.pos = i + n
+                return i
+        raise ValueError(f"cue {cue!r} not found in the script after word #{self.pos}")
+
+
 @dataclass(frozen=True)
 class Word:
     text: str
@@ -61,7 +81,7 @@ class Aligner:
         self._blocks = [b for b in matcher.get_matching_blocks() if b.size]
         if not self._blocks:
             raise ValueError("script and transcript share no characters (wrong language or file?)")
-        self._cursor = 0  # script token index; cues must appear in order
+        self._cues = CueCursor(self.script_tokens)
 
     @property
     def match_ratio(self) -> float:
@@ -85,17 +105,5 @@ class Aligner:
         t_pos = self._transcript_char_for(self._script_char_of(token_index))
         return self.words[self._t_owner[t_pos]].start
 
-    def find_cue(self, cue: str) -> int:
-        """Script token index of the next occurrence of `cue` (one or more words) after the cursor."""
-        needle = tokenize(cue)
-        if not needle:
-            raise ValueError(f"cue {cue!r} is empty after normalization")
-        n = len(needle)
-        for i in range(self._cursor, len(self.script_tokens) - n + 1):
-            if self.script_tokens[i:i + n] == needle:
-                self._cursor = i + n
-                return i
-        raise ValueError(f"cue {cue!r} not found in the script after word #{self._cursor}")
-
     def cue_time(self, cue: str) -> float:
-        return self.time_of_token(self.find_cue(cue))
+        return self.time_of_token(self._cues.find(cue))

@@ -1,0 +1,24 @@
+{
+  "name": "journee-ad-2",
+  "business": "Journee (fly-ai.space): an AI travel assistant in Hebrew. You write one sentence and get a full trip with real flights, hotels and a day-by-day itinerary, on the website, in WhatsApp or in Instagram. It can also turn a TikTok/Instagram link or a friend's list of recommendations into a route, and keeps trip documents available offline.",
+  "audience": "Israelis planning a trip abroad, 25-45, on their phones",
+  "cta": "fly-ai.space: start for free, or message on WhatsApp/Instagram",
+  "tone": "energetic, simple, confident",
+  "language": "he",
+  "targetSeconds": 22,
+  "speed": 1.15,
+  "voice": { "id": "032386ec-491b-5bdc-81ac-49e9a6a2c89d", "name": "Daisy" },
+  "budget": { "credits": 70, "newBrollMax": 2, "resolution": "720p" },
+  "brand": { "background": "#121418", "gradient": ["#10204a", "#14171f", "#3d2166"], "font": "Heebo", "dir": "rtl" },
+  "screens": [
+    { "key": "s7",  "kind": "slide", "desc": "Planning a trip by WhatsApp message", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c66959f0-7db2-4cb4-8253-dc11c308f656.png" },
+    { "key": "s8",  "kind": "slide", "desc": "Same assistant inside Instagram DMs", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c9213f47-9ada-4931-bd34-032e7b6da2cb.png" },
+    { "key": "s9",  "kind": "slide", "desc": "Website: one free-text sentence becomes a route", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4e0bfc7e-0db7-4bfd-8a46-53f108d67260.png" },
+    { "key": "s12", "kind": "slide", "desc": "Full package: flight, hotel and itinerary from one sentence", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f8dc982d-5fd2-4752-b517-964d127a3d70.png" },
+    { "key": "s10", "kind": "slide", "desc": "TikTok/Instagram link → rated places from the video", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c9683bee-dc10-4ddb-a052-9aa579fb856c.png" },
+    { "key": "s11", "kind": "slide", "desc": "Paste a friend's recommendation list → a route", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/35f3a5a5-3c5a-49c6-be80-553ed6f449ef.png" },
+    { "key": "s13", "kind": "slide", "desc": "Trip documents available offline", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/cb84498f-54fe-49be-bed4-bbb1964583aa.png" },
+    { "key": "s6",  "kind": "slide", "desc": "Feature summary: 'your smart travel assistant'", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/6eed74f8-7b40-4095-b310-d3ab0a7386fa.png" },
+    { "key": "s14", "kind": "cta",   "desc": "End card: let's plan the next trip, fly-ai.space", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/fa06a978-19e2-460a-b3c7-b4ac38115bc8.png" }
+  ]
+}

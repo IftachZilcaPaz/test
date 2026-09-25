@@ -68,6 +68,10 @@ Exit codes: `0` OK · `1` rendered, but a checkpoint frame is blank · `2` spec,
 }
 ```
 
+`generate` (optional) is written by [`video/generator`](../generator/README.md). It lists the exact
+Higgsfield requests for the voice-over and any new b-roll. The renderer ignores it, and refuses to
+run while `voice.file` or a used asset is still empty.
+
 ### Beat types: pick one per screen, by what the image is
 
 | Type | Use for | Looks like | Caption |

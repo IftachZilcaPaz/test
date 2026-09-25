@@ -73,9 +73,10 @@ def load_spec(path: Path) -> dict:
         raise SpecError("; ".join(errors))
 
     voice = spec["voice"]
-    for key in ("file", "script"):
-        if not voice.get(key):
-            errors.append(f"voice.{key} is required")
+    if not voice.get("script"):
+        errors.append("voice.script is required")
+    if not voice.get("file"):
+        errors.append("voice.file is empty: generate the voice-over first (see spec 'generate')")
     if not 0.5 <= float(spec.get("speed", 1.0)) <= 2.0:
         errors.append("speed must be between 0.5 and 2.0")
 
@@ -90,6 +91,9 @@ def load_spec(path: Path) -> dict:
         ref = assets.get(b.get("asset", ""))
         if ref is None:
             errors.append(f"{where}: asset '{b.get('asset')}' is not in assets")
+            continue
+        if not ref:
+            errors.append(f"{where}: asset '{b['asset']}' has no URL yet: generate it first (see spec 'generate')")
             continue
         ext = ext_of(ref)
         if ext not in VIDEO_EXT | IMAGE_EXT:
