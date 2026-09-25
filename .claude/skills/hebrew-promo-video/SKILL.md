@@ -107,7 +107,9 @@ deep blue, violet, gold).
 Render one transparent 1000×300 PNG per beat with Playwright in the sandbox. Use
 `require(\`${npm root -g}/playwright\`)`: there is no Python playwright. Use
 `<html dir=rtl>` and Google Font **Heebo** 800 (secondary line 500), 84px white with a soft
-text-shadow. Assert `document.fonts.check("800 84px Heebo")` before capturing. The template is
+text-shadow. Heebo's Hebrew glyphs are a separate unicode-range subset. Load it explicitly with
+`document.fonts.load("800 84px Heebo", "<Hebrew sample>")`, then assert `document.fonts.check(...)` with the
+same Hebrew sample before capturing. Without the sample the check can pass or fail at random (this happened on ad #2). The template is
 `video/journee-ad/captions.cjs`. Captions are short (≤ 5 words per line, ≤ 2 lines) and mirror
 the VO beat. They don't need to be verbatim.
 
@@ -118,8 +120,11 @@ Start from `video/journee-ad/edit.jsx`:
 - 1080×1920 @30fps, background `#0d0f14`.
 - **B-roll beat:** full-bleed `<media>` (muted, `trimStart` 0.3, scale 1.00→1.05), a bottom black
   scrim, and the caption at y=1400.
-- **Screen beat:** a brand gradient backdrop, and the screenshot in a rounded "device" card
+- **Screen beat (raw app screenshot):** a brand gradient backdrop, and the screenshot in a rounded "device" card
   (x150 y450 780×1387, radius 54, deep shadow, scale 0.92→1.0). The caption sits at y=120.
+- **Screen beat (designed 9:16 marketing slide):** full-bleed, no extra caption (the slide carries its
+  own headline). Carousel entry: offsetX −160→0 in 0.35s ("house") + fade 0.2s, scale 1.04→1.0 over the beat.
+  Short beats (0.8s) are fine for a rhythmic list ("WhatsApp, Instagram, or the website"). See `video/journee-ad-2/`.
 - **End card:** the real CTA screenshot full-bleed with a slow push-in, held ~3.5s.
 - **Cut points:** each beat starts at its first word's Whisper timestamp + 0.3s (the VO
   lead-in).

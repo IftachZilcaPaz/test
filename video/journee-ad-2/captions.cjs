@@ -1,15 +1,11 @@
-// Renders the Hebrew caption PNGs (c1..c7) with headless Chromium so RTL shaping/bidi is correct.
+// Renders the Hebrew b-roll captions (c1..c3) with headless Chromium so RTL shaping/bidi is correct.
 // Usage: G=$(npm root -g) node captions.cjs   (writes into ./assets)
 const { chromium } = require(`${process.env.G ?? "."}/playwright`);
 
 const CAPTIONS = {
   c1: "מתכננים טיול?",
-  c2: "כותבים משפט אחד:<br>לאן ומתי",
-  c3: "מסלול מלא,<br>יום אחרי יום",
-  c4: "טיסות ומלונות אמיתיים<br><span class=s>במחירים מהשוק</span>",
-  c5: "שומרים · עורכים · משתפים",
-  c6: "הכול בעברית<br><span class=s>באתר ובוואטסאפ</span>",
-  c7: "בואו נתכנן<br>את הטיול הבא",
+  c2: "ראיתם סרטון<br>בטיקטוק?",
+  c3: "חבר שלח<br>רשימת המלצות?",
 };
 
 const HTML = `<html dir=rtl><head>
@@ -19,7 +15,6 @@ const HTML = `<html dir=rtl><head>
   #c{width:1000px;height:300px;display:flex;align-items:center;justify-content:center;text-align:center;
      font-family:Heebo,sans-serif;font-weight:800;font-size:84px;line-height:1.12;color:#fff;letter-spacing:-1px;
      text-shadow:0 4px 24px rgba(0,0,0,.65),0 2px 6px rgba(0,0,0,.5)}
-  .s{font-weight:500;font-size:58px;color:#e6e0ff}
 </style></head><body><div id=c></div></body></html>`;
 
 (async () => {
