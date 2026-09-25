@@ -1,0 +1,38 @@
+{
+  "name": "journee-ad-1",
+  "template": "A",
+  "speed": 1.15,
+  "brand": {
+    "background": "#0d0f14",
+    "gradient": ["#10204a", "#14171f", "#3d2166"],
+    "font": "Heebo",
+    "dir": "rtl"
+  },
+  "voice": {
+    "file": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_044923_a1de3df5-8451-4efe-b9dd-af74ed9aa63b.mp3",
+    "voiceId": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
+    "lang": "he",
+    "leadIn": 0.3,
+    "script": "מתכננים טיול? כִּתְבוּ משפט אחד: לאן, ומתי. ג'רְנִי בונה לכם מסלול מלא, יום אחרי יום, עם טיסות ומלונות אמיתיים, ומחירים מהשוק. שומרים, עורכים, ומשתפים. הכול בעברית, באתר ובוואטסאפ. בואו נתכנן את הטיול הבא, בחינם."
+  },
+  "assets": {
+    "roof": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
+    "rome": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043621_5c0c2d56-f3e7-4916-bb21-ca297dc660ef.mp4",
+    "plane": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_cd30ab2c-fed2-489e-96b3-27fd9c31fb04.mp4",
+    "s1": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/a4fa633b-5ad0-4156-8b7e-fd668498f25f.webp",
+    "s2": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/0cd3d966-e1dc-4ec2-9a5f-f9ac23116ce2.webp",
+    "s3": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/518ff963-533a-4ed7-a906-9f4a7b9d4f8c.webp",
+    "s4": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f3302740-bb19-4bf9-bfd4-5f524cce19a4.webp",
+    "s5": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/fa06a978-19e2-460a-b3c7-b4ac38115bc8.png"
+  },
+  "beats": [
+    { "type": "broll",  "asset": "roof",  "caption": "מתכננים טיול?" },
+    { "type": "screen", "asset": "s4",    "cue": "כִּתְבוּ",  "caption": "כותבים משפט אחד:\nלאן ומתי" },
+    { "type": "broll",  "asset": "rome",  "cue": "ג'רְנִי",   "caption": "מסלול מלא,\nיום אחרי יום" },
+    { "type": "screen", "asset": "s3",    "cue": "עם",       "caption": "טיסות ומלונות אמיתיים", "sub": "במחירים מהשוק" },
+    { "type": "screen", "asset": "s1",    "cue": "שומרים",   "caption": "שומרים · עורכים · משתפים" },
+    { "type": "screen", "asset": "s2",    "cue": "הכול",     "caption": "הכול בעברית", "sub": "באתר ובוואטסאפ" },
+    { "type": "broll",  "asset": "plane", "cue": "בואו",     "caption": "בואו נתכנן\nאת הטיול הבא" },
+    { "type": "end",    "asset": "s5",    "hold": 3.5 }
+  ]
+}

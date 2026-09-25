@@ -1,0 +1,46 @@
+{
+  "name": "journee-ad-2",
+  "template": "B",
+  "speed": 1.15,
+  "brand": {
+    "background": "#121418",
+    "gradient": ["#10204a", "#14171f", "#3d2166"],
+    "font": "Heebo",
+    "dir": "rtl"
+  },
+  "voice": {
+    "file": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_052043_384c9b39-37a7-4905-9e6b-56982314f9a2.mp3",
+    "voiceId": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
+    "lang": "he",
+    "leadIn": 0.3,
+    "script": "מתכננים טיול? פשוט שולחים הודעה, בוואטסאפ, באינסטגרם, או באתר. משפט אחד, ומקבלים טיסה, מלון ומסלול מלא. ראיתם סרטון בטיקטוק? שִׁלְחוּ את הלינק, וג'רְנִי מוציא ממנו את כל המקומות. חבר שלח רשימת המלצות? מדביקים, ומקבלים מסלול. וכל המסמכים של הטיול איתכם, גם בלי קליטה. ג'רְנִי, עוזר הטיולים החכם שלכם."
+  },
+  "assets": {
+    "roof": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
+    "nyc": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_052032_94c9dd3c-0552-4189-a930-4919fe00fdbc.mp4",
+    "thai": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_052032_54641196-8399-4b11-91ff-9190da7d5bd5.mp4",
+    "s6": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/6eed74f8-7b40-4095-b310-d3ab0a7386fa.png",
+    "s7": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c66959f0-7db2-4cb4-8253-dc11c308f656.png",
+    "s8": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c9213f47-9ada-4931-bd34-032e7b6da2cb.png",
+    "s9": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4e0bfc7e-0db7-4bfd-8a46-53f108d67260.png",
+    "s10": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c9683bee-dc10-4ddb-a052-9aa579fb856c.png",
+    "s11": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/35f3a5a5-3c5a-49c6-be80-553ed6f449ef.png",
+    "s12": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f8dc982d-5fd2-4752-b517-964d127a3d70.png",
+    "s13": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/cb84498f-54fe-49be-bed4-bbb1964583aa.png",
+    "s14": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/fa06a978-19e2-460a-b3c7-b4ac38115bc8.png"
+  },
+  "beats": [
+    { "type": "broll", "asset": "roof", "caption": "מתכננים טיול?" },
+    { "type": "slide", "asset": "s7",  "cue": "פשוט" },
+    { "type": "slide", "asset": "s8",  "cue": "באינסטגרם" },
+    { "type": "slide", "asset": "s9",  "cue": "או" },
+    { "type": "slide", "asset": "s12", "cue": "ומקבלים" },
+    { "type": "broll", "asset": "nyc",  "cue": "ראיתם", "caption": "ראיתם סרטון\nבטיקטוק?" },
+    { "type": "slide", "asset": "s10", "cue": "שִׁלְחוּ" },
+    { "type": "broll", "asset": "thai", "cue": "חבר", "caption": "חבר שלח\nרשימת המלצות?" },
+    { "type": "slide", "asset": "s11", "cue": "מדביקים" },
+    { "type": "slide", "asset": "s13", "cue": "וכל" },
+    { "type": "slide", "asset": "s6",  "cue": "ג'רְנִי" },
+    { "type": "end",   "asset": "s14", "hold": 3.4 }
+  ]
+}
