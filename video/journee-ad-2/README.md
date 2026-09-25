@@ -6,6 +6,9 @@ A 29s vertical ad (1080×1920, 30fps, H.264 + AAC), built with the
 **Render:** https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/28dc5b20-3138-45cb-8483-915fc22e3774.mp4
 (Higgsfield media `28dc5b20-3138-45cb-8483-915fc22e3774`)
 
+**Sped up ×1.15 (25.2s):** https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/aa5d3ddb-4c83-48b1-afc9-17a0f43f34de.mp4
+(see [speed-up](../journee-ad/README.md#speed-up-no-credits))
+
 ## Structure
 
 | Time (s)    | Visual                                    | VO                                        |
