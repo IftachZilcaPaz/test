@@ -66,3 +66,8 @@ ffmpeg -i proj/renders/silent.mp4 -i assets/vo.mp3 \
   -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -ar 48000 -shortest \
   -movflags +faststart journee_ad_he_v1.mp4
 ```
+
+## Reuse
+
+The full recipe, including the Hebrew pronunciation (niqqud) rules and lexicon, is the project
+skill [`.claude/skills/hebrew-promo-video`](../../.claude/skills/hebrew-promo-video/SKILL.md).
