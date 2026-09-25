@@ -48,7 +48,9 @@ ElevenLabs guesses vowels from unpointed Hebrew and gets ambiguous words wrong
 | Intended | Write for TTS | Wrong reading seen | Notes |
 |---|---|---|---|
 | kitvu (imperative "write") | `כִּתְבוּ` | כתבו → *katvu* | Full spelling כיתבו also used (Journee v2) |
-| Journee (brand) | `ג'רְנִי` | ג'ורני → *jorni* | The user asked for pointed forms going forward |
+| Journee (brand) | `ג'רְנִי` | ג'ורני → *jorni* | Confirmed by the user (ad #2) |
+| shilchu (imperative "send") | `שִׁלְחוּ` | (pre-emptive) | Confirmed by the user (ad #2) |
+| takhnen (imperative "plan") | `תַּכְנֵן` | (pre-emptive) | Confirmed by the user (ad #2) |
 
 When the user corrects a pronunciation, add a row here in the same change.
 
@@ -91,9 +93,13 @@ and let the user choose by ear.
 
 ### 4. B-roll (Seedance)
 
+Check the reusable clip library in `video/PLAYBOOK.md` §7 first: a reused clip costs 0.
+Default to **720p**. A clip shows for 1.5–3s under a scrim, so 1080p isn't worth the extra 25
+credits unless the user asks for it. At most 2 new clips per ad.
+
 ```
-generate_video_batch  model: seedance_2_5  aspect_ratio: 9:16  resolution: 1080p
-                      duration: 5  generate_audio: false        # ~60 credits each; 720p ~35
+generate_video_batch  model: seedance_2_5  aspect_ratio: 9:16  resolution: 720p
+                      duration: 5  generate_audio: false        # 35 credits each; 1080p = 60
 ```
 
 Three shots: (a) hook: a person's hands with a phone in an aspirational setting, screen
@@ -162,11 +168,18 @@ to the video yourself.
    `ffmpeg -i old.mp4 -map 0:v -c copy -f md5 -` vs. the same command on the new file.
 5. Add the new pronunciation to the lexicon. Record the new version in the project README.
 
-## Budget reference (Plus plan, Sept 2026)
+## Budget reference (measured, Sept 2026)
 
-3 b-roll clips at 1080p ≈ 180 credits. Each VO take costs a few credits. Lip-synced presenter
-(Seedance `omni_reference` with image + audio reference) ≈ 35 credits per 5s at 720p. It needs
-a presenter photo, and it's optional: a VO over b-roll and screens needs no lip-sync.
+Seedance 2.5 5s: 60 credits at 1080p, 35 at 720p. ElevenLabs VO: 0.75–0.9 per take. Everything else
+(upload, captions, edit, render, Whisper, speed-up, audio swap) costs 0. Actual cost: ad #1 ≈ 186,
+ad #2 ≈ 71. Templates, savings rules, the asset library and the automation roadmap are in
+[`video/PLAYBOOK.md`](../../../video/PLAYBOOK.md).
+
+Pacing: a whole-video speed-up of `setpts=PTS/1.15` + `atempo=1.15` is free and keeps the
+cuts in sync. Prefer it over regenerating the VO.
+
+Lip-synced presenter (Seedance `omni_reference` with image + audio reference) ≈ 35 credits per 5s at
+720p. It needs a presenter photo, and it's optional.
 
 ## Kick-off prompt (paste with the screenshots)
 
