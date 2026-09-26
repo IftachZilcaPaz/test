@@ -5,31 +5,73 @@
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
       "res": "1080p",
       "desc": "Close-up of hands typing on a smartphone on a rooftop at sunset, city skyline and lake behind; screen out of focus",
-      "tags": ["hook", "phone", "city", "sunset", "generic"]
+      "tags": [
+        "hook",
+        "phone",
+        "city",
+        "sunset",
+        "generic"
+      ]
     },
     "rome": {
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043621_5c0c2d56-f3e7-4916-bb21-ca297dc660ef.mp4",
       "res": "1080p",
       "desc": "Aerial drone orbit of the Colosseum in Rome at golden hour",
-      "tags": ["travel", "europe", "rome", "landmark", "aerial"]
+      "tags": [
+        "travel",
+        "europe",
+        "rome",
+        "landmark",
+        "aerial"
+      ]
     },
     "plane": {
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_cd30ab2c-fed2-489e-96b3-27fd9c31fb04.mp4",
       "res": "1080p",
       "desc": "Airplane window above a sea of clouds at sunrise, wing in golden light",
-      "tags": ["travel", "flight", "payoff", "aspirational"]
+      "tags": [
+        "travel",
+        "flight",
+        "payoff",
+        "aspirational"
+      ]
     },
     "nyc": {
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_052032_94c9dd3c-0552-4189-a930-4919fe00fdbc.mp4",
       "res": "720p",
       "desc": "Brooklyn Bridge at blue hour, a traveler walking away from camera holding a phone, Manhattan skyline",
-      "tags": ["travel", "city", "usa", "new-york", "phone"]
+      "tags": [
+        "travel",
+        "city",
+        "usa",
+        "new-york",
+        "phone"
+      ]
     },
     "thai": {
       "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_052032_54641196-8399-4b11-91ff-9190da7d5bd5.mp4",
       "res": "720p",
       "desc": "Aerial over a turquoise Thai bay with limestone cliffs and a long-tail boat at golden hour",
-      "tags": ["travel", "beach", "asia", "thailand", "aerial"]
+      "tags": [
+        "travel",
+        "beach",
+        "asia",
+        "thailand",
+        "aerial"
+      ]
+    },
+    "cafe": {
+      "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_073406_3191dc49-01ec-4350-ae16-4ba6aaa1f777.mp4",
+      "res": "720p",
+      "desc": "Sunlit café: a mentor in her forties talks with a young man across a wooden table, notebook and coffee, he nods and smiles",
+      "tags": [
+        "people",
+        "mentoring",
+        "meeting",
+        "cafe",
+        "warm",
+        "generic"
+      ]
     }
   }
 }

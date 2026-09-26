@@ -1,0 +1,63 @@
+{
+  "script": "יש לכם ניסיון שאחרים היו משלמים כדי לקבל? הצטרפו לנבחרת המנטורים של מנטור איט. בונים פרופיל, קובעים מחיר, ומגיעים אליכם אנשים שכבר יודעים למה אתם מתאימים להם. אונליין או פנים מול פנים, בזמנים שלכם. מנטור איט: הניסיון שלכם שווה יותר ממה שאתם חושבים.",
+  "flagged_words": [
+    {
+      "word": "מֶנְטוֹר אִיט",
+      "reading": "mentor it",
+      "reason": "brand name (approved)"
+    }
+  ],
+  "beats": [
+    {
+      "type": "broll",
+      "asset": "cafe",
+      "cue": "",
+      "caption": "יש לכם ניסיון\nשאחרים מחפשים?",
+      "sub": ""
+    },
+    {
+      "type": "slide",
+      "asset": "team",
+      "cue": "הצטרפו",
+      "caption": "",
+      "sub": ""
+    },
+    {
+      "type": "scroll",
+      "asset": "iftach_full",
+      "cue": "בונים",
+      "caption": "בונים פרופיל\nקובעים מחיר",
+      "sub": ""
+    },
+    {
+      "type": "screen",
+      "asset": "match",
+      "cue": "למה",
+      "caption": "מגיעים אליכם\nאנשים שמתאימים",
+      "sub": "עם דוח שמסביר למה"
+    },
+    {
+      "type": "screen",
+      "asset": "nitzan",
+      "cue": "אונליין",
+      "caption": "אונליין או פנים מול פנים",
+      "sub": "בזמנים שלכם"
+    },
+    {
+      "type": "screen",
+      "asset": "signup",
+      "cue": "מנטור",
+      "caption": "הצטרפו\nלנבחרת",
+      "sub": ""
+    },
+    {
+      "type": "end",
+      "asset": "endcard",
+      "cue": "",
+      "caption": "",
+      "sub": ""
+    }
+  ],
+  "new_broll": [],
+  "notes": "Client-approved script (option 2A, 'set your price' kept as written by the client)."
+}

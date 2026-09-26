@@ -1,8 +1,8 @@
 {
-  "name": "mentorit-ad-1",
+  "name": "mentorit-ad-2",
   "business": "mentor it: a Hebrew marketplace that matches people with the right mentor. A 4-question matching questionnaire (field, budget, online or in person, goal) produces a personal match report with a % score and an explanation of why each mentor fits. Full mentor profiles show what you get in the first session and a transparent hourly price. Mentors are manually verified. Browse all mentors with filters. Mentors can also join the platform.",
-  "audience": "People looking for a mentor (career, entrepreneurship, relationships, finance, parenting, health)",
-  "cta": "mentorit.me",
+  "audience": "Experienced professionals who could become mentors on the platform",
+  "cta": "mentorit.me: join as a mentor",
   "tone": "warm, confident, simple",
   "language": "he",
   "targetSeconds": 22,
@@ -12,8 +12,8 @@
     "name": "Daisy"
   },
   "budget": {
-    "credits": 69.93,
-    "newBrollMax": 1,
+    "credits": 33.93,
+    "newBrollMax": 0,
     "resolution": "720p"
   },
   "brand": {
@@ -36,9 +36,9 @@
   "endCard": {
     "wordmark": "mentor",
     "badge": "it",
-    "title": "קיצור הדרך\nשלכם",
-    "subtitle": "מנטורים מאומתים · מחירים שקופים · אונליין או פנים מול פנים",
-    "button": "מצאו מנטור עכשיו",
+    "title": "הניסיון שלכם\nשווה יותר",
+    "subtitle": "פרופיל מאומת · מחיר שקוף · אונליין או פנים מול פנים",
+    "button": "הצטרפו כמנטורים",
     "url": "mentorit.me"
   },
   "screens": [
@@ -119,5 +119,5 @@
       "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2533d89f-9e1e-4e5d-bd7c-ed93b2a44081.png"
     }
   ],
-  "notes": "Real mentors appear with their consent. No CTA screen: use the generated end card. Budget allows exactly one new 720p clip. Client feedback: never mention the number of questions ('4 questions') in the voice-over or on the end card; the questionnaire screen may still appear."
+  "notes": "Mentor-recruitment companion to mentorit-ad-1; reuses its café clip from the library. Client-approved script (option 2A). Real mentors appear with their consent. No CTA screen: use the generated end card. Client feedback: never mention the number of questions."
 }

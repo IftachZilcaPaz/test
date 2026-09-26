@@ -2,46 +2,38 @@
   "name": "mentorit-ad-1",
   "speed": 1.15,
   "voice": {
-    "file": "",
+    "file": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_073408_4b1ee307-b82e-433f-9a3d-004b7e3eba15.mp3",
     "voiceId": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
     "lang": "he",
     "leadIn": 0.3,
-    "script": "מחפשים מנטור, ולא יודעים במי לבחור? במֶנְטוֹר אִיט עונים על ארבע שאלות קצרות, ומקבלים דוח התאמה אישי. אפשר לראות כל פרופיל עד הסוף: מה תקבלו בפגישה הראשונה, וכמה זה עולה. אונליין או פנים מול פנים. ומנטורים? הצטרפו גם אתם. מֶנְטוֹר אִיט: המנטור הנכון הוא לא עניין של מזל."
+    "script": "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם."
   },
   "assets": {
     "roof": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
-    "home": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f823edfa-0b75-436a-b948-0d9779c8f2b2.webp",
+    "cafe": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_073406_3191dc49-01ec-4350-ae16-4ba6aaa1f777.mp4",
     "q_field": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f82d4a48-59f4-456f-bca3-48fd1500af8e.png",
-    "match": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4d5c3fb6-2231-4e16-83ba-8f7890308f3f.png",
     "iftach_full": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2bfba24c-456f-43ec-b436-ca8d62cf4bd7.webp",
-    "cafe": "",
-    "signup": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2533d89f-9e1e-4e5d-bd7c-ed93b2a44081.png",
+    "q_mode": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/503916da-f16b-4462-8b9f-6fa4511bd16c.png",
     "team": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/807efd0e-a487-436e-b412-692e8e24d2dd.webp"
   },
   "beats": [
     {
       "type": "broll",
       "asset": "roof",
-      "caption": "מחפשים מנטור?"
+      "caption": "שנה של\nניסוי וטעייה?"
     },
     {
-      "type": "screen",
-      "asset": "home",
-      "cue": "במנטור",
-      "caption": "המנטור הנכון\nבלי ניחושים"
+      "type": "broll",
+      "asset": "cafe",
+      "cue": "או",
+      "caption": "או שעה אחת\nעם מי שכבר היה שם"
     },
     {
       "type": "screen",
       "asset": "q_field",
-      "cue": "ארבע",
-      "caption": "4 שאלות קצרות"
-    },
-    {
-      "type": "screen",
-      "asset": "match",
-      "cue": "ומקבלים",
-      "caption": "דוח התאמה אישי",
-      "sub": "ולמה דווקא הוא"
+      "cue": "במנטור",
+      "caption": "מנטור לכל תחום",
+      "sub": "קריירה · יזמות · זוגיות · כסף"
     },
     {
       "type": "scroll",
@@ -56,20 +48,14 @@
           1048
         ]
       ],
-      "cue": "אפשר",
-      "caption": "כל הפרופיל\nעד הסוף"
-    },
-    {
-      "type": "broll",
-      "asset": "cafe",
-      "cue": "אונליין",
-      "caption": "אונליין או\nפנים מול פנים"
+      "cue": "רואים",
+      "caption": "מה תקבלו\nוכמה זה עולה"
     },
     {
       "type": "screen",
-      "asset": "signup",
-      "cue": "ומנטורים",
-      "caption": "מנטורים?\nהצטרפו גם אתם"
+      "asset": "q_mode",
+      "cue": "ונפגשים",
+      "caption": "אונליין או\nפנים מול פנים"
     },
     {
       "type": "slide",
@@ -81,8 +67,8 @@
       "card": {
         "wordmark": "mentor",
         "badge": "it",
-        "title": "המנטור הנכון\nהוא לא עניין של מזל",
-        "subtitle": "4 שאלות · דוח התאמה אישי · מחירים שקופים",
+        "title": "קיצור הדרך\nשלכם",
+        "subtitle": "מנטורים מאומתים · מחירים שקופים · אונליין או פנים מול פנים",
         "button": "מצאו מנטור עכשיו",
         "url": "mentorit.me"
       },
@@ -95,7 +81,7 @@
       "variant": "elevenlabs",
       "voice_type": "preset",
       "voice_id": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
-      "prompt": "מחפשים מנטור, ולא יודעים במי לבחור? במֶנְטוֹר אִיט עונים על ארבע שאלות קצרות, ומקבלים דוח התאמה אישי. אפשר לראות כל פרופיל עד הסוף: מה תקבלו בפגישה הראשונה, וכמה זה עולה. אונליין או פנים מול פנים. ומנטורים? הצטרפו גם אתם. מֶנְטוֹר אִיט: המנטור הנכון הוא לא עניין של מזל."
+      "prompt": "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם."
     },
     "broll": {
       "cafe": {
