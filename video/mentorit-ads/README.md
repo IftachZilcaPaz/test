@@ -48,3 +48,7 @@ mentorit spec and brief now points to them. The originals are kept on the CDN.
 Alexey versions, re-rendered:
 - ad-1: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2dba2f2e-c032-4e9b-bfcc-b09d0acb9059.mp4
 - ad-2: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/011ef398-aef5-48d3-a97d-07e262bada59.mp4
+
+Grady versions with the name fix (the chosen voice):
+- ad-1, 19.4s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/56b748a6-b1f3-4184-8473-6bafd4add71a.mp4
+- ad-2, 22.2s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/44e916d6-fbe5-41a6-ae39-69a0e8519cc2.mp4
