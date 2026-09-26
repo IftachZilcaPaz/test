@@ -179,6 +179,20 @@ input[type=color]{width:44px;height:38px;border:1px solid var(--line);border-rad
 .pipe li.done .dot{background:var(--money);border-color:var(--money);color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
 .pipe .c{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+/* cost tags + change ledger */
+.ctag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;padding:1px 7px;border-radius:999px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
+.ctag.free{background:var(--money-soft);color:var(--money)}
+.ctag.paid{background:var(--warn-soft);color:var(--warn)}
+.ledger{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.ledger li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.ledger li b{font-family:var(--mono);font-weight:500;white-space:nowrap}
+.ledger li.paid b{color:var(--warn)} .ledger li.free b{color:var(--money)}
+.ledger li.total{border-bottom:0;font-weight:700}
+.ledger li.total b{color:var(--ink);font-size:15px}
+.basis{font-size:12px;color:var(--ink-3);margin-top:6px}
+.prices{width:100%;border-collapse:collapse;font-size:14px}
+.prices td{padding:7px 6px;border-bottom:1px solid var(--line)}
+.prices td:last-child{text-align:end;white-space:nowrap}
 pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;max-height:260px;overflow:auto;font-size:12px;direction:ltr;text-align:left;font-family:var(--mono)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -189,7 +203,7 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
       <div class="brand"><span class="tally" aria-hidden="true"></span><h1>סטודיו פרומו</h1><span class="drybadge">DRY RUN · 0 קרדיטים</span></div>
       <div class="wallet" aria-live="polite">
         <div><div class="k">יתרה</div><div class="v mono" id="wBal">29.98</div></div>
-        <div><div class="k">הסרטון הזה</div><div class="v mono" id="wCost">0.83</div></div>
+        <div><div class="k">השינוי הבא</div><div class="v mono" id="wCost">0.83</div></div>
         <div><div class="k">יישאר</div><div class="v mono good" id="wLeft">29.15</div></div>
       </div>
     </div>
@@ -218,7 +232,7 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
           </div>
         </div>
         <div class="card">
-          <h2>מסכים</h2>
+          <h2>מסכים <span class="ctag free">הוספה והחלפה: 0</span></h2>
           <p class="lede">צילומי מסך אמיתיים מהאפליקציה. צילום ארוך (עמוד שלם) מזוהה אוטומטית ונגלל בתוך הטלפון.</p>
           <label class="drop" id="drop" for="fileIn">גררו לכאן צילומי מסך, או לחצו לבחירה<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
           <div class="shots" id="shots"></div>
@@ -228,12 +242,12 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
         <div class="card">
           <h2>סגנון</h2>
           <div class="fields" style="margin-top:12px">
-            <div class="f full"><label>קול</label><div class="chips" id="voiceChips"></div></div>
+            <div class="f full"><label>קול <span class="ctag paid">החלפה = קריינות חדשה ~0.83</span></label><div class="chips" id="voiceChips"></div></div>
             <div class="f full"><label>טון</label><div class="chips" id="toneChips"></div></div>
             <div class="f"><label for="bLen">אורך יעד (שניות)</label><input type="number" id="bLen" min="12" max="45" step="1"></div>
-            <div class="f"><label for="bSpeed">קצב</label><select id="bSpeed"><option value="1">×1.0</option><option value="1.15">×1.15</option><option value="1.2">×1.2</option><option value="1.25">×1.25</option><option value="1.3">×1.3</option></select></div>
-            <div class="f"><label for="bColor">צבע מותג</label><input type="color" id="bColor"></div>
-            <div class="f"><label for="bEnd">כותרת כרטיס הסיום</label><input type="text" id="bEnd"></div>
+            <div class="f"><label for="bSpeed">קצב <span class="ctag free">0</span></label><select id="bSpeed"><option value="1">×1.0</option><option value="1.15">×1.15</option><option value="1.2">×1.2</option><option value="1.25">×1.25</option><option value="1.3">×1.3</option></select></div>
+            <div class="f"><label for="bColor">צבע מותג <span class="ctag free">0</span></label><input type="color" id="bColor"></div>
+            <div class="f"><label for="bEnd">כותרת כרטיס הסיום <span class="ctag free">0</span></label><input type="text" id="bEnd"></div>
           </div>
         </div>
         <div class="card">
@@ -264,11 +278,11 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
         <div class="card">
           <h2>התסריט שנבחר</h2>
           <p class="lede">זה הטקסט שיישלח לקריין. ניקוד רק במילים שעלולות להיקרא לא נכון.</p>
-          <div class="f"><label for="scriptBox">קריינות</label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="mono"></small></div>
+          <div class="f"><label for="scriptBox">קריינות <span class="ctag paid">כל שינוי בטקסט = קריינות חדשה ~0.83</span></label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="mono"></small></div>
           <div id="flags" class="row" style="margin-top:10px"></div>
         </div>
         <div class="card">
-          <h2>מה רואים ומתי</h2>
+          <h2>מה רואים ומתי <span class="ctag free">מסכים, כיתובים, סדר: 0</span></h2>
           <p class="lede">כל שורה מתחלפת כשהקריין מגיע למילה שבעמודה "מתחיל ב". אפשר לשנות מסך, מילה או כיתוב.</p>
           <div class="tscroll"><table class="beats" id="beatsTbl"><thead><tr><th>#</th><th>מה על המסך</th><th>מתחיל ב</th><th>כיתוב</th></tr></thead><tbody></tbody></table></div>
         </div>
@@ -289,6 +303,12 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
       </div>
       <div>
         <div class="card">
+          <h2>מה השינויים יעלו ב-Higgsfield</h2>
+          <p class="lede">מחושב לפני כל הפקה, מול הגרסה האחרונה שהופקה. רק קריינות חדשה ושוט חדש עולים קרדיטים.</p>
+          <ul class="ledger" id="ledger"></ul>
+          <div class="basis" id="basis"></div>
+        </div>
+        <div class="card">
           <h2>ציר הזמן</h2>
           <p class="lede">כך ייחתך הסרטון, בערך. לחיצה על הציר קופצת לנקודה. הזמנים מחושבים מקצב דיבור ממוצע של 1.85 מילים בשנייה, ובהפקה האמיתית הם מסתנכרנים למילים של הקריין.</p>
           <div class="bar" id="bar"><div class="head" id="head"></div></div>
@@ -300,7 +320,7 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
           <ul class="checks" id="checks"></ul>
         </div>
         <div class="card">
-          <h2>מה כל בחירה עולה</h2>
+          <h2>אם מפיקים סרטון חדש מאפס</h2>
           <table class="costs" id="costs"><thead><tr><th>אפשרות</th><th>עלות</th><th>יישאר</th></tr></thead><tbody></tbody></table>
           <p class="hint" style="margin-top:8px">לחיצה על שורה בוחרת אותה. רינדור, החלפת מסך, כיתוב וקצב עולים 0.</p>
         </div>
@@ -315,14 +335,29 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
       <div class="card">
         <h2>מה יקרה כשלוחצים "הפק"</h2>
         <p class="lede">בדמו הזה שום דבר לא נשלח ל-Higgsfield. הסימולציה מראה את הסדר, הזמן והעלות של כל שלב.</p>
+        <ul class="ledger" id="ledger2" style="margin-bottom:14px"></ul>
         <ul class="pipe" id="pipe"></ul>
-        <div class="row" style="margin-top:14px"><button class="btn primary" id="simBtn">הרץ סימולציה</button><span class="status" id="simStatus"></span></div>
+        <div class="row" style="margin-top:14px"><button class="btn primary" id="simBtn">הרץ סימולציה</button><button class="btn" id="resetBase">התחל סרטון חדש</button><span class="status" id="simStatus"></span></div>
       </div>
       <div class="card">
         <h2>להפקה אמיתית</h2>
         <p class="lede">מעתיקים את החבילה ומדביקים ל-Claude Code עם המשפט "תפיק את זה". היא בפורמט של המחולל, כך שההפקה רצה בלי שאלות נוספות.</p>
         <div class="row"><button class="btn" id="copyBtn">העתק חבילה</button><span class="status" id="copyStatus"></span></div>
         <pre class="json" id="json"></pre>
+      </div>
+      <div class="card">
+        <h2>מחירון שינויים</h2>
+        <p class="lede">מה כל שינוי עולה אחרי שסרטון כבר הופק. המחירים נמדדו בחשבון שלכם.</p>
+        <table class="prices"><tbody>
+          <tr><td>שינוי מילה בקריינות, או קול אחר</td><td><span class="ctag paid">~0.83 לסרטון</span></td></tr>
+          <tr><td>שוט קולנועי חדש, 5 שניות, 720p</td><td><span class="ctag paid">35</span></td></tr>
+          <tr><td>שוט קולנועי חדש, 5 שניות, 1080p</td><td><span class="ctag paid">60</span></td></tr>
+          <tr><td>שוט מהספרייה (כבר שולם בעבר)</td><td><span class="ctag free">0</span></td></tr>
+          <tr><td>החלפת מסך או תמונה, תיקון טקסט בתמונה</td><td><span class="ctag free">0</span></td></tr>
+          <tr><td>כיתובים, סדר, מילת התחלה</td><td><span class="ctag free">0</span></td></tr>
+          <tr><td>קצב (×1.15, ×1.25…), צבע, כרטיס סיום</td><td><span class="ctag free">0</span></td></tr>
+          <tr><td>רינדור מחדש, כמה פעמים שרוצים</td><td><span class="ctag free">0</span></td></tr>
+        </tbody></table>
       </div>
     </div>
   </section>
@@ -378,8 +413,8 @@ const S = {
       flagged_words: [{ word: "מֶנְטוֹר אִיט", reading: "mentor it", reason: "שם המותג" }],
       beats: [
         { type: "broll", asset: "roof", cue: "", caption: "שנה של\nניסוי וטעייה?" },
-        { type: "broll", asset: "cafe", cue: "או", caption: "או שעה אחת\nעם מי שכבר היה שם" },
-        { type: "screen", asset: "q_field", cue: "במֶנְטוֹר", caption: "מנטור לכל תחום" },
+        { type: "broll", asset: "cafe", cue: "או", caption: "או שעה אחת עם מישהו\nשכבר טעה בשבילכם" },
+        { type: "screen", asset: "q_field", cue: "במֶנְטוֹר", caption: "מנטור לקריירה, ליזמות,\nלזוגיות או לכסף" },
         { type: "scroll", asset: "iftach_full", cue: "רואים", caption: "מה תקבלו\nוכמה זה עולה" },
         { type: "screen", asset: "q_mode", cue: "ונפגשים", caption: "אונליין או\nפנים מול פנים" },
         { type: "slide", asset: "team", cue: "מֶנְטוֹר", caption: "" },
@@ -389,26 +424,27 @@ const S = {
       script: "יש לכם ניסיון שאחרים היו משלמים כדי לקבל? הצטרפו לנבחרת המנטורים של מֶנְטוֹר אִיט. בונים פרופיל, קובעים מחיר, ומגיעים אליכם אנשים שכבר יודעים למה אתם מתאימים להם. אונליין או פנים מול פנים, בזמנים שלכם. מֶנְטוֹר אִיט: הניסיון שלכם שווה יותר ממה שאתם חושבים.",
       flagged_words: [{ word: "מֶנְטוֹר אִיט", reading: "mentor it", reason: "שם המותג" }],
       beats: [
-        { type: "broll", asset: "cafe", cue: "", caption: "יש לכם ניסיון\nשאחרים מחפשים?" },
+        { type: "broll", asset: "cafe", cue: "", caption: "יש לכם ניסיון שאחרים\nהיו משלמים כדי לקבל?" },
         { type: "slide", asset: "team", cue: "הצטרפו", caption: "" },
         { type: "scroll", asset: "iftach_full", cue: "בונים", caption: "בונים פרופיל\nקובעים מחיר" },
-        { type: "screen", asset: "match", cue: "למה", caption: "מגיעים אליכם\nאנשים שמתאימים" },
-        { type: "screen", asset: "signup", cue: "מֶנְטוֹר", caption: "הצטרפו\nלנבחרת" },
+        { type: "screen", asset: "match", cue: "למה", caption: "שכבר יודעים למה\nאתם מתאימים להם" },
+        { type: "screen", asset: "signup", cue: "מֶנְטוֹר", caption: "הניסיון שלכם שווה יותר\nממה שאתם חושבים" },
         { type: "end", asset: "endcard", cue: "", caption: "" },
       ] },
   ],
   pick: 0,
 };
 const images = {};   // screen key -> object URL (never stored)
+S.baselines = {};    // option index -> snapshot of the last produced version
 
 /* ---------- storage (convenience only) ---------- */
-const STORE = "promo-studio-draft-v1";
+const STORE = "promo-studio-draft-v2";
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || "null");
-  if (saved && saved.brief) { Object.assign(S.brief, saved.brief); if (saved.options?.length) { S.options = saved.options; S.pick = saved.pick ?? 0; } if (saved.screens?.length) S.screens = saved.screens; }
+  if (saved && saved.brief) { Object.assign(S.brief, saved.brief); if (saved.options?.length) { S.options = saved.options; S.pick = saved.pick ?? 0; } if (saved.screens?.length) S.screens = saved.screens; if (saved.baselines) S.baselines = saved.baselines; }
 } catch {}
 let saveT;
-const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ brief: S.brief, options: S.options, pick: S.pick, screens: S.screens })); } catch {} }, 400); };
+const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ brief: S.brief, options: S.options, pick: S.pick, screens: S.screens, baselines: S.baselines })); } catch {} }, 400); };
 
 /* ---------- text helpers (same rules as the engine) ---------- */
 const FINALS = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
@@ -447,8 +483,51 @@ const targetWords = () => Math.round(S.brief.len * S.brief.speed * WPS * voice()
 /* ---------- cost ---------- */
 function newShots(opt) { return opt.beats.filter(b => b.type === "broll" && !LIBRARY[b.asset]).length; }
 function cost(opt) { return COST.voice + newShots(opt) * COST.shot[S.brief.res]; }
+
+/* What the NEXT production costs, diffed against the last produced version of this option.
+   Only a new voice-over or a new shot spends Higgsfield credits; everything else is a free re-render. */
+function snapshot() {
+  const o = cur(), b = S.brief;
+  return { script: o.script.trim().replace(/\s+/g, " "), voice: b.voice, res: b.res, speed: b.speed,
+    look: [b.color, b.endTitle, b.cta, b.name].join("|"),
+    screens: S.screens.map(s => `${s.key}:${s.kind}`).join(","),
+    beats: o.beats.map(x => ({ type: x.type, asset: x.asset, cue: x.cue || "", caption: x.caption || "" })) };
+}
+const newIn = snap => snap.beats.filter(x => x.type === "broll" && !LIBRARY[x.asset]).length;
+function changes() {
+  const base = S.baselines[S.pick], now = snapshot(), out = [], shot = COST.shot[now.res];
+  if (!base) {
+    out.push([`סרטון חדש: קריינות (${voice().name})`, COST.voice]);
+    const n = newIn(now); if (n) out.push([`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${now.res}`, n * shot]);
+    out.push(["רינדור, כיתובים ובדיקות", 0]);
+    return out;
+  }
+  if (now.script !== base.script) out.push(["טקסט הקריינות השתנה → קריינות חדשה", COST.voice]);
+  else if (now.voice !== base.voice) out.push([`קול אחר (${voice().name}) → קריינות חדשה`, COST.voice]);
+  const nNew = newIn(now), nBase = newIn(base);
+  const addShots = nNew && now.res !== base.res ? nNew : Math.max(0, nNew - nBase);
+  if (addShots) out.push([`${addShots} שוט${addShots > 1 ? "ים" : ""} חדש${addShots > 1 ? "ים" : ""} · ${now.res}`, addShots * shot]);
+  const diff = (f) => now.beats.length !== base.beats.length || now.beats.some((x, i) => f(x) !== f(base.beats[i]));
+  if (diff(x => x.caption)) out.push(["כיתובים", 0]);
+  if (diff(x => x.asset + x.type)) out.push(["מסכים או שוטים מהספרייה", 0]);
+  if (diff(x => x.cue) && now.script === base.script) out.push(["מתי כל קטע נכנס", 0]);
+  if (now.screens !== base.screens) out.push(["תמונות מסכים", 0]);
+  if (now.speed !== base.speed) out.push([`קצב ×${now.speed}`, 0]);
+  if (now.look !== base.look) out.push(["צבע, שם או כרטיס סיום", 0]);
+  if (!out.length) out.push(["אין שינויים מאז ההפקה האחרונה", 0]);
+  else out.push(["רינדור מחדש", 0]);
+  return out;
+}
+const changeCost = () => changes().reduce((a, [, c]) => a + c, 0);
+function renderLedger() {
+  const rows = changes(), total = rows.reduce((a, [, c]) => a + c, 0), left = S.brief.balance - total;
+  const li = ([t, c]) => el("li", { className: c ? "paid" : "free" }, el("span", { textContent: t }), el("b", { textContent: c ? `${money(c)} קר'` : "0" }));
+  const totalRow = el("li", { className: "total" }, el("span", { textContent: `סה"כ · יישאר ${left >= 0 ? money(left) : "חסרים " + money(-left)}` }), el("b", { textContent: `${money(total)} קר'` }));
+  for (const id of ["#ledger", "#ledger2"]) $(id).replaceChildren(...rows.map(li), totalRow.cloneNode(true));
+  $("#basis").textContent = S.baselines[S.pick] ? "בהשוואה לגרסה שהופקה לאחרונה מהתסריט הזה." : "התסריט הזה עוד לא הופק, אז זו עלות של סרטון מלא.";
+}
 function renderWallet() {
-  const c = cost(cur()), left = S.brief.balance - c;
+  const c = changeCost(), left = S.brief.balance - c;
   $("#wBal").textContent = money(S.brief.balance);
   $("#wCost").textContent = money(c);
   const l = $("#wLeft"); l.textContent = left >= 0 ? money(left) : `חסרים ${money(-left)}`;
@@ -599,7 +678,7 @@ $("#genBtn").onclick = async () => {
     const res = await sample.json(buildPrompt(), { signal: ctl.signal, cache: false, onText: () => { st.textContent = "Claude כותב..."; } });
     const opts = (res?.options || []).filter(validOption).map(o => ({ ...o, beats: o.beats.map(b => ({ type: b.type, asset: b.asset, cue: String(b.cue || ""), caption: String(b.caption || "") })) }));
     if (!opts.length) throw { code: "invalid_json" };
-    S.options = opts; S.pick = 0; save(); renderOpts(); renderScript(); refresh();
+    S.options = opts; S.pick = 0; S.baselines = {}; save(); renderOpts(); renderScript(); refresh();
     st.textContent = `התקבלו ${opts.length} גרסאות. בחרו אחת ותקנו חופשי.`;
   } catch (e) {
     st.className = "status err";
@@ -692,8 +771,8 @@ function renderChecks() {
   S.screens.forEach(s => { const bt = o.beats.find(b => b.asset === s.key); if (bt && bt.type !== KIND_TO_TYPE[s.kind]) add("warnx", `"${s.label}" מסומן כ${s.kind === "tall" ? "מסך ארוך" : s.kind === "slide" ? "שקף" : "מסך"} אבל מוצג כ${TYPE_NAMES[bt.type]}.`); });
   const ns = newShots(o);
   if (ns > S.brief.newShots) add("badx", `התסריט מבקש ${ns} שוטים חדשים, והתקציב שבחרתם מאפשר ${S.brief.newShots}.`);
-  const left = S.brief.balance - cost(o);
-  add(left >= 0 ? "ok" : "badx", left >= 0 ? `העלות ${money(cost(o))} קרדיטים. יישארו ${money(left)}.` : `חסרים ${money(-left)} קרדיטים.`);
+  const cc = changeCost(), left = S.brief.balance - cc;
+  add(left >= 0 ? "ok" : "badx", left >= 0 ? `ההפקה הבאה תעלה ${money(cc)} קרדיטים. יישארו ${money(left)}.` : `חסרים ${money(-left)} קרדיטים.`);
   if ((o.flagged_words || []).length) add("warnx", `לאשר הגייה: ${o.flagged_words.map(f => `${f.word} (${f.reading})`).join(", ")}.`);
   add("ok", "רינדור, כיתובים, קצב והחלפת מסכים: 0 קרדיטים, אפשר לתקן כמה שרוצים.");
   $("#checks").replaceChildren(...out.map(([lvl, txt]) => el("li", { className: lvl }, el("span", { className: "ic", textContent: lvl === "ok" ? "✓" : "!" }), el("span", { textContent: txt }))));
@@ -714,10 +793,11 @@ function renderCosts() {
 
 /* ---------- step 4 ---------- */
 function steps() {
-  const o = cur(), ns = newShots(o), v = voice();
+  const o = cur(), v = voice(), rows = changes();
+  const vo = rows.find(([t, c]) => c === COST.voice), shots = rows.find(([t, c]) => c && c !== COST.voice);
   return [
-    ["קריינות", `${v.name}, ${words(o.script).length} מילים`, COST.voice, 4],
-    ...(ns ? [[`שוט חדש${ns > 1 ? ` ×${ns}` : ""}`, `${S.brief.res}, 5 שנ'`, ns * COST.shot[S.brief.res], 9]] : []),
+    ...(vo ? [["קריינות", `${v.name}, ${words(o.script).length} מילים`, COST.voice, 4]] : [["קריינות", "משתמשים בקיימת", 0, 1]]),
+    ...(shots ? [[shots[0], "5 שנ' כל אחד", shots[1], 9]] : []),
     ["בדיקת הקריינות", "עברית, התאמה לתסריט, סנכרון מילים", 0, 3],
     ["רינדור", `${o.beats.length} קטעים, ×${S.brief.speed}, 1080×1920`, 0, 6],
     ["בדיקת איכות ומסירה", "פריימים ריקים, אורך, קישור לסרטון", 0, 2],
@@ -736,8 +816,11 @@ $("#simBtn").onclick = async () => {
   const st = steps(), btn = $("#simBtn"), s = $("#simStatus"); btn.disabled = true;
   for (let i = 0; i < st.length; i++) { renderPipe(i - 1, i); s.textContent = `${st[i][0]}...`; await new Promise(r => setTimeout(r, st[i][3] * 180)); }
   renderPipe(st.length - 1); btn.disabled = false;
-  s.textContent = `בהפקה אמיתית: כ-${Math.round(st.reduce((a, x) => a + x[3], 0) * 12 / 60)} דקות, ${money(cost(cur()))} קרדיטים. בדמו לא יצא אף קרדיט.`;
+  const spent = st.reduce((a, x) => a + x[2], 0);
+  s.textContent = `בהפקה אמיתית: כ-${Math.max(1, Math.round(st.reduce((a, x) => a + x[3], 0) * 12 / 60))} דקות, ${money(spent)} קרדיטים. בדמו לא יצא אף קרדיט. הגרסה הזו נשמרה כ"הופקה", ומעכשיו כל שינוי מחושב מולה.`;
+  S.baselines[S.pick] = snapshot(); save(); refresh();
 };
+$("#resetBase").onclick = () => { delete S.baselines[S.pick]; save(); refresh(); $("#simStatus").textContent = "מתחילים מאפס: העלות היא של סרטון מלא."; };
 function bundle() {
   const b = S.brief, o = cur(), v = voice();
   let n = 0; const beats = o.beats.map(x => ({ type: x.type, asset: x.type === "broll" && !LIBRARY[x.asset] ? `new${++n}` : x.asset, cue: x.cue || "", caption: x.caption || "", sub: "" }));
@@ -771,10 +854,15 @@ function go(step) {
 $$("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
 function refresh() {
   TL = timeline(cur());
-  renderWallet(); renderChecks(); renderCosts();
+  renderWallet(); renderLedger(); renderChecks(); renderCosts();
   $("#json").textContent = JSON.stringify(bundle(), null, 2);
   if (S.step === "preview") { renderBar(); shownBeat = -1; seek(Math.min(t, TL.total)); }
   if (S.step === "produce") renderPipe();
+}
+if (!Object.keys(S.baselines).length && S.options.every(o => o.example)) {
+  const keep = S.pick;
+  S.options.forEach((_, i) => { S.pick = i; S.baselines[i] = snapshot(); });  // both examples are already produced
+  S.pick = keep;
 }
 renderChips(); renderShots(); renderOpts(); renderScript(); refresh();
 })();

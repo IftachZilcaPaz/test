@@ -24,7 +24,10 @@ of truth: `video/library.json` (reusable b-roll), `video/lexicon.json` (confirme
    only after they confirm. Run `get_cost: true` on paid calls you're unsure of.
 5. **Cheapest path first:** reuse library clips (0) → 720p (35) → 1080p (60) only on request. At most 2
    new clips per ad, 5s each, `count: 1`.
-6. **Fixes are free:** re-cut, re-caption and speed (`"speed"` in the spec) mean a re-render. A
+6. **Always price a change before doing it.** Before any generation, tell the user what it costs
+   and what stays: new voice-over (any script word or a different voice) ~0.83 credits per video,
+   new shot 35 (720p) / 60 (1080p); screens, captions, order, speed, brand and re-renders 0.
+7. **Fixes are free:** re-cut, re-caption and speed (`"speed"` in the spec) mean a re-render. A
    mispronounced word means one VO take plus an audio-only swap.
 7. **Report honestly.** List the automated checks you ran (engine report, Whisper, ffprobe), and state
    that nobody has watched or listened to the video yet.
