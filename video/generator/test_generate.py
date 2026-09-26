@@ -139,6 +139,7 @@ class TallScreensAndEndCard(Base):
         super().setUp()
         self.brief = g.load_brief(MENTORIT_BRIEF)
         self.plan = g.finalize(g.load_json(MENTORIT_RESPONSE), self.lexicon)
+        self.library["broll"].pop("cafe", None)  # the library as it was before this plan added the clip
 
     def test_plan_is_valid_and_costs_one_clip(self):
         self.assertEqual(g.validate_plan(self.plan, self.brief, self.library, self.pricing), [])
