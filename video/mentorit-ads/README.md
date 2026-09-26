@@ -8,6 +8,12 @@ Cost: 36.65 credits in total (one 720p café clip, now in `library.json` as `caf
 | ad-1: "ניסוי וטעייה" | people looking for a mentor | 19.7s | https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/767abc80-ef84-4d6e-ba91-da8ac511aa28.mp4 |
 | ad-2: "הניסיון שלכם שווה יותר" | mentors | 21.7s | https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f15ed506-0b29-46ad-9e75-8e5ca6747ba0.mp4 |
 
+**Final (×1.25, 0 credits):**
+- ad-1, 18.1s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/c0c7cd52-93a9-44d6-b2ed-5ecf4b2058ce.mp4
+- ad-2, 20.0s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/9f9ca938-3ec3-4268-ac15-e395c7301c6a.mp4
+
+The table above holds the first cut at ×1.15. The specs are now set to `speed: 1.25`.
+
 QA: Whisper detected Hebrew at 0.95 / 0.92; script↔transcript match 92% / 98%; no blank checkpoints.
 Voice-overs (Daisy): ad-1 `hf_20260926_073408_4b1ee307…mp3`, ad-2 `hf_20260926_073408_b228b2f7…mp3` (URLs in the specs).
 
