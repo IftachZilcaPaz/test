@@ -50,7 +50,10 @@ tense). Every correction the user makes goes into that file in the same change.
 
 1. **Intake.** In Claude Code, chat attachments are local files, so use `media_upload` (`files[]`),
    `curl --data-binary` PUT, then `media_confirm`. Skip duplicate files (compare md5). Classify each
-   image: **raw screenshot → `screenshot`**, **designed 9:16 slide → `slide`**, **end card → `cta`**.
+   image: **raw screenshot → `screenshot`**, **tall full-page capture → `tall`** (scrolls in the
+   phone card; set `cut` over a sticky header frozen mid-page and `crop` off the footer, on gaps
+   between cards), **designed 9:16 slide → `slide`**, **end card → `cta`**. No CTA screen → add
+   `endCard` to the brief (title, url, wordmark/badge, button) and the engine draws it for free.
 2. **Brief.** Write `video/briefs/<name>.brief.json` from `_template.brief.json` and what the user
    told you. Ask only for what's missing: CTA, voice, budget.
 3. **Plan.** Run `video/generator/generate.py` on the brief. With Claude API credentials it runs

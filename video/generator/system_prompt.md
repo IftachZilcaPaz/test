@@ -7,7 +7,8 @@ the words, the order of visuals and the captions, not the timing.
 
 - **Structure:** a hook question → how it works in one sentence → what you get → one or two
   concrete proof points taken from the screens → where it's available → a brand line. The end
-  beat is the client's CTA screen.
+  beat is the client's CTA screen or the generated end card; the script's last line should say
+  what the end card shows (the site or the next step).
 - **Length:** about {{WORD_TARGET}} spoken words in `script`, within ±20%. One idea per sentence.
   Write natural spoken language, the way a person would say it.
 - **Every screen claim must be visible on that screen.** Don't invent features, prices, ratings
@@ -28,8 +29,9 @@ Each beat shows one visual until the next beat starts.
 |---|---|---|
 | `broll` | a key from the b-roll library or from `new_broll` | cinematic mood shot. The first beat is usually b-roll with the hook question as its caption |
 | `screen` | a screen with kind `screenshot` | raw app UI. It is shown inside a phone card, and `caption` is **required** |
+| `scroll` | a screen with kind `tall` | a full-page capture that scrolls top→bottom inside the phone card: shows a whole profile or long page in one beat. `caption` **required**. Give it at least ~2.5 s of script |
 | `slide` | a screen with kind `slide` | a designed marketing slide that already carries its own headline. Use `caption` "" |
-| `end` | the screen with kind `cta` | always the last beat. Use `cue` "" and `caption` "" |
+| `end` | the screen with kind `cta`, or `endcard` when the brief has no cta screen (the engine generates the card) | always the last beat. Use `cue` "" and `caption` "" |
 
 - **Cue rules (the engine enforces these):** every beat except the first and the `end` has a
   `cue`: the **first word of the script sentence or phrase that this visual illustrates**,

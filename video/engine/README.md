@@ -14,6 +14,7 @@ Higgsfield tools, and the resulting URLs go into the spec.
 | `render.py` | Orchestrator: validate spec → fetch assets → Whisper → align cues → captions → higgsedit → mux/speed → QA report |
 | `align.py` | Script↔transcript character alignment, robust to Whisper misspellings, word splits and niqqud |
 | `captions.cjs` | Caption PNGs in headless Chromium (correct RTL/bidi, any Google Font, text inserted as text, never HTML) |
+| `endcard.cjs` | Branded end card PNG (wordmark, title, subtitle, button, URL) for apps without a CTA screen |
 | `test_align.py` | Regression test: reproduces the hand-tuned cuts of `journee-ad-2` exactly |
 
 Verified on 2026-09-25: rendering `specs/journee-ad-2.json` reproduces the hand-made ad with
@@ -47,7 +48,10 @@ Exit codes: `0` OK · `1` rendered, but a checkpoint frame is blank · `2` spec,
     "gradient": ["#10204a", "#14171f", "#3d2166"],  // backdrop of `screen` beats (2+ colors)
     "font": "Heebo",                   // any Google Font that covers the script
     "captionColor": "#ffffff", "subColor": "#e6e0ff",
-    "dir": "rtl"                       // "ltr" for English and other LTR languages
+    "dir": "rtl",                      // "ltr" for English and other LTR languages
+    // generated end card only (#rrggbb colors):
+    "accent": "#6d5dfc", "cardBackground": "#0d0f14", "cardText": "#ffffff", "cardMuted": "#b8bdd0",
+    "headingFont": ""                  // card title font; "" = same as "font"
   },
   "voice": {
     "file": "https://…/vo.mp3",        // generated voice-over (ElevenLabs for Hebrew)
@@ -62,8 +66,12 @@ Exit codes: `0` OK · `1` rendered, but a checkpoint frame is blank · `2` spec,
   "beats": [                           // in order; each beat runs until the next one starts
     { "type": "broll",  "asset": "hook", "caption": "Question?" },           // first beat starts at 0
     { "type": "screen", "asset": "chat", "cue": "word", "caption": "Line 1\nLine 2", "sub": "smaller line" },
+    { "type": "scroll", "asset": "profile", "cue": "word", "caption": "…",   // tall capture, scrolls in the card
+      "crop": [0, 1800], "cut": [[896, 1048]] },                             // optional, source pixels
     { "type": "slide",  "asset": "…",    "cue": "another" },
     { "type": "end",    "asset": "cta",  "hold": 3.4 }                        // must be last
+    // or, with no CTA screen: { "type": "end", "card": { "title": "…", "url": "example.com",
+    //   "wordmark": "acme", "badge": "app", "subtitle": "…", "button": "…" } }
   ]
 }
 ```
@@ -78,8 +86,14 @@ run while `voice.file` or a used asset is still empty.
 |---|---|---|---|
 | `broll` | Cinematic clip (video) or photo | Full-bleed, slow 1.00→1.05 push-in | Optional, lower third over a scrim |
 | `screen` | **Raw** app screenshot (status bar, real UI) | Rounded "device" card on the brand gradient | **Required**, top |
+| `scroll` | **Tall** full-page capture (profile, long page) | Same device card; holds 0.5s, scrolls top→bottom (smoothstep), holds 0.4s | **Required**, top |
 | `slide` | **Designed** 9:16 marketing slide with its own headline | Full-bleed, RTL carousel entry | Usually none (the slide has one) |
-| `end` | CTA / end card | Full-bleed, fade in + push-in, held `hold` s | None |
+| `end` | CTA / end card: an `asset`, or a `card` the engine draws in the brand colors | Full-bleed, fade in + push-in, held `hold` s | None |
+
+`scroll` needs an image at least 200px taller than the card at card width (780px), otherwise it
+fails and asks for a `screen` beat. Full-page captures often freeze a sticky header mid-page or end
+with the site footer: `cut` removes bands and `crop` keeps `[top, bottom]`, both in source pixels.
+Pick cut rows on a gap between cards so the seam is invisible. Give the beat ≥ 2.5s.
 
 ### Timing
 
@@ -112,6 +126,8 @@ run while `voice.file` or a used asset is still empty.
   `-shortest` never terminates on the speed-up path (found and fixed while building this).
 - Web fonts load per script subset. Captions are loaded with their real text before capture,
   and the render fails loudly if the font is missing.
+- Scroll clips and end cards are built by the engine before composing (0 credits). The scroll clip
+  is 780×1388 (H.264 needs even sizes); the card's `fit="cover"` absorbs the extra pixel.
 - WebP screens are converted to PNG. Video assets start 0.3s in (`trim`) to skip model warm-up
   frames.
 - Layout constants assume 1080×1920.

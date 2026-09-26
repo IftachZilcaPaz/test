@@ -1,0 +1,47 @@
+{
+  "name": "mentorit-ad-1",
+  "business": "mentor it: a Hebrew marketplace that matches people with the right mentor. A 4-question matching questionnaire (field, budget, online or in person, goal) produces a personal match report with a % score and an explanation of why each mentor fits. Full mentor profiles show what you get in the first session and a transparent hourly price. Mentors are manually verified. Browse all mentors with filters. Mentors can also join the platform.",
+  "audience": "Both sides: people looking for a mentor (career, entrepreneurship, health, parenting, relationships, finance), and mentors who want clients",
+  "cta": "mentorit.me",
+  "tone": "warm, confident, simple",
+  "language": "he",
+  "targetSeconds": 22,
+  "speed": 1.15,
+  "voice": { "id": "032386ec-491b-5bdc-81ac-49e9a6a2c89d", "name": "Daisy" },
+  "budget": { "credits": 69.93, "newBrollMax": 1, "resolution": "720p" },
+  "brand": {
+    "background": "#0a2a22",
+    "gradient": ["#0f6e57", "#0b3d31", "#081f19"],
+    "font": "Heebo",
+    "headingFont": "Frank Ruhl Libre",
+    "captionColor": "#ffffff",
+    "subColor": "#d4efe4",
+    "dir": "rtl",
+    "accent": "#0f6e57",
+    "cardBackground": "#f8f5ee",
+    "cardText": "#14201c",
+    "cardMuted": "#5b6b64"
+  },
+  "endCard": {
+    "wordmark": "mentor",
+    "badge": "it",
+    "title": "המנטור הנכון\nהוא לא עניין של מזל",
+    "subtitle": "4 שאלות · דוח התאמה אישי · מחירים שקופים",
+    "button": "מצאו מנטור עכשיו",
+    "url": "mentorit.me"
+  },
+  "screens": [
+    { "key": "team", "kind": "slide", "desc": "designed slide: 'the mentor it team' with the two mentors' photos", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/807efd0e-a487-436e-b412-692e8e24d2dd.webp" },
+    { "key": "home", "kind": "screenshot", "desc": "home: 'the right mentor is not a matter of luck', find-me-a-mentor button, 86% match example", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f823edfa-0b75-436a-b948-0d9779c8f2b2.webp" },
+    { "key": "q_field", "kind": "screenshot", "desc": "questionnaire step 1/4: which field (health, parenting, relationships, entrepreneurship, finance, career)", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f82d4a48-59f4-456f-bca3-48fd1500af8e.png" },
+    { "key": "q_budget", "kind": "screenshot", "desc": "questionnaire: budget", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/8a2f8d51-1326-4283-aa78-ed00b98d9289.png" },
+    { "key": "q_mode", "kind": "screenshot", "desc": "questionnaire: online or in person", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/503916da-f16b-4462-8b9f-6fa4511bd16c.png" },
+    { "key": "q_goal", "kind": "screenshot", "desc": "questionnaire: your goal", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/e8fe6ba5-0c69-446a-93b2-757672ffd0a7.png" },
+    { "key": "match", "kind": "screenshot", "desc": "personal match report: 89% match with a mentor and why", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4d5c3fb6-2231-4e16-83ba-8f7890308f3f.png" },
+    { "key": "browse", "kind": "screenshot", "desc": "browse mentors with search and filters", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4d894239-b8bc-45d2-b70d-aee415c12052.png" },
+    { "key": "nitzan", "kind": "screenshot", "desc": "mentor profile (Nitzan Paz): verified, 450 NIS/hour", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/05577be3-13a5-4f35-9e6f-641ca6bcb1b9.png" },
+    { "key": "iftach_full", "kind": "tall", "desc": "full mentor profile (Iftach Paz Zilca): price, about, what you get in the first session, who it fits, availability", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2bfba24c-456f-43ec-b436-ca8d62cf4bd7.webp", "crop": [0, 1800], "cut": [[896, 1048]] },
+    { "key": "signup", "kind": "screenshot", "desc": "sign-up dialog (Google or email)", "url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2533d89f-9e1e-4e5d-bd7c-ed93b2a44081.png" }
+  ],
+  "notes": "Real mentors appear with their consent. No CTA screen: use the generated end card. Budget allows exactly one new 720p clip."
+}

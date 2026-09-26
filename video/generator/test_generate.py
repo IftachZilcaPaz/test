@@ -15,6 +15,8 @@ import generate as g
 HERE = Path(__file__).parent
 BRIEF = HERE / "fixtures" / "journee-ad-2.brief.json"
 RESPONSE = HERE / "fixtures" / "journee-ad-2.response.json"
+MENTORIT_BRIEF = HERE / "fixtures" / "mentorit-ad-1.brief.json"
+MENTORIT_RESPONSE = HERE / "fixtures" / "mentorit-ad-1.response.json"
 
 
 class Base(unittest.TestCase):
@@ -79,6 +81,19 @@ class Brands(Base):
             with self.subTest(src=src):
                 self.assertEqual(g.apply_brands(src, self.lexicon), want)
 
+    def test_multi_word_brand(self):
+        cases = {
+            "במנטור איט עונים": "במֶנְטוֹר אִיט עונים",
+            "ב-mentor it": "במֶנְטוֹר אִיט",
+            "Mentor It: המנטור": "מֶנְטוֹר אִיט: המנטור",
+            "mentorit.": "מֶנְטוֹר אִיט.",
+            "מֶנְטוֹר אִיט": "מֶנְטוֹר אִיט",          # idempotent
+            "מחפשים מנטור, ולא": "מחפשים מנטור, ולא",  # the plain word is not the brand
+        }
+        for src, want in cases.items():
+            with self.subTest(src=src):
+                self.assertEqual(g.apply_brands(src, self.lexicon), want)
+
     def test_captions_never_carry_niqqud(self):
         plan = copy.deepcopy(self.plan)
         plan["beats"][5]["caption"] = "שִׁלְחוּ לינק"
@@ -115,6 +130,60 @@ class Validation(Base):
         spec = g.build_spec(plan, self.brief, self.library)
         self.assertEqual(spec["assets"]["bangkok"], "")
         self.assertEqual(spec["generate"]["broll"]["bangkok"]["resolution"], "720p")
+
+
+class TallScreensAndEndCard(Base):
+    """mentorit-ad-1: a scrolling full-page capture and an engine-generated end card."""
+
+    def setUp(self):
+        super().setUp()
+        self.brief = g.load_brief(MENTORIT_BRIEF)
+        self.plan = g.finalize(g.load_json(MENTORIT_RESPONSE), self.lexicon)
+
+    def test_plan_is_valid_and_costs_one_clip(self):
+        self.assertEqual(g.validate_plan(self.plan, self.brief, self.library, self.pricing), [])
+        self.assertEqual(g.estimate(self.plan, self.brief, self.pricing)["credits"], 36)
+
+    def test_spec_carries_scroll_region_and_card(self):
+        spec = g.build_spec(self.plan, self.brief, self.library)
+        scroll = next(b for b in spec["beats"] if b["type"] == "scroll")
+        self.assertEqual((scroll["crop"], scroll["cut"]), ([0, 1800], [[896, 1048]]))
+        end = spec["beats"][-1]
+        self.assertEqual(end["card"]["url"], "mentorit.me")
+        self.assertNotIn("asset", end)
+        self.assertNotIn(g.END_CARD_KEY, spec["assets"])
+        self.assertEqual(spec["assets"]["cafe"], "")
+        self.assertEqual(spec["brand"]["headingFont"], "Frank Ruhl Libre")
+
+    def test_engine_accepts_the_spec_once_generated(self):
+        sys.path.insert(0, str(g.VIDEO_DIR / "engine"))
+        import render
+        spec = g.build_spec(self.plan, self.brief, self.library)
+        spec["voice"]["file"], spec["assets"]["cafe"] = "https://x/vo.mp3", "https://x/cafe.mp4"
+        path = Path(tempfile.mktemp(suffix=".json"))
+        path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(render.load_spec(path)["beats"][-1]["card"]["title"], self.brief["endCard"]["title"])
+        spec["beats"][4]["cut"] = [[1048, 896]]
+        spec["beats"][-1]["card"] = {"title": "x"}
+        path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(render.SpecError) as ctx:
+            render.load_spec(path)
+        self.assertIn("cut band", str(ctx.exception))
+        self.assertIn("card needs ['url']", str(ctx.exception))
+
+    def test_tall_screen_must_scroll(self):
+        plan = copy.deepcopy(self.plan)
+        plan["beats"][4]["type"] = "screen"
+        self.assertTrue(g.validate_plan(plan, self.brief, self.library, self.pricing))
+
+    def test_brief_takes_cta_screen_or_end_card_not_both(self):
+        bad = g.load_json(MENTORIT_BRIEF)
+        bad["screens"].append({"key": "cta", "kind": "cta", "url": "https://x/cta.png"})
+        path = Path(tempfile.mktemp(suffix=".json"))
+        path.write_text(json.dumps(bad, ensure_ascii=False), encoding="utf-8")
+        with self.assertRaises(g.BriefError) as ctx:
+            g.load_brief(path)
+        self.assertIn("not both", str(ctx.exception))
 
 
 class BriefAndPrompt(Base):

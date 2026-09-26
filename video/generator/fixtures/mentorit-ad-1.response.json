@@ -1,0 +1,21 @@
+{
+  "script": "מחפשים מנטור, ולא יודעים במי לבחור? במנטור איט עונים על ארבע שאלות קצרות, ומקבלים דוח התאמה אישי. אפשר לראות כל פרופיל עד הסוף: מה תקבלו בפגישה הראשונה, וכמה זה עולה. אונליין או פנים מול פנים. ומנטורים? הצטרפו גם אתם. מנטור איט: המנטור הנכון הוא לא עניין של מזל.",
+  "flagged_words": [
+    { "word": "מֶנְטוֹר אִיט", "reading": "mentor it", "reason": "brand name; unpointed איט can be read 'ayit'" }
+  ],
+  "beats": [
+    { "type": "broll", "asset": "roof", "cue": "", "caption": "מחפשים מנטור?", "sub": "" },
+    { "type": "screen", "asset": "home", "cue": "במנטור", "caption": "המנטור הנכון\nבלי ניחושים", "sub": "" },
+    { "type": "screen", "asset": "q_field", "cue": "ארבע", "caption": "4 שאלות קצרות", "sub": "" },
+    { "type": "screen", "asset": "match", "cue": "ומקבלים", "caption": "דוח התאמה אישי", "sub": "ולמה דווקא הוא" },
+    { "type": "scroll", "asset": "iftach_full", "cue": "אפשר", "caption": "כל הפרופיל\nעד הסוף", "sub": "" },
+    { "type": "broll", "asset": "cafe", "cue": "אונליין", "caption": "אונליין או\nפנים מול פנים", "sub": "" },
+    { "type": "screen", "asset": "signup", "cue": "ומנטורים", "caption": "מנטורים?\nהצטרפו גם אתם", "sub": "" },
+    { "type": "slide", "asset": "team", "cue": "מנטור", "caption": "", "sub": "" },
+    { "type": "end", "asset": "endcard", "cue": "", "caption": "", "sub": "" }
+  ],
+  "new_broll": [
+    { "key": "cafe", "prompt": "Warm cinematic close-up in a sunlit Tel Aviv café: an experienced mentor in her forties leans in and talks with a young man across a small wooden table, notebook and two coffee cups between them, he nods and smiles; slow push-in, shallow depth of field, soft golden afternoon light, natural documentary feel, no text, no logos, no readable screens", "why": "the library has no people and nothing about a real meeting; this is the face-to-face mentoring moment, the emotional core the screens can't show" }
+  ],
+  "notes": "Unused screens: q_budget, q_mode, q_goal (the four questions are shown by the first one), browse, nitzan (her profile is summarised by the team slide). The team slide shows both real mentors (with consent). The end card is generated from brief.endCard: no CTA screen needed. The scroll beat removes the sticky header captured mid-page (cut 896–1048) and the page footer (crop to 1800)."
+}

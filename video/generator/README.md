@@ -16,7 +16,8 @@ images. Code does everything that has to be right:
 | Brand pronunciation (`lexicon.json` → `brands`) applied to every alias and ו/ה/ב/ל/מ/ש/כ prefix | Confirmed TTS spellings must never drift |
 | Niqqud stripped from captions | Captions use normal spelling |
 | Cue check: each cue is a real script word, in order | The engine syncs cuts on cues |
-| Screen kind → beat type (`screenshot`→`screen`, `slide`→`slide`, `cta`→`end`) | Wrong type = wrong layout |
+| Screen kind → beat type (`screenshot`→`screen`, `tall`→`scroll`, `slide`→`slide`, `cta`→`end`) | Wrong type = wrong layout |
+| Brand aliases, multi-word too ("mentor it" → `מֶנְטוֹר אִיט`) | TTS misreads the brand |
 | Asset keys exist; new clips ≤ budget, and every new clip is used | No surprise credits |
 | Word count within ±20% of target (`targetSeconds × speed × words_per_second`) | Length control |
 | Cost and length estimate from `pricing.json` | Approval before spending |
@@ -44,8 +45,9 @@ tokens.
 
 ## Brief format
 
-Copy [`../briefs/_template.brief.json`](../briefs/_template.brief.json). The full example is
-[`fixtures/journee-ad-2.brief.json`](fixtures/journee-ad-2.brief.json).
+Copy [`../briefs/_template.brief.json`](../briefs/_template.brief.json). Full examples:
+[`fixtures/journee-ad-2.brief.json`](fixtures/journee-ad-2.brief.json) (CTA screen) and
+[`fixtures/mentorit-ad-1.brief.json`](fixtures/mentorit-ad-1.brief.json) (tall screen + generated end card).
 
 | Field | Required | Notes |
 |---|---|---|
@@ -53,13 +55,14 @@ Copy [`../briefs/_template.brief.json`](../briefs/_template.brief.json). The ful
 | `business` | ✓ | what it does, in a few sentences: the model writes only from this and the screens |
 | `cta` | ✓ | what the viewer should do |
 | `voice.id` | ✓ | Higgsfield `voice_id` (Journee used Daisy `032386ec-491b-5bdc-81ac-49e9a6a2c89d`) |
-| `screens[]` | ✓ | `{key, url, kind, desc?}`. `kind` is `screenshot` (raw UI), `slide` (designed 9:16) or `cta` (exactly one) |
+| `screens[]` | ✓ | `{key, url, kind, desc?}`. `kind` is `screenshot` (raw UI), `tall` (full-page capture that scrolls; optional `crop`/`cut`, see the engine README), `slide` (designed 9:16) or `cta` (at most one) |
+| `endCard` | if no `cta` screen | `{title, url, wordmark?, badge?, subtitle?, button?}`: the engine draws the end card; the plan uses asset `endcard` |
 | `audience`, `tone`, `notes` | | free text |
 | `language` | | default `he` |
 | `targetSeconds` | | final length after speed-up, default 20 |
 | `speed` | | default 1.15 |
 | `budget` | | `{credits, newBrollMax: 2, resolution: "720p"}` |
-| `brand` | | passed through to the spec (colors, font, dir) |
+| `brand` | | passed through to the spec (colors, font, dir, end-card colors and `headingFont`) |
 
 Screens must already be uploaded (Higgsfield CDN URLs), because the model fetches them by URL.
 

@@ -25,7 +25,9 @@ sys.path.insert(0, str(VIDEO_DIR / "engine"))
 from align import CueCursor, normalize, tokenize  # noqa: E402
 
 MODEL = "claude-opus-5"
-SCREEN_KINDS = {"screenshot": "screen", "slide": "slide", "cta": "end"}
+SCREEN_KINDS = {"screenshot": "screen", "tall": "scroll", "slide": "slide", "cta": "end"}
+END_CARD_KEY = "endcard"   # asset key of the engine-generated end card (brief.endCard)
+SCROLL_FIELDS = ("crop", "cut")  # passed from a tall screen to its scroll beat
 HEBREW_PREFIXES = "והבלמשכ"
 NIQQUD = re.compile(r"[֑-ׇ]")
 MAX_REPAIRS = 2
@@ -41,7 +43,7 @@ PLAN_SCHEMA = {
             "required": ["word", "reading", "reason"], "additionalProperties": False}},
         "beats": {"type": "array", "items": {
             "type": "object",
-            "properties": {"type": {"type": "string", "enum": ["broll", "screen", "slide", "end"]},
+            "properties": {"type": {"type": "string", "enum": ["broll", "screen", "scroll", "slide", "end"]},
                            "asset": {"type": "string"}, "cue": {"type": "string"},
                            "caption": {"type": "string"}, "sub": {"type": "string"}},
             "required": ["type", "asset", "cue", "caption", "sub"], "additionalProperties": False}},
@@ -86,8 +88,16 @@ def load_brief(path: Path) -> dict:
         if s.get("key") in keys:
             errors.append(f"screen #{i}: duplicate key '{s.get('key')}'")
         keys.add(s.get("key"))
-    if sum(s.get("kind") == "cta" for s in b.get("screens", [])) != 1:
-        errors.append("exactly one screen must have kind 'cta' (the end card)")
+    ctas = sum(s.get("kind") == "cta" for s in b.get("screens", []))
+    if b.get("endCard"):
+        if ctas:
+            errors.append("give either a 'cta' screen or 'endCard', not both")
+        if missing := [k for k in ("title", "url") if not b["endCard"].get(k)]:
+            errors.append(f"endCard needs {missing}")
+    elif ctas != 1:
+        errors.append("exactly one screen must have kind 'cta', or add 'endCard' to generate one")
+    if END_CARD_KEY in keys:
+        errors.append(f"screen key '{END_CARD_KEY}' is reserved for the generated end card")
     if not (b.get("voice") or {}).get("id"):
         errors.append("voice.id is required (a Higgsfield voice_id)")
     if errors:
@@ -145,12 +155,19 @@ def screen_label(s: dict) -> str:
     return f"Screen key={s['key']} kind={s['kind']}" + (f": {s['desc']}" if s.get("desc") else "")
 
 
+def end_card_label(brief: dict) -> str:
+    return (f"No CTA screen: the engine generates the end card (asset key '{END_CARD_KEY}') from: "
+            + json.dumps(brief["endCard"], ensure_ascii=False))
+
+
 def build_user_content(brief: dict, images: bool) -> list[dict]:
     content: list[dict] = [{"type": "text", "text": brief_text(brief)}]
     for s in brief["screens"]:
         content.append({"type": "text", "text": screen_label(s)})
         if images:
             content.append({"type": "image", "source": {"type": "url", "url": s["url"]}})
+    if brief.get("endCard"):
+        content.append({"type": "text", "text": end_card_label(brief)})
     content.append({"type": "text", "text": "Return the production plan JSON."})
     return content
 
@@ -195,12 +212,24 @@ def call_claude(system: str, content: list[dict], validate) -> dict:
 # ---------------------------------------------------------------- deterministic post-processing
 
 
+def _apply_phrase_brands(script: str, lexicon: dict) -> str:
+    """Multi-word aliases ("mentor it"), optionally prefixed (ב/ב-), matched case-insensitively."""
+    for b in lexicon["brands"]:
+        for alias in sorted((a for a in b["aliases"] + [b["tts"]] if " " in a.strip()), key=len, reverse=True):
+            words = r"\s+".join(map(re.escape, alias.split()))
+            pattern = rf"(?<![\w\u0591-\u05C7])([{HEBREW_PREFIXES}]{{0,2}})-?{words}(?![\w\u0591-\u05C7])"
+            script = re.sub(pattern, lambda m: m.group(1) + b["tts"], script, flags=re.IGNORECASE)
+    return script
+
+
 def apply_brands(script: str, lexicon: dict) -> str:
     """Rewrite every brand alias (optionally prefixed by ו/ה/ב/ל/מ/ש/כ) to its confirmed TTS spelling."""
+    script = _apply_phrase_brands(script, lexicon)
     targets = {}
     for b in lexicon["brands"]:
         for alias in b["aliases"] + [b["tts"]]:
-            targets[normalize(alias)] = b["tts"]
+            if " " not in alias.strip():
+                targets[normalize(alias)] = b["tts"]
 
     def fix(token: str) -> str:
         m = re.match(r"^(\W*)(.*?)(\W*)$", token)
@@ -230,7 +259,10 @@ def validate_plan(plan: dict, brief: dict, library: dict, pricing: dict) -> list
 
     for i, b in enumerate(beats):
         where = f"beat #{i} ({b['type']} '{b['asset']}')"
-        if b["asset"] in screens:
+        if b["asset"] == END_CARD_KEY and brief.get("endCard"):
+            if b["type"] != "end":
+                errors.append(f"{where}: the generated end card must use type 'end'")
+        elif b["asset"] in screens:
             expected = SCREEN_KINDS[screens[b["asset"]]["kind"]]
             if b["type"] != expected:
                 errors.append(f"{where}: screen kind '{screens[b['asset']]['kind']}' must use type '{expected}'")
@@ -239,10 +271,10 @@ def validate_plan(plan: dict, brief: dict, library: dict, pricing: dict) -> list
                 errors.append(f"{where}: b-roll clips must use type 'broll'")
         else:
             errors.append(f"{where}: unknown asset; use a screen key, a library key or a new_broll key")
-        if b["type"] == "screen" and not b["caption"].strip():
-            errors.append(f"{where}: screen beats need a caption")
+        if b["type"] in ("screen", "scroll") and not b["caption"].strip():
+            errors.append(f"{where}: {b['type']} beats need a caption")
     if beats[-1]["type"] != "end":
-        errors.append("the last beat must be the 'end' beat on the cta screen")
+        errors.append("the last beat must be the 'end' beat (the cta screen or the generated end card)")
     if any(b["type"] == "end" for b in beats[:-1]):
         errors.append("only the last beat may be type 'end'")
     used = [b["asset"] for b in beats if b["asset"] in screens]
@@ -319,14 +351,19 @@ def budget_options(plan: dict, brief: dict, pricing: dict) -> list[dict]:
 
 
 def build_spec(plan: dict, brief: dict, library: dict) -> dict:
-    screens = {s["key"]: s["url"] for s in brief["screens"]}
-    used = [b["asset"] for b in plan["beats"]]
+    screens = {s["key"]: s for s in brief["screens"]}
+    used = [b["asset"] for b in plan["beats"] if b["asset"] != END_CARD_KEY]
     assets = {}
     for key in dict.fromkeys(used):
-        assets[key] = screens.get(key) or library["broll"].get(key, {}).get("url", "")
+        assets[key] = screens[key]["url"] if key in screens else library["broll"].get(key, {}).get("url", "")
     beats = []
     for i, b in enumerate(plan["beats"]):
-        beat = {"type": b["type"], "asset": b["asset"]}
+        if b["asset"] == END_CARD_KEY:
+            beat = {"type": "end", "card": brief["endCard"]}
+        else:
+            beat = {"type": b["type"], "asset": b["asset"]}
+        if b["type"] == "scroll":
+            beat.update({k: screens[b["asset"]][k] for k in SCROLL_FIELDS if k in screens[b["asset"]]})
         if 0 < i < len(plan["beats"]) - 1:
             beat["cue"] = b["cue"]
         if b["caption"]:
@@ -375,8 +412,12 @@ def review_sheet(plan: dict, brief: dict, est: dict, library: dict, options: lis
         lines.append("")
     lines += ["## 2. מה רואים ומתי", "", "| # | ~שנ' | מה על המסך | כיתוב | מתחיל במילה |", "|---|---|---|---|---|"]
     for i, (b, t) in enumerate(zip(plan["beats"], est["starts"])):
-        if b["asset"] in screens:
-            what = f"מסך `{b['asset']}`" + (f" ({screens[b['asset']]['desc']})" if screens[b['asset']].get("desc") else "")
+        if b["asset"] == END_CARD_KEY:
+            card = brief["endCard"]
+            what = f"כרטיס סיום אוטומטי: {card['title'].replace(chr(10), ' ')} · {card['url']}"
+        elif b["asset"] in screens:
+            what = (f"מסך `{b['asset']}`" + (" (גלילה)" if b["type"] == "scroll" else "")
+                    + (f" ({screens[b['asset']]['desc']})" if screens[b['asset']].get("desc") else ""))
         elif b["asset"] in library["broll"]:
             what = f"שוט מהספרייה `{b['asset']}`: {library['broll'][b['asset']]['desc']}"
         else:
@@ -411,6 +452,8 @@ def review_sheet(plan: dict, brief: dict, est: dict, library: dict, options: lis
 
 def prompt_sheet(system: str, brief: dict) -> str:
     screens = "\n".join(f"- {screen_label(s)}: {s['url']}" for s in brief["screens"])
+    if brief.get("endCard"):
+        screens += f"\n\n{end_card_label(brief)}"
     return (f"# Prompt: {brief['name']}\n\nPaste the SYSTEM part as the system prompt (or at the top of the "
             f"message), attach the screen images in this order, then paste the USER part. Save the JSON "
             f"answer to a file and run:\n`python3 generate.py <brief> --from-response <answer.json>`\n\n"

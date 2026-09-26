@@ -1,0 +1,128 @@
+{
+  "name": "mentorit-ad-1",
+  "speed": 1.15,
+  "voice": {
+    "file": "",
+    "voiceId": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
+    "lang": "he",
+    "leadIn": 0.3,
+    "script": "מחפשים מנטור, ולא יודעים במי לבחור? במֶנְטוֹר אִיט עונים על ארבע שאלות קצרות, ומקבלים דוח התאמה אישי. אפשר לראות כל פרופיל עד הסוף: מה תקבלו בפגישה הראשונה, וכמה זה עולה. אונליין או פנים מול פנים. ומנטורים? הצטרפו גם אתם. מֶנְטוֹר אִיט: המנטור הנכון הוא לא עניין של מזל."
+  },
+  "assets": {
+    "roof": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
+    "home": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f823edfa-0b75-436a-b948-0d9779c8f2b2.webp",
+    "q_field": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f82d4a48-59f4-456f-bca3-48fd1500af8e.png",
+    "match": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4d5c3fb6-2231-4e16-83ba-8f7890308f3f.png",
+    "iftach_full": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2bfba24c-456f-43ec-b436-ca8d62cf4bd7.webp",
+    "cafe": "",
+    "signup": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2533d89f-9e1e-4e5d-bd7c-ed93b2a44081.png",
+    "team": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/807efd0e-a487-436e-b412-692e8e24d2dd.webp"
+  },
+  "beats": [
+    {
+      "type": "broll",
+      "asset": "roof",
+      "caption": "מחפשים מנטור?"
+    },
+    {
+      "type": "screen",
+      "asset": "home",
+      "cue": "במנטור",
+      "caption": "המנטור הנכון\nבלי ניחושים"
+    },
+    {
+      "type": "screen",
+      "asset": "q_field",
+      "cue": "ארבע",
+      "caption": "4 שאלות קצרות"
+    },
+    {
+      "type": "screen",
+      "asset": "match",
+      "cue": "ומקבלים",
+      "caption": "דוח התאמה אישי",
+      "sub": "ולמה דווקא הוא"
+    },
+    {
+      "type": "scroll",
+      "asset": "iftach_full",
+      "crop": [
+        0,
+        1800
+      ],
+      "cut": [
+        [
+          896,
+          1048
+        ]
+      ],
+      "cue": "אפשר",
+      "caption": "כל הפרופיל\nעד הסוף"
+    },
+    {
+      "type": "broll",
+      "asset": "cafe",
+      "cue": "אונליין",
+      "caption": "אונליין או\nפנים מול פנים"
+    },
+    {
+      "type": "screen",
+      "asset": "signup",
+      "cue": "ומנטורים",
+      "caption": "מנטורים?\nהצטרפו גם אתם"
+    },
+    {
+      "type": "slide",
+      "asset": "team",
+      "cue": "מנטור"
+    },
+    {
+      "type": "end",
+      "card": {
+        "wordmark": "mentor",
+        "badge": "it",
+        "title": "המנטור הנכון\nהוא לא עניין של מזל",
+        "subtitle": "4 שאלות · דוח התאמה אישי · מחירים שקופים",
+        "button": "מצאו מנטור עכשיו",
+        "url": "mentorit.me"
+      },
+      "hold": 3.4
+    }
+  ],
+  "generate": {
+    "voice": {
+      "model": "text2speech_v2",
+      "variant": "elevenlabs",
+      "voice_type": "preset",
+      "voice_id": "032386ec-491b-5bdc-81ac-49e9a6a2c89d",
+      "prompt": "מחפשים מנטור, ולא יודעים במי לבחור? במֶנְטוֹר אִיט עונים על ארבע שאלות קצרות, ומקבלים דוח התאמה אישי. אפשר לראות כל פרופיל עד הסוף: מה תקבלו בפגישה הראשונה, וכמה זה עולה. אונליין או פנים מול פנים. ומנטורים? הצטרפו גם אתם. מֶנְטוֹר אִיט: המנטור הנכון הוא לא עניין של מזל."
+    },
+    "broll": {
+      "cafe": {
+        "model": "seedance_2_5",
+        "aspect_ratio": "9:16",
+        "duration": 5,
+        "resolution": "720p",
+        "generate_audio": false,
+        "prompt": "Warm cinematic close-up in a sunlit Tel Aviv café: an experienced mentor in her forties leans in and talks with a young man across a small wooden table, notebook and two coffee cups between them, he nods and smiles; slow push-in, shallow depth of field, soft golden afternoon light, natural documentary feel, no text, no logos, no readable screens"
+      }
+    }
+  },
+  "brand": {
+    "background": "#0a2a22",
+    "gradient": [
+      "#0f6e57",
+      "#0b3d31",
+      "#081f19"
+    ],
+    "font": "Heebo",
+    "headingFont": "Frank Ruhl Libre",
+    "captionColor": "#ffffff",
+    "subColor": "#d4efe4",
+    "dir": "rtl",
+    "accent": "#0f6e57",
+    "cardBackground": "#f8f5ee",
+    "cardText": "#14201c",
+    "cardMuted": "#5b6b64"
+  }
+}

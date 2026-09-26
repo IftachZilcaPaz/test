@@ -24,7 +24,7 @@ from align import Aligner, Word
 
 ENGINE_DIR = Path(__file__).resolve().parent
 W, H, FPS = 1080, 1920, 30
-BEAT_TYPES = {"broll", "screen", "slide", "end"}
+BEAT_TYPES = {"broll", "screen", "scroll", "slide", "end"}
 VIDEO_EXT = {".mp4", ".mov", ".webm", ".mkv"}
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp"}
 DEFAULT_BRAND = {
@@ -34,10 +34,20 @@ DEFAULT_BRAND = {
     "captionColor": "#ffffff",
     "subColor": "#e6e0ff",
     "dir": "rtl",
+    # generated end card (end beat with "card")
+    "accent": "#6d5dfc",
+    "cardBackground": "#0d0f14",
+    "cardText": "#ffffff",
+    "cardMuted": "#b8bdd0",
+    "headingFont": "",      # empty = same as "font"
 }
 MIN_BEAT = 0.5          # seconds; shorter cuts read as glitches
 BLANK_LUMA = 0.02       # mean luminance below this = a blank checkpoint frame
 MIN_LANG_PROB = 0.8
+CARD_X, CARD_Y, CARD_W, CARD_H = 150, 450, 780, 1387   # the "device" card of screen/scroll beats
+MIN_SCROLL = 200        # px of travel below which a scroll beat is really a static screen
+SCROLL_HOLD = (0.5, 0.4)  # seconds held still before / after the scroll
+CARD_FIELDS = {"title", "url"}  # required on a generated end card
 
 
 class SpecError(ValueError):
@@ -88,6 +98,16 @@ def load_spec(path: Path) -> dict:
         if b.get("type") not in BEAT_TYPES:
             errors.append(f"{where}: type must be one of {sorted(BEAT_TYPES)}")
             continue
+        if b["type"] == "end" and i != len(beats) - 1:
+            errors.append(f"{where}: the end beat must be last")
+        if "card" in b:
+            if b["type"] != "end":
+                errors.append(f"{where}: only end beats take a generated 'card'")
+            elif "asset" in b:
+                errors.append(f"{where}: give either 'asset' or 'card', not both")
+            elif missing := sorted(CARD_FIELDS - {k for k, v in b["card"].items() if v}):
+                errors.append(f"{where}: card needs {missing}")
+            continue
         ref = assets.get(b.get("asset", ""))
         if ref is None:
             errors.append(f"{where}: asset '{b.get('asset')}' is not in assets")
@@ -98,12 +118,12 @@ def load_spec(path: Path) -> dict:
         ext = ext_of(ref)
         if ext not in VIDEO_EXT | IMAGE_EXT:
             errors.append(f"{where}: unsupported asset extension '{ext}'")
-        if b["type"] in ("screen", "slide") and ext not in IMAGE_EXT:
-            errors.append(f"{where}: screen/slide assets must be images")
-        if b["type"] == "screen" and not b.get("caption"):
-            errors.append(f"{where}: screen beats need a caption")
-        if b["type"] == "end" and i != len(beats) - 1:
-            errors.append(f"{where}: the end beat must be last")
+        if b["type"] in ("screen", "scroll", "slide") and ext not in IMAGE_EXT:
+            errors.append(f"{where}: screen/scroll/slide assets must be images")
+        if b["type"] in ("screen", "scroll") and not b.get("caption"):
+            errors.append(f"{where}: {b['type']} beats need a caption")
+        if b["type"] == "scroll":
+            errors += [f"{where}: {e}" for e in _scroll_region_errors(b)]
         if 0 < i and b["type"] != "end" and "cue" not in b and "at" not in b:
             errors.append(f"{where}: needs 'cue' (a script word) or 'at' (seconds)")
     if beats and beats[-1].get("type") != "end":
@@ -113,6 +133,17 @@ def load_spec(path: Path) -> dict:
 
     spec["brand"] = {**DEFAULT_BRAND, **spec.get("brand", {})}
     return spec
+
+
+def _scroll_region_errors(b: dict) -> list[str]:
+    errors = []
+    crop = b.get("crop")
+    if crop is not None and not (len(crop) == 2 and 0 <= crop[0] < crop[1]):
+        errors.append("crop must be [top, bottom] with top < bottom (source pixels)")
+    for band in b.get("cut", []):
+        if not (len(band) == 2 and 0 <= band[0] < band[1]):
+            errors.append(f"cut band {band} must be [from, to] with from < to (source pixels)")
+    return errors
 
 
 # ---------------------------------------------------------------- inputs
@@ -185,6 +216,72 @@ def build_timeline(spec: dict, words: list[Word], vo_dur: float) -> tuple[list[d
     return timeline, aligner.match_ratio
 
 
+# ---------------------------------------------------------------- derived media
+
+
+def scroll_clip(src: Path, beat: dict, dur: float, out: Path) -> Path:
+    """Tall screenshot → card-sized clip that holds, scrolls top→bottom (smoothstep), then holds.
+
+    `crop` keeps [top, bottom] and `cut` removes bands (e.g. a sticky header captured mid-page),
+    both in source pixels, so a raw full-page capture needs no manual editing.
+    """
+    from PIL import Image  # sandbox-only dependency
+
+    im = Image.open(src).convert("RGB")
+    top, bottom = beat.get("crop", [0, im.height])
+    bottom = min(bottom, im.height)
+    keep, y = [], top
+    for a, b in sorted(beat.get("cut", [])):
+        if a > y:
+            keep.append((y, min(a, bottom)))
+        y = max(y, b)
+    if y < bottom:
+        keep.append((y, bottom))
+    strip = Image.new("RGB", (im.width, sum(b - a for a, b in keep)))
+    off = 0
+    for a, b in keep:
+        strip.paste(im.crop((0, a, im.width, b)), (0, off))
+        off += b - a
+    scaled_h = round(strip.height * CARD_W / strip.width)
+    clip_h = CARD_H + CARD_H % 2  # H.264 needs even dimensions; the card's fit="cover" absorbs 1px
+    if scaled_h - clip_h < MIN_SCROLL:
+        raise SpecError(f"scroll asset '{beat['asset']}' is only {scaled_h}px tall at card width "
+                        f"(needs > {CARD_H + MIN_SCROLL}); use a 'screen' beat instead")
+    png = out.with_suffix(".png")
+    strip.resize((CARD_W, scaled_h - scaled_h % 2), Image.LANCZOS).save(png)
+
+    pre, post = SCROLL_HOLD
+    move = max(dur - pre - post, 0.1)
+    p = f"clip((t-{pre})/{move:.3f}\\,0\\,1)"
+    y_expr = f"(ih-oh)*{p}*{p}*(3-2*{p})"
+    run(["ffmpeg", "-v", "error", "-y", "-loop", "1", "-framerate", str(FPS), "-i", str(png),
+         "-t", f"{dur + 0.1:.3f}", "-vf", f"crop={CARD_W}:{clip_h}:0:{y_expr},format=yuv420p",
+         "-c:v", "libx264", "-preset", "medium", "-crf", "16", "-r", str(FPS), str(out)])
+    return out.resolve()
+
+
+def render_end_card(spec: dict, card: dict, out: Path) -> Path:
+    brand = spec["brand"]
+    cfg = out.with_suffix(".json")
+    cfg.write_text(json.dumps({"brand": brand, "card": card, "width": W, "height": H},
+                              ensure_ascii=False), encoding="utf-8")
+    run(["node", str(ENGINE_DIR / "endcard.cjs"), str(cfg), str(out)])
+    return out.resolve()
+
+
+def prepare_derived(spec: dict, timeline: list[dict], files: dict[str, Path], work: Path) -> None:
+    """Media the engine builds itself (0 credits): scroll clips and generated end cards."""
+    ddir = work / "derived"
+    ddir.mkdir(exist_ok=True)
+    for i, b in enumerate(timeline):
+        if b["type"] == "scroll":
+            b["key"] = f"scroll{i}"
+            files[b["key"]] = scroll_clip(files[b["asset"]], b, b["dur"], ddir / f"{b['key']}.mp4")
+        elif "card" in b:
+            b["key"] = f"card{i}"
+            files[b["key"]] = render_end_card(spec, b["card"], ddir / f"{b['key']}.png")
+
+
 # ---------------------------------------------------------------- render
 
 
@@ -197,6 +294,7 @@ const SCRIM = { kind: "linear", angle: 90, stops: [
 const BG = { kind: "linear", angle: 160,
   stops: D.gradient.map((color, i, all) => ({ offset: i / (all.length - 1), color })) };
 const CAP_X = Math.round((W - 1000) / 2);
+const SHADOW = { x: 0, y: 30, blur: 90, color: "rgba(0,0,0,0.7)" };
 const CAP_IN = [
   { property: "offsetY", from: 36, to: 0, duration: 0.45, easing: "house" },
   { property: "opacity", from: 0, to: 1, duration: 0.3 } ];
@@ -230,14 +328,17 @@ export default async ({ project }) => {
   const device = (b) => (
     <frame width={W} height={H} layout="none">
       <rect x={0} y={0} width={W} height={H} fill={BG} />
-      <media file={a[b.asset]} x={150} y={450} width={780} height={1387} fit="cover" radius={54}
-        shadow={{ x: 0, y: 30, blur: 90, color: "rgba(0,0,0,0.7)" }} animate={DEVICE(b.dur)} />
+      {b.video
+        ? <media file={a[b.asset]} x={D.card.x} y={D.card.y} width={D.card.w} height={D.card.h} fit="cover"
+            radius={54} trimStart={b.trim} muted shadow={SHADOW} animate={DEVICE(b.dur)} />
+        : <media file={a[b.asset]} x={D.card.x} y={D.card.y} width={D.card.w} height={D.card.h} fit="cover"
+            radius={54} shadow={SHADOW} animate={DEVICE(b.dur)} />}
       <media file={a[b.cap]} x={CAP_X} y={120} width={1000} height={300} animate={CAP_IN} />
     </frame>);
 
   for (const b of D.beats) {
     let node;
-    if (b.type === "screen") node = device(b);
+    if (b.type === "screen" || b.type === "scroll") node = device(b);
     else if (b.type === "end") node = bare(full(b, END(b.dur)));
     else {
       const base = full(b, b.type === "broll" ? KEN(b.dur) : CAROUSEL(b.dur));
@@ -267,23 +368,31 @@ def render_captions(spec: dict, timeline: list[dict], work: Path) -> dict[int, P
 
 def write_edit(spec: dict, timeline: list[dict], files: dict[str, Path], caps: dict[int, Path],
                work: Path) -> Path:
-    used = {b["asset"] for b in timeline}
+    used = {media_key(b) for b in timeline}
     data_files = {k: str(v) for k, v in files.items() if k in used}
     beats = []
     for i, b in enumerate(timeline):
-        beat = {"type": b["type"], "asset": b["asset"], "start": b["start"], "dur": b["dur"],
-                "video": files[b["asset"]].suffix in VIDEO_EXT, "trim": float(b.get("trim", 0.3))}
+        key = media_key(b)
+        derived = "key" in b  # built by the engine: no model warm-up frames to skip
+        beat = {"type": b["type"], "asset": key, "start": b["start"], "dur": b["dur"],
+                "video": files[key].suffix in VIDEO_EXT,
+                "trim": 0.0 if derived else float(b.get("trim", 0.3))}
         if i in caps:
             beat["cap"] = f"cap{i}"
             data_files[f"cap{i}"] = str(caps[i])
         beats.append(beat)
     brand = spec["brand"]
     data = {"W": W, "H": H, "fps": FPS, "background": brand["background"], "gradient": brand["gradient"],
+            "card": {"x": CARD_X, "y": CARD_Y, "w": CARD_W, "h": CARD_H},
             "files": data_files, "beats": beats,
             "checkpoints": [round(b["start"] + b["dur"] / 2, 2) for b in timeline]}
     edit = work / "edit.jsx"
     edit.write_text(EDIT_TEMPLATE.replace("__DATA__", json.dumps(data, ensure_ascii=False)), encoding="utf-8")
     return edit
+
+
+def media_key(b: dict) -> str:
+    return b.get("key") or b["asset"]
 
 
 def blank_checkpoints(work: Path) -> list[str]:
@@ -349,12 +458,13 @@ def main() -> int:
     print(f"voice: {lang} {prob:.2f} | script↔transcript match {ratio:.0%} | "
           f"{total:.2f}s → {total / speed:.2f}s at ×{speed}")
     for i, b in enumerate(timeline):
-        print(f"  #{i:<2} {b['start']:6.2f}–{b['start'] + b['dur']:6.2f}  {b['type']:<6} {b['asset']:<8} "
+        print(f"  #{i:<2} {b['start']:6.2f}–{b['start'] + b['dur']:6.2f}  {b['type']:<6} {b.get('asset', 'card'):<8} "
               f"{b.get('cue', '') or ''}  {b.get('caption', '').replace(chr(10), ' / ')}")
     if args.plan:
         return 0
 
     files = fetch_assets(spec, work)
+    prepare_derived(spec, timeline, files, work)
     caps = render_captions(spec, timeline, work)
     edit = write_edit(spec, timeline, files, caps, work)
     shutil.rmtree(work / "proj", ignore_errors=True)
@@ -366,7 +476,8 @@ def main() -> int:
     report = {"spec": spec["name"], "out": str(args.out), "duration": duration(args.out.resolve()),
               "voice": {"lang": lang, "prob": round(prob, 3), "match": round(ratio, 3)},
               "blank_checkpoints": blank,
-              "timeline": [{k: b[k] for k in ("type", "asset", "start", "dur")} for b in timeline]}
+              "timeline": [{"type": b["type"], "asset": b.get("asset", "card"), "start": b["start"],
+                            "dur": b["dur"]} for b in timeline]}
     (work / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({k: report[k] for k in ("out", "duration", "voice", "blank_checkpoints")}, ensure_ascii=False))
     return 1 if blank else 0
