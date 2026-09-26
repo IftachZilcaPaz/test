@@ -38,3 +38,13 @@ Specs: `specs/mentorit-ad-1-alexey.json`, `specs/mentorit-ad-2-alexey.json`.
 - ad-2, 18.5s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/dfba7249-6671-4aca-b39c-322ada97b802.mp4
 
 QA: Hebrew detected at 0.988 / 0.998; script↔transcript match 93.9% / 97%; no blank checkpoints.
+
+## Name fix: "יפתח פז זילכה" → "יפתח זילכה" (0 credits)
+
+The middle word was cut out of the original pixels (column cut and re-align, no redraw), so the
+font and layout stay identical. Edited screens: `team` (15), `match` (21), `iftach_full` (26); every
+mentorit spec and brief now points to them. The originals are kept on the CDN.
+
+Alexey versions, re-rendered:
+- ad-1: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2dba2f2e-c032-4e9b-bfcc-b09d0acb9059.mp4
+- ad-2: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/011ef398-aef5-48d3-a97d-07e262bada59.mp4
