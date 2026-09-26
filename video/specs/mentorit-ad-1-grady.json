@@ -1,0 +1,114 @@
+{
+  "name": "mentorit-ad-1-grady",
+  "speed": 1.25,
+  "voice": {
+    "file": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_085954_2dd6f798-19b6-41bb-ae4b-3392740ed703.mp3",
+    "voiceId": "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678",
+    "lang": "he",
+    "leadIn": 0.3,
+    "script": "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם."
+  },
+  "assets": {
+    "roof": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260925_043620_5770920e-d796-469b-b517-f9ad9ffa733f.mp4",
+    "cafe": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_073406_3191dc49-01ec-4350-ae16-4ba6aaa1f777.mp4",
+    "q_field": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f82d4a48-59f4-456f-bca3-48fd1500af8e.png",
+    "iftach_full": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2bfba24c-456f-43ec-b436-ca8d62cf4bd7.webp",
+    "q_mode": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/503916da-f16b-4462-8b9f-6fa4511bd16c.png",
+    "team": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/807efd0e-a487-436e-b412-692e8e24d2dd.webp"
+  },
+  "beats": [
+    {
+      "type": "broll",
+      "asset": "roof",
+      "caption": "שנה של\nניסוי וטעייה?"
+    },
+    {
+      "type": "broll",
+      "asset": "cafe",
+      "cue": "או",
+      "caption": "או שעה אחת\nעם מי שכבר היה שם"
+    },
+    {
+      "type": "screen",
+      "asset": "q_field",
+      "cue": "במנטור",
+      "caption": "מנטור לכל תחום",
+      "sub": "קריירה · יזמות · זוגיות · כסף"
+    },
+    {
+      "type": "scroll",
+      "asset": "iftach_full",
+      "crop": [
+        0,
+        1800
+      ],
+      "cut": [
+        [
+          896,
+          1048
+        ]
+      ],
+      "cue": "רואים",
+      "caption": "מה תקבלו\nוכמה זה עולה"
+    },
+    {
+      "type": "screen",
+      "asset": "q_mode",
+      "cue": "ונפגשים",
+      "caption": "אונליין או\nפנים מול פנים"
+    },
+    {
+      "type": "slide",
+      "asset": "team",
+      "cue": "מנטור"
+    },
+    {
+      "type": "end",
+      "card": {
+        "wordmark": "mentor",
+        "badge": "it",
+        "title": "קיצור הדרך\nשלכם",
+        "subtitle": "מנטורים מאומתים · מחירים שקופים · אונליין או פנים מול פנים",
+        "button": "מצאו מנטור עכשיו",
+        "url": "mentorit.me"
+      },
+      "hold": 3.4
+    }
+  ],
+  "generate": {
+    "voice": {
+      "model": "text2speech_v2",
+      "variant": "elevenlabs",
+      "voice_type": "preset",
+      "voice_id": "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678",
+      "prompt": "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם."
+    },
+    "broll": {
+      "cafe": {
+        "model": "seedance_2_5",
+        "aspect_ratio": "9:16",
+        "duration": 5,
+        "resolution": "720p",
+        "generate_audio": false,
+        "prompt": "Warm cinematic close-up in a sunlit Tel Aviv café: an experienced mentor in her forties leans in and talks with a young man across a small wooden table, notebook and two coffee cups between them, he nods and smiles; slow push-in, shallow depth of field, soft golden afternoon light, natural documentary feel, no text, no logos, no readable screens"
+      }
+    }
+  },
+  "brand": {
+    "background": "#0a2a22",
+    "gradient": [
+      "#0f6e57",
+      "#0b3d31",
+      "#081f19"
+    ],
+    "font": "Heebo",
+    "headingFont": "Frank Ruhl Libre",
+    "captionColor": "#ffffff",
+    "subColor": "#d4efe4",
+    "dir": "rtl",
+    "accent": "#0f6e57",
+    "cardBackground": "#f8f5ee",
+    "cardText": "#14201c",
+    "cardMuted": "#5b6b64"
+  }
+}

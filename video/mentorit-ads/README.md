@@ -19,3 +19,13 @@ Voice-overs (Daisy): ad-1 `hf_20260926_073408_4b1ee307…mp3`, ad-2 `hf_20260926
 
 First real use of the `scroll` beat (Iftach's full profile, sticky header cut out) and the
 engine-drawn end card. Re-renders (order, captions, speed) are free: edit the spec and re-run.
+
+## Male voice (Grady, `e2a2d2e6-9ed2-59cd-82af-feaa27f8a678`), ×1.25, 1.65 credits for both voice-overs
+
+Specs: `specs/mentorit-ad-1-grady.json`, `specs/mentorit-ad-2-grady.json` (the Daisy specs are untouched).
+
+- ad-1, 19.4s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/d2cad56b-811f-4e13-ae35-821291124c07.mp4
+- ad-2, 22.2s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/ac61f21c-b92f-4ed7-85ad-d3b81de17d21.mp4
+
+QA: Hebrew detected at 0.997 / 0.998; script↔transcript match 94.5% / 96.4%; no blank checkpoints.
+Grady reads Hebrew more slowly than Daisy (~2s longer per video at the same ×1.25).
