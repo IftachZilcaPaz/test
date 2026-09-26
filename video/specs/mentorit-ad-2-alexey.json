@@ -1,0 +1,106 @@
+{
+  "name": "mentorit-ad-2-alexey",
+  "speed": 1.25,
+  "voice": {
+    "file": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_090447_f8c0545c-2324-46f0-9244-b19522a6bef8.mp3",
+    "voiceId": "7c2133e5-68ab-511f-9aed-9a67664382b1",
+    "lang": "he",
+    "leadIn": 0.3,
+    "script": "יש לכם ניסיון שאחרים היו משלמים כדי לקבל? הצטרפו לנבחרת המנטורים של מֶנְטוֹר אִיט. בונים פרופיל, קובעים מחיר, ומגיעים אליכם אנשים שכבר יודעים למה אתם מתאימים להם. אונליין או פנים מול פנים, בזמנים שלכם. מֶנְטוֹר אִיט: הניסיון שלכם שווה יותר ממה שאתם חושבים."
+  },
+  "assets": {
+    "cafe": "https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260926_073406_3191dc49-01ec-4350-ae16-4ba6aaa1f777.mp4",
+    "team": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/807efd0e-a487-436e-b412-692e8e24d2dd.webp",
+    "iftach_full": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2bfba24c-456f-43ec-b436-ca8d62cf4bd7.webp",
+    "match": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/4d5c3fb6-2231-4e16-83ba-8f7890308f3f.png",
+    "nitzan": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/05577be3-13a5-4f35-9e6f-641ca6bcb1b9.png",
+    "signup": "https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2533d89f-9e1e-4e5d-bd7c-ed93b2a44081.png"
+  },
+  "beats": [
+    {
+      "type": "broll",
+      "asset": "cafe",
+      "caption": "יש לכם ניסיון\nשאחרים מחפשים?"
+    },
+    {
+      "type": "slide",
+      "asset": "team",
+      "cue": "הצטרפו"
+    },
+    {
+      "type": "scroll",
+      "asset": "iftach_full",
+      "crop": [
+        0,
+        1800
+      ],
+      "cut": [
+        [
+          896,
+          1048
+        ]
+      ],
+      "cue": "בונים",
+      "caption": "בונים פרופיל\nקובעים מחיר"
+    },
+    {
+      "type": "screen",
+      "asset": "match",
+      "cue": "למה",
+      "caption": "מגיעים אליכם\nאנשים שמתאימים",
+      "sub": "עם דוח שמסביר למה"
+    },
+    {
+      "type": "screen",
+      "asset": "nitzan",
+      "cue": "אונליין",
+      "caption": "אונליין או פנים מול פנים",
+      "sub": "בזמנים שלכם"
+    },
+    {
+      "type": "screen",
+      "asset": "signup",
+      "cue": "מנטור",
+      "caption": "הצטרפו\nלנבחרת"
+    },
+    {
+      "type": "end",
+      "card": {
+        "wordmark": "mentor",
+        "badge": "it",
+        "title": "הניסיון שלכם\nשווה יותר",
+        "subtitle": "פרופיל מאומת · מחיר שקוף · אונליין או פנים מול פנים",
+        "button": "הצטרפו כמנטורים",
+        "url": "mentorit.me"
+      },
+      "hold": 3.4
+    }
+  ],
+  "generate": {
+    "voice": {
+      "model": "text2speech_v2",
+      "variant": "elevenlabs",
+      "voice_type": "preset",
+      "voice_id": "7c2133e5-68ab-511f-9aed-9a67664382b1",
+      "prompt": "יש לכם ניסיון שאחרים היו משלמים כדי לקבל? הצטרפו לנבחרת המנטורים של מֶנְטוֹר אִיט. בונים פרופיל, קובעים מחיר, ומגיעים אליכם אנשים שכבר יודעים למה אתם מתאימים להם. אונליין או פנים מול פנים, בזמנים שלכם. מֶנְטוֹר אִיט: הניסיון שלכם שווה יותר ממה שאתם חושבים."
+    },
+    "broll": {}
+  },
+  "brand": {
+    "background": "#0a2a22",
+    "gradient": [
+      "#0f6e57",
+      "#0b3d31",
+      "#081f19"
+    ],
+    "font": "Heebo",
+    "headingFont": "Frank Ruhl Libre",
+    "captionColor": "#ffffff",
+    "subColor": "#d4efe4",
+    "dir": "rtl",
+    "accent": "#0f6e57",
+    "cardBackground": "#f8f5ee",
+    "cardText": "#14201c",
+    "cardMuted": "#5b6b64"
+  }
+}

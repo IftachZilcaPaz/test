@@ -29,3 +29,12 @@ Specs: `specs/mentorit-ad-1-grady.json`, `specs/mentorit-ad-2-grady.json` (the D
 
 QA: Hebrew detected at 0.997 / 0.998; script↔transcript match 94.5% / 96.4%; no blank checkpoints.
 Grady reads Hebrew more slowly than Daisy (~2s longer per video at the same ×1.25).
+
+## Male voice (Alexey, `7c2133e5-68ab-511f-9aed-9a67664382b1`), ×1.25, 1.65 credits for both voice-overs
+
+Specs: `specs/mentorit-ad-1-alexey.json`, `specs/mentorit-ad-2-alexey.json`.
+
+- ad-1, 17.3s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/f7590538-eb9d-4c24-8f14-4e4992cfaf09.mp4
+- ad-2, 18.5s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/dfba7249-6671-4aca-b39c-322ada97b802.mp4
+
+QA: Hebrew detected at 0.988 / 0.998; script↔transcript match 93.9% / 97%; no blank checkpoints.
