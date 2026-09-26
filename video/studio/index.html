@@ -1,0 +1,780 @@
+<title>סטודיו פרומו</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;700&family=IBM+Plex+Mono:wght@500&family=Secular+One&family=Frank+Ruhl+Libre:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#F1F2F4; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#DFE2E7; --line-strong:#C6CBD3;
+  --ink:#15171B; --ink-2:#4B5260; --ink-3:#7A8290;
+  --accent:#F0521F; --accent-ink:#FFFFFF; --accent-soft:#FDE7DE;
+  --money:#0E7F58; --money-soft:#DDF3EA; --warn:#B26A00; --warn-soft:#FFF1D6; --bad:#C62B2B; --bad-soft:#FCE3E3;
+  --stage:#0B0C0E; --shadow:0 1px 2px rgba(20,23,27,.06),0 8px 24px rgba(20,23,27,.06);
+  --t-broll:#5B6BF0; --t-screen:#0E7F58; --t-scroll:#0A8FA8; --t-slide:#B35CD6; --t-end:#F0521F;
+  --display:'Secular One','IBM Plex Sans Hebrew',system-ui,sans-serif;
+  --body:'IBM Plex Sans Hebrew',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --ground:#0F1114; --surface:#181B20; --surface-2:#1E2228; --line:#2A2F37; --line-strong:#3A414B;
+  --ink:#ECEEF1; --ink-2:#B3BAC5; --ink-3:#848C98;
+  --accent:#FF6A3D; --accent-ink:#1A0B05; --accent-soft:#3A1D12;
+  --money:#3CC48F; --money-soft:#12301F; --warn:#F2B143; --warn-soft:#33260E; --bad:#FF7070; --bad-soft:#3A1717;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0F1114; --surface:#181B20; --surface-2:#1E2228; --line:#2A2F37; --line-strong:#3A414B;
+  --ink:#ECEEF1; --ink-2:#B3BAC5; --ink-3:#848C98;
+  --accent:#FF6A3D; --accent-ink:#1A0B05; --accent-soft:#3A1D12;
+  --money:#3CC48F; --money-soft:#12301F; --warn:#F2B143; --warn-soft:#33260E; --bad:#FF7070; --bad-soft:#3A1717;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);padding-block:14px 10px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.top-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-inline-end:auto}
+.tally{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.brand h1{font-family:var(--display);font-size:22px;font-weight:400;letter-spacing:.2px}
+.drybadge{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.steps{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}
+.step{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:center;color:var(--ink-2)}
+.step b{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--ink-3)}
+.step[aria-current="step"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.step[aria-current="step"] b{color:var(--surface)}
+.wallet{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px}
+.wallet .k{font-size:12px;color:var(--ink-3)}
+.wallet .v{font-family:var(--mono);font-size:15px}
+.wallet .v.good{color:var(--money)} .wallet .v.bad{color:var(--bad)}
+
+/* layout */
+.panel{display:none}
+.panel.on{display:block}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:var(--shadow)}
+.card + .card{margin-top:16px}
+.card h2{font-size:17px;font-weight:700;margin-bottom:4px}
+.lede{color:var(--ink-2);margin:0 0 16px;max-width:65ch}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+@media (max-width:560px){.fields{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:5px}
+.f.full{grid-column:1/-1}
+.f label{font-size:13px;font-weight:500;color:var(--ink-2)}
+.f small{color:var(--ink-3);font-size:12px}
+input[type=text],input[type=number],select,textarea{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+textarea{resize:vertical;min-height:84px;line-height:1.6}
+input[type=color]{width:44px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:9px;padding:9px 16px;cursor:pointer;font-weight:500;display:inline-flex;gap:8px;align-items:center}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
+.hint{font-size:13px;color:var(--ink-3)}
+
+/* screens */
+.drop{border:1.5px dashed var(--line-strong);border-radius:10px;padding:14px;text-align:center;color:var(--ink-2);cursor:pointer;background:var(--surface-2)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:12px}
+.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
+.shot .thumb{aspect-ratio:9/16;background:var(--line);position:relative;overflow:hidden}
+.shot .thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.shot .meta{padding:6px;display:flex;flex-direction:column;gap:4px}
+.shot .meta input,.shot .meta select{padding:4px 6px;font-size:12px}
+.shot .x{position:absolute;top:4px;inset-inline-start:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;width:22px;height:22px;cursor:pointer;line-height:1}
+.mock{position:absolute;inset:0;padding:8% 9%;display:flex;flex-direction:column;gap:6%;background:linear-gradient(180deg,#fbfaf6,#f1efe8)}
+.mock i{display:block;height:5%;border-radius:4px;background:#d9ddd6}
+.mock i.h{height:7%;width:70%;background:#b9c2bb;margin-inline-start:auto}
+.mock i.b{height:8%;border-radius:99px;background:var(--brand,#0f6e57)}
+.mock span{font-size:10px;color:#56605a;text-align:center;margin-top:auto;font-weight:500}
+
+/* script options */
+.opts{display:grid;gap:12px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface-2);cursor:pointer;display:grid;gap:6px}
+.opt[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:var(--surface)}
+.opt h3{font-size:15px;display:flex;gap:8px;align-items:center}
+.opt .tag{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--line);color:var(--ink-2);font-weight:500}
+.opt p{margin:0;line-height:1.75}
+.opt .angle{color:var(--ink-3);font-size:13px}
+.status{font-size:14px;color:var(--ink-2);min-height:22px}
+.status.err{color:var(--bad)}
+.beats{width:100%;border-collapse:collapse;font-size:14px}
+.beats th{font-size:12px;color:var(--ink-3);font-weight:500;text-align:start;padding:6px 6px;border-bottom:1px solid var(--line)}
+.beats td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+.beats td input,.beats td select{padding:5px 7px;font-size:13px}
+.tscroll{overflow-x:auto}
+.typedot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:6px}
+.flag{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--surface-2);font-size:13px}
+
+/* preview */
+.stage-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.stage-wrap{grid-template-columns:1fr}}
+.phone{width:100%;max-width:340px;aspect-ratio:9/16;background:var(--stage);border-radius:26px;overflow:hidden;position:relative;margin-inline:auto;box-shadow:0 20px 50px rgba(0,0,0,.35);border:6px solid #1b1d21}
+.layer{position:absolute;inset:0;transition:opacity .25s}
+.cap{position:absolute;inset-inline:6%;text-align:center;color:#fff;font-family:'IBM Plex Sans Hebrew',sans-serif;font-weight:700;font-size:clamp(17px,5.6vw,24px);line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.6);white-space:pre-line;animation:capin .45s ease-out both}
+.cap small{display:block;font-weight:500;font-size:.66em;opacity:.9;margin-top:4px}
+@keyframes capin{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.broll{background:radial-gradient(120% 80% at 70% 20%,#4a3a2a,#141210 70%);display:flex;align-items:center;justify-content:center;animation:ken 6s linear both}
+@keyframes ken{from{transform:scale(1)}to{transform:scale(1.06)}}
+.broll .lbl{color:rgba(255,255,255,.72);font-size:12px;text-align:center;padding:0 16%;font-family:var(--mono);line-height:1.5}
+.scrim{position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(0,0,0,.72),transparent)}
+.dev{position:absolute;left:13.9%;right:13.9%;top:23.4%;bottom:4.4%;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(0,0,0,.55);animation:devin .5s ease-out both}
+@keyframes devin{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.dev img{width:100%;display:block}
+.dev .sc{will-change:transform}
+.full img{width:100%;height:100%;object-fit:cover;object-position:top}
+.endc{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:0 10%;animation:endin .5s ease-out both}
+@keyframes endin{from{opacity:0;transform:scale(1)}to{opacity:1;transform:scale(1.03)}}
+.endc .wm{font-family:'IBM Plex Sans Hebrew',sans-serif;font-weight:700;font-size:22px;direction:ltr;display:flex;gap:4px;align-items:center}
+.endc .wm em{font-style:normal;color:#fff;border-radius:6px;padding:0 6px 2px}
+.endc .tt{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;line-height:1.1;white-space:pre-line}
+.endc .st{font-size:12px;opacity:.75}
+.endc .bt{color:#fff;border-radius:99px;padding:8px 18px;font-weight:700;font-size:14px;margin-top:6px}
+.endc .ul{font-weight:700;direction:ltr}
+.controls{display:flex;align-items:center;gap:10px;margin-top:12px;max-width:340px;margin-inline:auto}
+.tc{font-family:var(--mono);font-size:13px;color:var(--ink-2);min-width:92px;text-align:center}
+.bar{position:relative;height:30px;border-radius:6px;overflow:hidden;display:flex;cursor:pointer;background:var(--line);direction:ltr}
+.seg{height:100%;border-inline-end:2px solid var(--surface);opacity:.85;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-family:var(--mono);overflow:hidden;white-space:nowrap}
+.head{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);pointer-events:none}
+.karaoke{line-height:2;font-size:16px;margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+.karaoke span{transition:color .15s,background .15s;border-radius:4px;padding:0 1px}
+.karaoke span.past{color:var(--ink)}
+.karaoke span.fut{color:var(--ink-3)}
+.karaoke span.now{background:var(--accent-soft);color:var(--ink)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:8px}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.checks li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:14px}
+.checks .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;font-family:var(--mono)}
+.ok .ic{background:var(--money-soft);color:var(--money)}
+.warnx .ic{background:var(--warn-soft);color:var(--warn)}
+.badx .ic{background:var(--bad-soft);color:var(--bad)}
+.costs{width:100%;border-collapse:collapse;font-size:14px}
+.costs td,.costs th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:start}
+.costs th{font-size:12px;color:var(--ink-3);font-weight:500}
+.costs td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.costs tr.pick{background:var(--accent-soft)}
+.costs tr{cursor:pointer}
+.stat{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.stat:last-child{border-bottom:0}
+.stat b{font-family:var(--mono);font-weight:500}
+
+/* production */
+.pipe{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.pipe li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.pipe .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line-strong);display:grid;place-items:center;font-size:12px}
+.pipe li.run .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
+.pipe li.done .dot{background:var(--money);border-color:var(--money);color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pipe .c{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;max-height:260px;overflow:auto;font-size:12px;direction:ltr;text-align:left;font-family:var(--mono)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" dir="rtl">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand"><span class="tally" aria-hidden="true"></span><h1>סטודיו פרומו</h1><span class="drybadge">DRY RUN · 0 קרדיטים</span></div>
+      <div class="wallet" aria-live="polite">
+        <div><div class="k">יתרה</div><div class="v mono" id="wBal">29.98</div></div>
+        <div><div class="k">הסרטון הזה</div><div class="v mono" id="wCost">0.83</div></div>
+        <div><div class="k">יישאר</div><div class="v mono good" id="wLeft">29.15</div></div>
+      </div>
+    </div>
+    <nav class="steps" aria-label="שלבים">
+      <button class="step" data-go="brief" aria-current="step"><b>1</b>בריף ומסכים</button>
+      <button class="step" data-go="script"><b>2</b>תסריט</button>
+      <button class="step" data-go="preview"><b>3</b>תצוגה מקדימה</button>
+      <button class="step" data-go="produce"><b>4</b>הפקה</button>
+    </nav>
+  </header>
+
+  <!-- 1. BRIEF -->
+  <section class="panel on" id="p-brief">
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <h2>מה מפרסמים?</h2>
+          <p class="lede">כמה שורות מספיקות. התסריט נכתב רק ממה שכתוב כאן ומהמסכים, בלי להמציא נתונים. הדוגמה ממולאת לפי mentor it.</p>
+          <div class="fields">
+            <div class="f"><label for="bName">שם המוצר</label><input type="text" id="bName"></div>
+            <div class="f"><label for="bTts">איך מבטאים אותו (מנוקד)</label><input type="text" id="bTts"><small>ייכנס כך לקריינות</small></div>
+            <div class="f full"><label for="bWhat">מה הוא עושה, ולמי</label><textarea id="bWhat" rows="3"></textarea></div>
+            <div class="f full"><label for="bAsk">מה אתם רוצים שהסרטון יעשה?</label><textarea id="bAsk" rows="2"></textarea><small>למשל: "סרטון שמגייס מנטורים, בטון חם ובטוח"</small></div>
+            <div class="f"><label for="bCta">לאן שולחים בסוף</label><input type="text" id="bCta"></div>
+            <div class="f"><label for="bAvoid">מה לא להגיד</label><input type="text" id="bAvoid"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>מסכים</h2>
+          <p class="lede">צילומי מסך אמיתיים מהאפליקציה. צילום ארוך (עמוד שלם) מזוהה אוטומטית ונגלל בתוך הטלפון.</p>
+          <label class="drop" id="drop" for="fileIn">גררו לכאן צילומי מסך, או לחצו לבחירה<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
+          <div class="shots" id="shots"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>סגנון</h2>
+          <div class="fields" style="margin-top:12px">
+            <div class="f full"><label>קול</label><div class="chips" id="voiceChips"></div></div>
+            <div class="f full"><label>טון</label><div class="chips" id="toneChips"></div></div>
+            <div class="f"><label for="bLen">אורך יעד (שניות)</label><input type="number" id="bLen" min="12" max="45" step="1"></div>
+            <div class="f"><label for="bSpeed">קצב</label><select id="bSpeed"><option value="1">×1.0</option><option value="1.15">×1.15</option><option value="1.2">×1.2</option><option value="1.25">×1.25</option><option value="1.3">×1.3</option></select></div>
+            <div class="f"><label for="bColor">צבע מותג</label><input type="color" id="bColor"></div>
+            <div class="f"><label for="bEnd">כותרת כרטיס הסיום</label><input type="text" id="bEnd"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>תקציב</h2>
+          <div class="fields" style="margin-top:12px">
+            <div class="f"><label for="bBal">יתרת קרדיטים</label><input type="number" id="bBal" step="0.01" min="0"></div>
+            <div class="f"><label for="bRes">איכות שוט חדש</label><select id="bRes"><option value="720p">720p · 35</option><option value="1080p">1080p · 60</option></select></div>
+            <div class="f full"><label>שוטים קולנועיים חדשים</label><div class="chips" id="newChips"></div><small>שוט מהספרייה עולה 0. שוט חדש הוא ההוצאה הגדולה.</small></div>
+          </div>
+        </div>
+        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="script">לתסריט ←</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. SCRIPT -->
+  <section class="panel" id="p-script">
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <h2>שלוש זוויות לבחירה</h2>
+          <p class="lede">Claude כותב שלוש גרסאות, כל אחת מזווית אחרת. בוחרים אחת ומתקנים חופשי. כתיבת תסריט לא עולה קרדיטים.</p>
+          <div class="row"><button class="btn primary" id="genBtn">כתבו לי תסריטים</button><button class="btn" id="stopBtn" hidden>עצור</button><span class="status" id="genStatus"></span></div>
+          <div class="opts" id="opts" role="radiogroup" aria-label="גרסאות תסריט" style="margin-top:14px"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>התסריט שנבחר</h2>
+          <p class="lede">זה הטקסט שיישלח לקריין. ניקוד רק במילים שעלולות להיקרא לא נכון.</p>
+          <div class="f"><label for="scriptBox">קריינות</label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="mono"></small></div>
+          <div id="flags" class="row" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <h2>מה רואים ומתי</h2>
+          <p class="lede">כל שורה מתחלפת כשהקריין מגיע למילה שבעמודה "מתחיל ב". אפשר לשנות מסך, מילה או כיתוב.</p>
+          <div class="tscroll"><table class="beats" id="beatsTbl"><thead><tr><th>#</th><th>מה על המסך</th><th>מתחיל ב</th><th>כיתוב</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="preview">לתצוגה מקדימה ←</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. PREVIEW -->
+  <section class="panel" id="p-preview">
+    <div class="stage-wrap">
+      <div>
+        <div class="phone" id="phone" aria-label="תצוגה מקדימה של הסרטון"></div>
+        <div class="controls">
+          <button class="btn" id="playBtn" aria-label="נגן">▶</button>
+          <div class="tc" id="tc" dir="ltr">0:00.0 / 0:00.0</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>ציר הזמן</h2>
+          <p class="lede">כך ייחתך הסרטון, בערך. לחיצה על הציר קופצת לנקודה. הזמנים מחושבים מקצב דיבור ממוצע של 1.85 מילים בשנייה, ובהפקה האמיתית הם מסתנכרנים למילים של הקריין.</p>
+          <div class="bar" id="bar"><div class="head" id="head"></div></div>
+          <div class="legend" id="legend"></div>
+          <div class="karaoke" id="karaoke" aria-live="off"></div>
+        </div>
+        <div class="card">
+          <h2>בדיקות לפני שמוציאים קרדיט</h2>
+          <ul class="checks" id="checks"></ul>
+        </div>
+        <div class="card">
+          <h2>מה כל בחירה עולה</h2>
+          <table class="costs" id="costs"><thead><tr><th>אפשרות</th><th>עלות</th><th>יישאר</th></tr></thead><tbody></tbody></table>
+          <p class="hint" style="margin-top:8px">לחיצה על שורה בוחרת אותה. רינדור, החלפת מסך, כיתוב וקצב עולים 0.</p>
+        </div>
+        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="produce">להפקה ←</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PRODUCE -->
+  <section class="panel" id="p-produce">
+    <div class="grid2">
+      <div class="card">
+        <h2>מה יקרה כשלוחצים "הפק"</h2>
+        <p class="lede">בדמו הזה שום דבר לא נשלח ל-Higgsfield. הסימולציה מראה את הסדר, הזמן והעלות של כל שלב.</p>
+        <ul class="pipe" id="pipe"></ul>
+        <div class="row" style="margin-top:14px"><button class="btn primary" id="simBtn">הרץ סימולציה</button><span class="status" id="simStatus"></span></div>
+      </div>
+      <div class="card">
+        <h2>להפקה אמיתית</h2>
+        <p class="lede">מעתיקים את החבילה ומדביקים ל-Claude Code עם המשפט "תפיק את זה". היא בפורמט של המחולל, כך שההפקה רצה בלי שאלות נוספות.</p>
+        <div class="row"><button class="btn" id="copyBtn">העתק חבילה</button><span class="status" id="copyStatus"></span></div>
+        <pre class="json" id="json"></pre>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); for (const k of kids) if (k != null) n.append(k); return n; };
+
+/* ---------- constants measured in production ---------- */
+const WPS = 1.85, LEAD = 0.3, END_HOLD = 3.4, MIN_BEAT = 0.5, MIN_SCROLL = 2.5;
+const COST = { voice: 0.83, shot: { "720p": 35, "1080p": 60 } };
+const VOICES = [
+  { id: "032386ec-491b-5bdc-81ac-49e9a6a2c89d", name: "Daisy", note: "אישה", pace: 1.0 },
+  { id: "7c2133e5-68ab-511f-9aed-9a67664382b1", name: "Alexey", note: "גבר", pace: 1.05 },
+  { id: "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678", name: "Grady", note: "גבר, איטי", pace: 0.9 },
+];
+const TONES = ["חם", "בטוח", "אנרגטי", "הומוריסטי", "רציני"];
+const LIBRARY = {
+  roof: "ידיים מקלידות בטלפון על גג בשקיעה",
+  cafe: "מנטורית ובחור בבית קפה מואר",
+  plane: "חלון מטוס מעל העננים בזריחה",
+};
+const TYPE_NAMES = { broll: "שוט", screen: "מסך", scroll: "מסך נגלל", slide: "שקף", end: "סיום" };
+const KIND_TO_TYPE = { screenshot: "screen", tall: "scroll", slide: "slide" };
+
+/* ---------- state (example: mentor it) ---------- */
+const S = {
+  step: "brief",
+  brief: {
+    name: "mentor it", tts: "מֶנְטוֹר אִיט",
+    what: "מרקטפלייס שמחבר בין אנשים למנטורים. שאלון קצר, דוח התאמה אישי עם אחוז התאמה והסבר למה, פרופילים מלאים עם מחיר שקוף ומה מקבלים בפגישה הראשונה, מנטורים מאומתים ידנית, אונליין או פנים מול פנים. גם מנטורים יכולים להצטרף.",
+    ask: "סרטון למי שמחפש מנטור, קצר וחד",
+    cta: "mentorit.me", avoid: "לא להזכיר כמה שאלות יש בשאלון",
+    voice: VOICES[1].id, tones: ["חם", "בטוח"], len: 20, speed: 1.25, color: "#0f6e57",
+    endTitle: "קיצור הדרך\nשלכם", balance: 29.98, res: "720p", newShots: 0,
+  },
+  screens: [
+    { key: "home", kind: "screenshot", label: "מסך הבית" },
+    { key: "q_field", kind: "screenshot", label: "שאלון: תחום" },
+    { key: "q_mode", kind: "screenshot", label: "אונליין או פנים מול פנים" },
+    { key: "match", kind: "screenshot", label: "דוח התאמה 89%" },
+    { key: "iftach_full", kind: "tall", label: "פרופיל מלא" },
+    { key: "team", kind: "slide", label: "נבחרת המנטורים" },
+    { key: "signup", kind: "screenshot", label: "הרשמה" },
+  ],
+  options: [
+    { title: "ניסוי וטעייה", angle: "חיסכון בטעויות: שעה עם מי שכבר עשה את זה", example: true,
+      script: "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם.",
+      flagged_words: [{ word: "מֶנְטוֹר אִיט", reading: "mentor it", reason: "שם המותג" }],
+      beats: [
+        { type: "broll", asset: "roof", cue: "", caption: "שנה של\nניסוי וטעייה?" },
+        { type: "broll", asset: "cafe", cue: "או", caption: "או שעה אחת\nעם מי שכבר היה שם" },
+        { type: "screen", asset: "q_field", cue: "במֶנְטוֹר", caption: "מנטור לכל תחום" },
+        { type: "scroll", asset: "iftach_full", cue: "רואים", caption: "מה תקבלו\nוכמה זה עולה" },
+        { type: "screen", asset: "q_mode", cue: "ונפגשים", caption: "אונליין או\nפנים מול פנים" },
+        { type: "slide", asset: "team", cue: "מֶנְטוֹר", caption: "" },
+        { type: "end", asset: "endcard", cue: "", caption: "" },
+      ] },
+    { title: "הניסיון שלכם שווה", angle: "גיוס מנטורים: הניסיון הופך לערך", example: true,
+      script: "יש לכם ניסיון שאחרים היו משלמים כדי לקבל? הצטרפו לנבחרת המנטורים של מֶנְטוֹר אִיט. בונים פרופיל, קובעים מחיר, ומגיעים אליכם אנשים שכבר יודעים למה אתם מתאימים להם. אונליין או פנים מול פנים, בזמנים שלכם. מֶנְטוֹר אִיט: הניסיון שלכם שווה יותר ממה שאתם חושבים.",
+      flagged_words: [{ word: "מֶנְטוֹר אִיט", reading: "mentor it", reason: "שם המותג" }],
+      beats: [
+        { type: "broll", asset: "cafe", cue: "", caption: "יש לכם ניסיון\nשאחרים מחפשים?" },
+        { type: "slide", asset: "team", cue: "הצטרפו", caption: "" },
+        { type: "scroll", asset: "iftach_full", cue: "בונים", caption: "בונים פרופיל\nקובעים מחיר" },
+        { type: "screen", asset: "match", cue: "למה", caption: "מגיעים אליכם\nאנשים שמתאימים" },
+        { type: "screen", asset: "signup", cue: "מֶנְטוֹר", caption: "הצטרפו\nלנבחרת" },
+        { type: "end", asset: "endcard", cue: "", caption: "" },
+      ] },
+  ],
+  pick: 0,
+};
+const images = {};   // screen key -> object URL (never stored)
+
+/* ---------- storage (convenience only) ---------- */
+const STORE = "promo-studio-draft-v1";
+try {
+  const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+  if (saved && saved.brief) { Object.assign(S.brief, saved.brief); if (saved.options?.length) { S.options = saved.options; S.pick = saved.pick ?? 0; } if (saved.screens?.length) S.screens = saved.screens; }
+} catch {}
+let saveT;
+const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify({ brief: S.brief, options: S.options, pick: S.pick, screens: S.screens })); } catch {} }, 400); };
+
+/* ---------- text helpers (same rules as the engine) ---------- */
+const FINALS = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+const norm = w => w.replace(/[֑-ׇ]/g, "").replace(/[^\p{L}\p{N}']/gu, "").replace(/[ךםןףץ]/g, c => FINALS[c]).toLowerCase();
+const words = s => s.split(/\s+/).filter(w => norm(w));
+const cur = () => S.options[S.pick];
+const voice = () => VOICES.find(v => v.id === S.brief.voice) || VOICES[0];
+const fmt = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(1).padStart(4, "0")}`; };
+const money = n => (Math.round(n * 100) / 100).toFixed(2);
+
+/* timeline from script + beats: returns {beats:[{...,start,dur,problem}], total, wordTimes} */
+function timeline(opt) {
+  const ws = words(opt.script), rate = WPS * voice().pace, speed = +S.brief.speed;
+  const wordTimes = ws.map((_, i) => (LEAD + i / rate) / speed);
+  const voEnd = (LEAD + ws.length / rate) / speed;
+  let from = 0; const out = [];
+  opt.beats.forEach((b, i) => {
+    let start = 0, problem = "";
+    if (i === 0) start = 0;
+    else if (b.type === "end") start = voEnd + 0.1 / speed;
+    else {
+      const target = norm(b.cue || "");
+      let idx = -1;
+      for (let j = from; j < ws.length; j++) if (norm(ws[j]) === target) { idx = j; break; }
+      if (!target) problem = "חסרה מילת התחלה";
+      else if (idx < 0) problem = `המילה "${b.cue}" לא נמצאה בהמשך התסריט`;
+      if (idx >= 0) { from = idx + 1; start = wordTimes[idx]; } else start = out.length ? out[out.length - 1].start + 0.6 : 0;
+    }
+    out.push({ ...b, start, problem });
+  });
+  out.forEach((b, i) => { b.dur = (i === out.length - 1 ? END_HOLD / speed : out[i + 1].start - b.start); });
+  return { beats: out, total: out.length ? out[out.length - 1].start + out[out.length - 1].dur : 0, wordTimes, ws };
+}
+const targetWords = () => Math.round(S.brief.len * S.brief.speed * WPS * voice().pace - 3.8 * WPS);
+
+/* ---------- cost ---------- */
+function newShots(opt) { return opt.beats.filter(b => b.type === "broll" && !LIBRARY[b.asset]).length; }
+function cost(opt) { return COST.voice + newShots(opt) * COST.shot[S.brief.res]; }
+function renderWallet() {
+  const c = cost(cur()), left = S.brief.balance - c;
+  $("#wBal").textContent = money(S.brief.balance);
+  $("#wCost").textContent = money(c);
+  const l = $("#wLeft"); l.textContent = left >= 0 ? money(left) : `חסרים ${money(-left)}`;
+  l.className = "v mono " + (left >= 0 ? "good" : "bad");
+}
+
+/* ---------- step 1 ---------- */
+const bind = (id, key, cast = v => v) => { const n = $(id); n.value = S.brief[key]; n.addEventListener("input", () => { S.brief[key] = cast(n.value); save(); refresh(); }); };
+bind("#bName", "name"); bind("#bTts", "tts"); bind("#bWhat", "what"); bind("#bAsk", "ask"); bind("#bCta", "cta"); bind("#bAvoid", "avoid");
+bind("#bLen", "len", Number); bind("#bSpeed", "speed", Number); bind("#bColor", "color"); bind("#bBal", "balance", Number); bind("#bRes", "res");
+$("#bEnd").value = S.brief.endTitle.replace(/\n/g, " / ");
+$("#bEnd").addEventListener("input", e => { S.brief.endTitle = e.target.value.replace(/\s*\/\s*/g, "\n"); save(); refresh(); });
+
+function chipGroup(host, items, isOn, onClick) {
+  host.replaceChildren(...items.map(it => { const b = el("button", { className: "chip", type: "button", textContent: it.label }); b.setAttribute("aria-pressed", isOn(it)); b.onclick = () => { onClick(it); save(); renderChips(); refresh(); }; return b; }));
+}
+function renderChips() {
+  chipGroup($("#voiceChips"), VOICES.map(v => ({ label: `${v.name} · ${v.note}`, v })), it => it.v.id === S.brief.voice, it => { S.brief.voice = it.v.id; });
+  chipGroup($("#toneChips"), TONES.map(t => ({ label: t })), it => S.brief.tones.includes(it.label), it => { const t = S.brief.tones; t.includes(it.label) ? t.splice(t.indexOf(it.label), 1) : t.push(it.label); });
+  chipGroup($("#newChips"), [0, 1, 2].map(n => ({ label: n === 0 ? "רק מהספרייה" : `עד ${n}`, n })), it => it.n === S.brief.newShots, it => { S.brief.newShots = it.n; });
+}
+
+function mock(label) { const m = el("div", { className: "mock" }); m.style.setProperty("--brand", S.brief.color); m.append(el("i", { className: "h" }), el("i"), el("i"), el("i", { className: "b" }), el("i"), el("span", { textContent: label })); return m; }
+function renderShots() {
+  $("#shots").replaceChildren(...S.screens.map((s, i) => {
+    const th = el("div", { className: "thumb" });
+    th.append(images[s.key] ? el("img", { src: images[s.key], alt: s.label }) : mock(s.label));
+    const x = el("button", { className: "x", type: "button", textContent: "×", title: "הסר" }); x.setAttribute("aria-label", `הסר ${s.label}`);
+    x.onclick = () => { S.screens.splice(i, 1); save(); renderShots(); refresh(); };
+    th.append(x);
+    const lab = el("input", { type: "text", value: s.label, id: `sl-${s.key}` }); lab.setAttribute("aria-label", "שם המסך");
+    lab.oninput = () => { s.label = lab.value; save(); refresh(); };
+    const kind = el("select", { id: `sk-${s.key}` }, ...[["screenshot", "מסך"], ["tall", "מסך ארוך (גלילה)"], ["slide", "שקף מעוצב"]].map(([v, t]) => el("option", { value: v, textContent: t, selected: s.kind === v })));
+    kind.setAttribute("aria-label", "סוג");
+    kind.onchange = () => { s.kind = kind.value; save(); refresh(); };
+    return el("div", { className: "shot" }, th, el("div", { className: "meta" }, lab, kind));
+  }));
+}
+function addFiles(files) {
+  for (const f of files) {
+    if (!f.type.startsWith("image/")) continue;
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      const base = f.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/gi, "_").toLowerCase().slice(0, 20) || "screen";
+      let key = base, n = 2; while (S.screens.some(s => s.key === key)) key = `${base}_${n++}`;
+      const ratio = img.naturalHeight / img.naturalWidth;
+      S.screens.push({ key, kind: ratio > 2.05 ? "tall" : "screenshot", label: f.name.replace(/\.[^.]+$/, "") });
+      images[key] = url; save(); renderShots(); refresh();
+    };
+    img.src = url;
+  }
+}
+$("#fileIn").onchange = e => addFiles(e.target.files);
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+
+/* ---------- step 2 ---------- */
+function renderOpts() {
+  $("#opts").replaceChildren(...S.options.map((o, i) => {
+    const d = el("div", { className: "opt", tabIndex: 0 });
+    d.setAttribute("role", "radio"); d.setAttribute("aria-checked", i === S.pick);
+    d.append(el("h3", {}, o.title, o.example ? el("span", { className: "tag", textContent: "דוגמה" }) : null, el("span", { className: "tag", textContent: `${words(o.script).length} מילים` })),
+      el("div", { className: "angle", textContent: o.angle || "" }), el("p", { textContent: o.script }));
+    const choose = () => { S.pick = i; save(); renderOpts(); renderScript(); refresh(); };
+    d.onclick = choose; d.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } };
+    return d;
+  }));
+}
+function assetChoices(type) {
+  if (type === "broll") return [...Object.entries(LIBRARY).map(([k, v]) => [k, `ספרייה: ${v}`]), ["new", `שוט חדש (${COST.shot[S.brief.res]} קרדיטים)`]];
+  if (type === "end") return [["endcard", "כרטיס סיום אוטומטי"]];
+  return S.screens.map(s => [s.key, s.label]);
+}
+function renderScript() {
+  const o = cur(); if (!o) return;
+  $("#scriptBox").value = o.script;
+  $("#flags").replaceChildren(...(o.flagged_words || []).map(f => el("span", { className: "flag", title: f.reason }, el("b", { textContent: f.word }), ` · ${f.reading}`)));
+  const tb = $("#beatsTbl tbody");
+  tb.replaceChildren(...o.beats.map((b, i) => {
+    const type = el("select", { id: `bt-${i}` }, ...Object.entries(TYPE_NAMES).map(([v, t]) => el("option", { value: v, textContent: t, selected: b.type === v })));
+    type.setAttribute("aria-label", "סוג");
+    const asset = el("select", { id: `ba-${i}` }, ...assetChoices(b.type).map(([v, t]) => el("option", { value: v, textContent: t, selected: b.asset === v })));
+    asset.setAttribute("aria-label", "תוכן");
+    const cue = el("input", { type: "text", value: b.cue || "", disabled: i === 0 || b.type === "end", id: `bc-${i}`, placeholder: i === 0 ? "התחלה" : b.type === "end" ? "אחרי הקריינות" : "" });
+    cue.setAttribute("aria-label", "מילת התחלה");
+    const cap = el("input", { type: "text", value: (b.caption || "").replace(/\n/g, " / "), disabled: b.type === "end" || b.type === "slide", id: `bk-${i}` });
+    cap.setAttribute("aria-label", "כיתוב");
+    type.onchange = () => { b.type = type.value; b.asset = assetChoices(b.type)[0]?.[0] || ""; commit(true); };
+    asset.onchange = () => { b.asset = asset.value; commit(false); };
+    cue.oninput = () => { b.cue = cue.value; commit(false); };
+    cap.oninput = () => { b.caption = cap.value.replace(/\s*\/\s*/g, "\n"); commit(false); };
+    const dot = el("span", { className: "typedot" }); dot.style.background = `var(--t-${b.type})`;
+    return el("tr", {}, el("td", { className: "mono" }, dot, String(i)), el("td", {}, el("div", { className: "row" }, type, asset)), el("td", {}, cue), el("td", {}, cap));
+  }));
+  renderWordInfo();
+}
+function renderWordInfo() { const n = words(cur().script).length, t = targetWords(); $("#wordInfo").textContent = `${n} מילים · יעד ${t} (±20%)`; }
+function commit(rerender) { save(); if (rerender) renderScript(); refresh(); }
+$("#scriptBox").addEventListener("input", e => { cur().script = e.target.value; cur().example = false; save(); renderWordInfo(); renderOpts(); refresh(); });
+
+/* Claude writes three options (the viewer's own Claude usage; no Higgsfield credits) */
+let sample = null, ctl = null;
+(async () => { try { sample = await window.claude?.use?.("sample"); } catch { sample = null; } if (!sample) { $("#genStatus").textContent = "כתיבה עם Claude זמינה כשהעמוד פתוח ב-claude.ai. בינתיים מוצגות שתי גרסאות לדוגמה."; } })();
+
+function buildPrompt() {
+  const b = S.brief, tw = targetWords();
+  const screens = S.screens.map(s => `- key "${s.key}" (${s.kind}): ${s.label}`).join("\n");
+  const lib = Object.entries(LIBRARY).map(([k, v]) => `- "${k}": ${v}`).join("\n");
+  return `You write short vertical (9:16) Hebrew promo videos for apps. Return ONLY JSON: {"options":[...]} with exactly 3 options, each a clearly different creative angle.
+Each option: {"title": short Hebrew name of the angle, "angle": one Hebrew sentence, "script": the voice-over, "flagged_words": [{"word","reading" (Latin transliteration),"reason" (Hebrew)}], "beats": [{"type","asset","cue","caption"}]}.
+
+SCRIPT RULES
+- About ${tw} spoken words (±15%). Natural spoken Hebrew, plural second person (אתם). One idea per sentence. Open with a hook question.
+- Every claim must come from the product description or the screens. Never invent numbers, prices or features.
+- Niqqud ONLY on words with two plausible readings (imperative vs past, etc.). Always write the brand exactly as: ${b.tts}. List every pointed word in flagged_words.
+- Avoid: ${b.avoid || "nothing specific"}. Tone: ${b.tones.join(", ") || "warm"}.
+- End on a short brand line.
+
+BEAT RULES
+- 6 to 9 beats. First beat: type "broll", cue "", caption = the hook (≤5 words per line, max 2 lines joined by \\n).
+- Last beat: type "end", asset "endcard", cue "", caption "".
+- Middle beats: "cue" = the first word of the phrase the visual illustrates, copied EXACTLY from the script (with its prefix and niqqud), in script order, each later than the previous.
+- Screens (use each at most once; type by kind: screenshot→"screen", tall→"scroll" (needs ≥5 words), slide→"slide" with caption ""):
+${screens}
+- B-roll (type "broll"): library keys (free):
+${lib}
+${b.newShots > 0 ? `  or asset "new" (costs credits) at most ${b.newShots} time(s) in total.` : "  No new shots: use library keys only."}
+- Captions: plain Hebrew, no niqqud, ≤5 words per line, max 2 lines.
+
+PRODUCT: ${b.name}
+WHAT IT DOES: ${b.what}
+THE CLIENT ASKS: ${b.ask}
+CTA: ${b.cta}`;
+}
+function validOption(o) {
+  return o && typeof o.script === "string" && Array.isArray(o.beats) && o.beats.length >= 3 &&
+    o.beats.every(b => TYPE_NAMES[b.type] && typeof b.asset === "string");
+}
+$("#genBtn").onclick = async () => {
+  if (!sample) return;
+  ctl = new AbortController();
+  const btn = $("#genBtn"), st = $("#genStatus"), stop = $("#stopBtn");
+  btn.disabled = true; stop.hidden = false; st.className = "status"; st.textContent = "Claude חושב... (עד דקה)";
+  try {
+    const res = await sample.json(buildPrompt(), { signal: ctl.signal, cache: false, onText: () => { st.textContent = "Claude כותב..."; } });
+    const opts = (res?.options || []).filter(validOption).map(o => ({ ...o, beats: o.beats.map(b => ({ type: b.type, asset: b.asset, cue: String(b.cue || ""), caption: String(b.caption || "") })) }));
+    if (!opts.length) throw { code: "invalid_json" };
+    S.options = opts; S.pick = 0; save(); renderOpts(); renderScript(); refresh();
+    st.textContent = `התקבלו ${opts.length} גרסאות. בחרו אחת ותקנו חופשי.`;
+  } catch (e) {
+    st.className = "status err";
+    st.textContent = ({ cancelled: "נעצר.", not_granted: "הכתיבה עם Claude לא אושרה בעמוד הזה.", rate_limited: "יותר מדי בקשות. נסו שוב בעוד דקה.", invalid_json: "התשובה לא הגיעה בפורמט הנכון. נסו שוב.", refused: "Claude לא כתב לבקשה הזו. נסחו אותה אחרת." })[e?.code] || "משהו השתבש בדרך. נסו שוב.";
+    if (e?.code === "cancelled") st.className = "status";
+  } finally { btn.disabled = false; stop.hidden = true; }
+};
+$("#stopBtn").onclick = () => ctl?.abort();
+
+/* ---------- step 3: dry-run player ---------- */
+let TL = null, t = 0, playing = false, raf = 0, last = 0, shownBeat = -1;
+function screenFor(key) { return S.screens.find(s => s.key === key); }
+function renderBeat(i) {
+  const ph = $("#phone"), b = TL.beats[i]; shownBeat = i;
+  const layer = el("div", { className: "layer" });
+  const brand = S.brief.color;
+  if (b.type === "broll") {
+    const lbl = LIBRARY[b.asset] ? `ספרייה · ${LIBRARY[b.asset]}` : `שוט חדש · ${COST.shot[S.brief.res]} קרדיטים\n${b.prompt || "יתואר בהפקה"}`;
+    const bg = el("div", { className: "layer broll" }, el("div", { className: "lbl", textContent: lbl }));
+    bg.style.animationDuration = `${b.dur}s`;
+    layer.append(bg, el("div", { className: "scrim" }));
+    if (b.caption) layer.append(capNode(b.caption, "auto", "12%"));
+  } else if (b.type === "screen" || b.type === "scroll") {
+    layer.style.background = `linear-gradient(160deg, ${brand}, #0b3d31 55%, #081f19)`;
+    const s = screenFor(b.asset), dev = el("div", { className: "dev" });
+    if (images[b.asset]) {
+      const img = el("img", { src: images[b.asset], alt: s?.label || "" });
+      if (b.type === "scroll") {
+        const sc = el("div", { className: "sc" }, img); dev.append(sc);
+        requestAnimationFrame(() => { const travel = Math.max(0, sc.offsetHeight - dev.offsetHeight); sc.style.transition = `transform ${Math.max(0.3, b.dur - 0.9)}s cubic-bezier(.45,0,.55,1) .5s`; requestAnimationFrame(() => { sc.style.transform = `translateY(-${travel}px)`; }); });
+      } else dev.append(img);
+    } else {
+      const m = mock((s?.label || b.asset) + (b.type === "scroll" ? " · נגלל" : "")); dev.append(m);
+      if (b.type === "scroll") { m.style.transition = `transform ${Math.max(0.3, b.dur - 0.9)}s ease-in-out .5s`; requestAnimationFrame(() => requestAnimationFrame(() => { m.style.transform = "translateY(-18%)"; })); }
+    }
+    layer.append(dev);
+    if (b.caption) layer.append(capNode(b.caption, "4.5%", "auto"));
+  } else if (b.type === "slide") {
+    const s = screenFor(b.asset);
+    layer.append(images[b.asset] ? el("div", { className: "layer full" }, el("img", { src: images[b.asset], alt: s?.label || "" })) : Object.assign(mock(s?.label || b.asset), {}));
+  } else {
+    const c = el("div", { className: "layer endc" });
+    c.style.background = "#f8f5ee"; c.style.color = "#14201c";
+    const em = el("em", { textContent: "it" }); em.style.background = brand;
+    const wm = el("div", { className: "wm" }, (S.brief.name || "").replace(/\s*it$/i, ""), /it$/i.test(S.brief.name) ? em : null);
+    const bt = el("div", { className: "bt", textContent: "להתחיל עכשיו" }); bt.style.background = brand;
+    const ul = el("div", { className: "ul", textContent: S.brief.cta }); ul.style.color = brand;
+    c.append(wm, el("div", { className: "tt", textContent: S.brief.endTitle }), bt, ul);
+    layer.append(c);
+  }
+  ph.replaceChildren(layer);
+}
+function capNode(text, top, bottom) { const c = el("div", { className: "cap", textContent: text }); c.style.top = top; c.style.bottom = bottom; return c; }
+function renderBar() {
+  const bar = $("#bar"), head = $("#head");
+  bar.replaceChildren(...[...TL.beats].reverse().map((b, ri) => {
+    const s = el("div", { className: "seg", textContent: b.type === "end" ? "סיום" : fmt(b.start).slice(2) });
+    s.style.width = `${(b.dur / TL.total) * 100}%`; s.style.background = `var(--t-${b.type})`; s.title = `${TYPE_NAMES[b.type]} · ${fmt(b.start)}`;
+    return s;
+  }), head);
+  $("#legend").replaceChildren(...Object.entries(TYPE_NAMES).map(([k, v]) => { const d = el("span", { className: "typedot" }); d.style.background = `var(--t-${k})`; return el("span", {}, d, v); }));
+  $("#karaoke").replaceChildren(...TL.ws.flatMap((w, i) => [el("span", { textContent: w, className: "fut", id: `w${i}` }), " "]));
+}
+function seek(nt) {
+  t = Math.max(0, Math.min(TL.total, nt));
+  let i = 0; for (let j = 0; j < TL.beats.length; j++) if (TL.beats[j].start <= t + 1e-6) i = j;
+  if (i !== shownBeat) renderBeat(i);
+  $("#head").style.right = `${(t / TL.total) * 100}%`;
+  $("#tc").textContent = `${fmt(t)} / ${fmt(TL.total)}`;
+  let wi = -1; TL.wordTimes.forEach((wt, k) => { if (wt <= t) wi = k; });
+  TL.ws.forEach((_, k) => { const n = $(`#w${k}`); if (n) n.className = k < wi ? "past" : k === wi ? "now" : "fut"; });
+}
+function loop(now) { const dt = (now - last) / 1000; last = now; seek(t + dt); if (t >= TL.total) { pause(); return; } raf = requestAnimationFrame(loop); }
+function play() { if (t >= TL.total) { t = 0; shownBeat = -1; } playing = true; $("#playBtn").textContent = "❚❚"; $("#playBtn").setAttribute("aria-label", "השהה"); shownBeat = -1; seek(t); last = performance.now(); raf = requestAnimationFrame(loop); }
+function pause() { playing = false; cancelAnimationFrame(raf); $("#playBtn").textContent = "▶"; $("#playBtn").setAttribute("aria-label", "נגן"); }
+$("#playBtn").onclick = () => playing ? pause() : play();
+$("#bar").addEventListener("click", e => { const r = e.currentTarget.getBoundingClientRect(); shownBeat = -1; seek(((r.right - e.clientX) / r.width) * TL.total); });
+
+function renderChecks() {
+  const o = cur(), n = words(o.script).length, tw = targetWords(), out = [];
+  const add = (lvl, txt) => out.push([lvl, txt]);
+  const ratio = n / tw;
+  add(ratio >= 0.8 && ratio <= 1.2 ? "ok" : "warnx", `${n} מילים, יעד ${tw}. אורך משוער ${fmt(TL.total)} אחרי ×${S.brief.speed}.`);
+  const probs = TL.beats.filter(b => b.problem);
+  probs.length ? probs.forEach(b => add("badx", `${TYPE_NAMES[b.type]} "${b.asset}": ${b.problem}`)) : add("ok", "כל המעברים נופלים על מילה שקיימת בתסריט, לפי הסדר.");
+  TL.beats.forEach((b, i) => { if (i < TL.beats.length - 1 && !b.problem && b.dur < MIN_BEAT) add("badx", `קטע ${i} קצר מדי (${b.dur.toFixed(1)} שנ'). בדרך כלל זו מילת התחלה לא נכונה.`); if (b.type === "scroll" && b.dur < MIN_SCROLL / S.brief.speed) add("warnx", `הגלילה בקטע ${i} מהירה (${b.dur.toFixed(1)} שנ'). כדאי לתת לה משפט ארוך יותר.`); });
+  const used = new Set(o.beats.map(b => b.asset));
+  const unused = S.screens.filter(s => !used.has(s.key));
+  if (unused.length) add("warnx", `מסכים שלא בשימוש: ${unused.map(s => s.label).join(", ")}.`);
+  S.screens.forEach(s => { const bt = o.beats.find(b => b.asset === s.key); if (bt && bt.type !== KIND_TO_TYPE[s.kind]) add("warnx", `"${s.label}" מסומן כ${s.kind === "tall" ? "מסך ארוך" : s.kind === "slide" ? "שקף" : "מסך"} אבל מוצג כ${TYPE_NAMES[bt.type]}.`); });
+  const ns = newShots(o);
+  if (ns > S.brief.newShots) add("badx", `התסריט מבקש ${ns} שוטים חדשים, והתקציב שבחרתם מאפשר ${S.brief.newShots}.`);
+  const left = S.brief.balance - cost(o);
+  add(left >= 0 ? "ok" : "badx", left >= 0 ? `העלות ${money(cost(o))} קרדיטים. יישארו ${money(left)}.` : `חסרים ${money(-left)} קרדיטים.`);
+  if ((o.flagged_words || []).length) add("warnx", `לאשר הגייה: ${o.flagged_words.map(f => `${f.word} (${f.reading})`).join(", ")}.`);
+  add("ok", "רינדור, כיתובים, קצב והחלפת מסכים: 0 קרדיטים, אפשר לתקן כמה שרוצים.");
+  $("#checks").replaceChildren(...out.map(([lvl, txt]) => el("li", { className: lvl }, el("span", { className: "ic", textContent: lvl === "ok" ? "✓" : "!" }), el("span", { textContent: txt }))));
+}
+function renderCosts() {
+  const rows = [["רק שוטים מהספרייה", 0], ...[1, 2].flatMap(n => ["720p", "1080p"].map(r => [`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${r}`, n, r]))];
+  const ns = newShots(cur());
+  $("#costs tbody").replaceChildren(...rows.map(([label, n, r]) => {
+    const c = COST.voice + n * (r ? COST.shot[r] : 0), left = S.brief.balance - c;
+    const tr = el("tr", {}, el("td", { textContent: label }), el("td", { className: "n", textContent: money(c) }), el("td", { className: "n", textContent: left >= 0 ? money(left) : `חסרים ${money(-left)}` }));
+    if (n === ns && (!r || r === S.brief.res)) tr.className = "pick";
+    tr.tabIndex = 0;
+    const pickIt = () => { S.brief.newShots = n; if (r) { S.brief.res = r; $("#bRes").value = r; } save(); renderChips(); refresh(); };
+    tr.onclick = pickIt; tr.onkeydown = e => { if (e.key === "Enter") pickIt(); };
+    return tr;
+  }));
+}
+
+/* ---------- step 4 ---------- */
+function steps() {
+  const o = cur(), ns = newShots(o), v = voice();
+  return [
+    ["קריינות", `${v.name}, ${words(o.script).length} מילים`, COST.voice, 4],
+    ...(ns ? [[`שוט חדש${ns > 1 ? ` ×${ns}` : ""}`, `${S.brief.res}, 5 שנ'`, ns * COST.shot[S.brief.res], 9]] : []),
+    ["בדיקת הקריינות", "עברית, התאמה לתסריט, סנכרון מילים", 0, 3],
+    ["רינדור", `${o.beats.length} קטעים, ×${S.brief.speed}, 1080×1920`, 0, 6],
+    ["בדיקת איכות ומסירה", "פריימים ריקים, אורך, קישור לסרטון", 0, 2],
+  ];
+}
+function renderPipe(doneUpTo = -1, running = -1) {
+  $("#pipe").replaceChildren(...steps().map(([name, sub, c], i) => {
+    const li = el("li", { className: i <= doneUpTo ? "done" : i === running ? "run" : "" },
+      el("span", { className: "dot", textContent: i <= doneUpTo ? "✓" : "" }),
+      el("div", {}, el("div", { textContent: name }), el("div", { className: "hint", textContent: sub })),
+      el("span", { className: "c", textContent: c ? `${money(c)} קר'` : "0" }));
+    return li;
+  }));
+}
+$("#simBtn").onclick = async () => {
+  const st = steps(), btn = $("#simBtn"), s = $("#simStatus"); btn.disabled = true;
+  for (let i = 0; i < st.length; i++) { renderPipe(i - 1, i); s.textContent = `${st[i][0]}...`; await new Promise(r => setTimeout(r, st[i][3] * 180)); }
+  renderPipe(st.length - 1); btn.disabled = false;
+  s.textContent = `בהפקה אמיתית: כ-${Math.round(st.reduce((a, x) => a + x[3], 0) * 12 / 60)} דקות, ${money(cost(cur()))} קרדיטים. בדמו לא יצא אף קרדיט.`;
+};
+function bundle() {
+  const b = S.brief, o = cur(), v = voice();
+  let n = 0; const beats = o.beats.map(x => ({ type: x.type, asset: x.type === "broll" && !LIBRARY[x.asset] ? `new${++n}` : x.asset, cue: x.cue || "", caption: x.caption || "", sub: "" }));
+  return {
+    brief: { name: (b.name || "client").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-ad", business: b.what, cta: b.cta, tone: b.tones.join(", "), language: "he",
+      targetSeconds: b.len, speed: b.speed, voice: { id: v.id, name: v.name },
+      budget: { credits: b.balance, newBrollMax: b.newShots, resolution: b.res },
+      brand: { accent: b.color }, endCard: { title: b.endTitle, url: b.cta },
+      lexicon: { brand: b.name, tts: b.tts },
+      screens: S.screens.map(s => ({ key: s.key, kind: s.kind, desc: s.label, url: "<upload>" })),
+      notes: [b.ask, b.avoid && `Avoid: ${b.avoid}`].filter(Boolean).join(". ") },
+    plan: { script: o.script, flagged_words: o.flagged_words || [], beats,
+      new_broll: beats.filter(x => x.asset.startsWith("new")).map(x => ({ key: x.asset, prompt: "<to write>", why: "" })), notes: "" },
+  };
+}
+$("#copyBtn").onclick = async () => {
+  const txt = JSON.stringify(bundle(), null, 2), s = $("#copyStatus");
+  try { await navigator.clipboard.writeText(txt); s.textContent = "הועתק."; }
+  catch { const r = document.createRange(); r.selectNodeContents($("#json")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); s.textContent = "סומן. העתיקו עם Ctrl+C."; }
+};
+
+/* ---------- navigation + refresh ---------- */
+function go(step) {
+  S.step = step; pause();
+  $$(".panel").forEach(p => p.classList.toggle("on", p.id === `p-${step}`));
+  $$(".step").forEach(b => b.setAttribute("aria-current", b.dataset.go === step ? "step" : "false"));
+  if (step === "preview") { t = 0; shownBeat = -1; renderBar(); seek(0); }
+  if (step === "produce") renderPipe();
+  window.scrollTo({ top: 0 });
+}
+$$("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
+function refresh() {
+  TL = timeline(cur());
+  renderWallet(); renderChecks(); renderCosts();
+  $("#json").textContent = JSON.stringify(bundle(), null, 2);
+  if (S.step === "preview") { renderBar(); shownBeat = -1; seek(Math.min(t, TL.total)); }
+  if (S.step === "produce") renderPipe();
+}
+renderChips(); renderShots(); renderOpts(); renderScript(); refresh();
+})();
+</script>
