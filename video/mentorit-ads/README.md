@@ -52,3 +52,13 @@ Alexey versions, re-rendered:
 Grady versions with the name fix (the chosen voice):
 - ad-1, 19.4s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/56b748a6-b1f3-4184-8473-6bafd4add71a.mp4
 - ad-2, 22.2s: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/44e916d6-fbe5-41a6-ae39-69a0e8519cc2.mp4
+
+## Captions now quote the voice-over (0 credits)
+
+Client feedback: "עם מי שכבר היה שם" on screen while the voice says "עם מישהו שכבר טעה בשבילכם"
+reads as a mistake. Every caption now repeats the spoken words (trimmed only), and captions
+shrink to fit instead of wrapping. Rule added to the generator, the studio and the skill.
+
+Grady, final:
+- ad-1: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2186e2b1-00cf-4051-b66e-9ed0402ef69c.mp4
+- ad-2: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/5a21bc72-3411-4a0f-a24b-23642e4d57a7.mp4

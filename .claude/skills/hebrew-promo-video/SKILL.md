@@ -41,6 +41,8 @@ Before any VO generation:
 3. The user confirms the readings. Whisper can't check vowels.
 4. Captions use normal unpointed spelling and the brand's own spelling. Niqqud goes only into
    `voice.script`.
+   A caption **quotes** the words spoken during its beat (verbatim, only trimmed); never a
+   paraphrase. Before rendering, read each caption against the script line it sits on.
 
 Confirmed pronunciations live in `video/lexicon.json`. `brands` are applied to scripts
 automatically by the generator. `words` are context-dependent guidance (כתבו is also a valid past

@@ -61,6 +61,14 @@ const HTML = `<html dir="${spec.dir === "ltr" ? "ltr" : "rtl"}"><head>
           s.textContent = sub;
           c.appendChild(s);
         }
+        // Shrink-to-fit: long lines never wrap or get clipped, they get smaller (floor 56px).
+        main.style.whiteSpace = "nowrap";
+        let size = 84;
+        main.style.fontSize = size + "px";
+        while (size > 56 && (main.scrollWidth > 980 || c.scrollHeight > 300)) {
+          size -= 2;
+          main.style.fontSize = size + "px";
+        }
       }, { text: item.text, sub: item.sub ?? "" });
       await page.locator("#c").screenshot({ path: path.join(outDir, `${item.name}.png`), omitBackground: true });
     }

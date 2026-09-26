@@ -16,6 +16,10 @@ the words, the order of visuals and the captions, not the timing.
 - **Captions** are short on-screen text (≤ 5 words per line, ≤ 2 lines, use `\n` for the line
   break), in normal spelling **without niqqud**, with the brand written as the brand writes it.
   `sub` is an optional smaller second line (use "" when not needed).
+- **A caption quotes the voice-over.** It repeats the words spoken while it is on screen
+  (trimmed, never reworded): the viewer reads and hears the same thing. A paraphrase such as
+  "someone who has been there" over the spoken "someone who already made the mistakes for you"
+  reads as an error. Pick the beat's key phrase, verbatim.
 
 ## Voice-over language: {{LANGUAGE}}
 
