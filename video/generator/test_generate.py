@@ -50,6 +50,20 @@ class ReproducesShippedAd(Base):
         self.assertEqual(est["starts"], sorted(est["starts"]))
 
 
+class BudgetOptions(Base):
+    def test_shows_cost_and_remaining_balance_per_choice(self):
+        plan = g.finalize(self.plan, self.lexicon)
+        opts = g.budget_options(plan, self.brief, self.pricing)
+        by = {o["label"]: o for o in opts}
+        self.assertEqual(by["רק מהספרייה"]["cost"], 1)
+        self.assertEqual(by["רק מהספרייה"]["left"], 69)            # brief balance 70
+        self.assertTrue(by["רק מהספרייה"]["chosen"])
+        self.assertEqual(by["2 שוטים חדשים (720p)"]["cost"], 71)
+        self.assertEqual(by["2 שוטים חדשים (720p)"]["left"], -1)   # shown as "missing 1"
+        self.assertEqual(by["1 שוט חדש (1080p)"]["cost"], 61)
+        self.assertEqual(sum(o["chosen"] for o in opts), 1)
+
+
 class Brands(Base):
     def test_aliases_prefixes_punctuation(self):
         cases = {

@@ -303,6 +303,21 @@ def estimate(plan: dict, brief: dict, pricing: dict) -> dict:
             "within_budget": None if budget is None else cost <= budget}
 
 
+def budget_options(plan: dict, brief: dict, pricing: dict) -> list[dict]:
+    """What each production choice costs and what it leaves of the balance (budget.credits)."""
+    balance, voice, chosen = brief["budget"]["credits"], pricing["voiceover_take"], len(plan["new_broll"])
+    options = []
+    for res in sorted(pricing["broll_5s"], key=pricing["broll_5s"].get):
+        for n in range(brief["budget"]["newBrollMax"] + 1):
+            if n == 0 and options:
+                continue  # "library only" is the same at every resolution
+            cost = voice + n * pricing["broll_5s"][res]
+            options.append({"label": "רק מהספרייה" if n == 0 else f"{n} שוט{'ים' if n > 1 else ''} חדש{'ים' if n > 1 else ''} ({res})",
+                            "cost": cost, "left": None if balance is None else round(balance - cost, 2),
+                            "chosen": n == chosen and (n == 0 or res == brief["budget"]["resolution"])})
+    return options
+
+
 def build_spec(plan: dict, brief: dict, library: dict) -> dict:
     screens = {s["key"]: s["url"] for s in brief["screens"]}
     used = [b["asset"] for b in plan["beats"]]
@@ -344,7 +359,7 @@ def build_spec(plan: dict, brief: dict, library: dict) -> dict:
 # ---------------------------------------------------------------- review sheet
 
 
-def review_sheet(plan: dict, brief: dict, est: dict, library: dict) -> str:
+def review_sheet(plan: dict, brief: dict, est: dict, library: dict, options: list[dict]) -> str:
     screens = {s["key"]: s for s in brief["screens"]}
     budget = brief["budget"]["credits"]
     verdict = "" if budget is None else (" ✅ בתוך התקציב" if est["within_budget"] else f" ⚠️ מעל התקציב ({budget})")
@@ -376,6 +391,13 @@ def review_sheet(plan: dict, brief: dict, est: dict, library: dict) -> str:
                      f"{est['clip_credits']} קרדיטים): {n['why']}\n"
                      f"  - פרומפט: `{n['prompt']}`")
     lines.append(f"- קריינות: ~{est['voice_credits']} קרדיט")
+    balance = brief["budget"]["credits"]
+    lines += ["", f"### מה כל בחירה עולה" + (f" (יתרה: {balance} קרדיטים)" if balance is not None else ""), "",
+              "| אפשרות | עלות | נשאר |", "|---|---|---|"]
+    for o in options:
+        left = "–" if o["left"] is None else (f"{o['left']}" if o["left"] >= 0 else f"⚠️ חסרים {-o['left']}")
+        mark = " ← **התוכנית הזו**" if o["chosen"] else ""
+        lines.append(f"| {o['label']}{mark} | {o['cost']} | {left} |")
     if plan["notes"]:
         lines += ["", "## 4. הערות", "", plan["notes"]]
     lines += ["", "## לאישור", "",
@@ -441,7 +463,8 @@ def main() -> int:
     spec_path.write_text(json.dumps(build_spec(plan, brief, library), ensure_ascii=False, indent=2) + "\n",
                          encoding="utf-8")
     review_path = args.review_dir / f"{brief['name']}.review.md"
-    review_path.write_text(review_sheet(plan, brief, est, library), encoding="utf-8")
+    review_path.write_text(review_sheet(plan, brief, est, library, budget_options(plan, brief, pricing)),
+                           encoding="utf-8")
     print(f"spec → {spec_path}\nreview → {review_path}\n"
           f"~{est['seconds']}s, {est['words']} words, ~{est['credits']} credits "
           f"({len(plan['new_broll'])} new clip(s) at {est['resolution']})")
