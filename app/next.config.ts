@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Native binaries resolve paths relative to their packages; keep them out of the bundle.
+  serverExternalPackages: ["ffmpeg-static", "sharp"],
   images: {
     // Higgsfield CDN hosts the brand mascot and generated media.
     remotePatterns: [

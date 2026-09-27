@@ -1,0 +1,223 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  approveScenes,
+  generateScenes,
+  quoteScenes,
+  refreshScenes,
+  resetScene,
+  updateScenePrompt,
+} from "@/app/app/projects/[id]/scene-actions";
+import { formatIls, formatUsd } from "@/lib/money";
+
+export type SceneView = {
+  id: string;
+  position: number;
+  caption: string;
+  prompt: string;
+  seconds: number;
+  status: "draft" | "generating" | "ready" | "failed";
+  demo: boolean;
+  costUsd: number;
+  error: string | null;
+};
+
+const STATUS = {
+  draft: { label: "ממתינה ליצירה", className: "bg-well text-ink-2" },
+  generating: { label: "נוצרת עכשיו…", className: "bg-tint-3 text-ink" },
+  ready: { label: "מוכנה", className: "bg-good-soft text-good" },
+  failed: { label: "נכשלה", className: "bg-bad-soft text-bad" },
+} as const;
+
+function SceneCard({ item, onError }: { item: SceneView; onError: (message: string) => void }) {
+  const router = useRouter();
+  const [prompt, setPrompt] = useState(item.prompt);
+  const [pending, startTransition] = useTransition();
+  const status = STATUS[item.status];
+  const dirty = prompt.trim() !== item.prompt;
+
+  const run = (action: () => Promise<{ error?: string }>) =>
+    startTransition(async () => {
+      const result = await action();
+      if (result.error) onError(result.error);
+      else router.refresh();
+    });
+
+  return (
+    <li className="clay flex min-w-0 flex-col gap-3 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-round text-lg">סצנה {item.position + 1}</span>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
+          {item.demo && item.status === "ready" ? "דוגמה" : status.label}
+        </span>
+      </div>
+      <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-well">
+        {item.status === "ready" ? (
+          <video src={`/api/scenes/${item.id}/video`} className="size-full object-cover" muted loop playsInline autoPlay preload="metadata" />
+        ) : (
+          <div className={`grid size-full place-items-center text-sm text-ink-3 ${item.status === "generating" ? "animate-pulse" : ""}`}>
+            {item.status === "generating" ? "Higgsfield יוצר את הסצנה…" : `${item.seconds} שניות`}
+          </div>
+        )}
+        {/* Caption preview, as it will appear in the video. */}
+        <p className="absolute inset-x-3 bottom-4 rounded-2xl bg-ink/75 px-3 py-2 text-center text-sm font-bold text-white">{item.caption}</p>
+      </div>
+      <label className="flex flex-col gap-1.5 text-xs font-medium text-ink-2">
+        מה רואים (באנגלית, בלי טקסט על המסך)
+        <textarea
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          dir="ltr"
+          rows={3}
+          disabled={item.status === "generating"}
+          className="field text-start text-sm leading-6"
+        />
+      </label>
+      {item.error && <p className="text-xs text-bad">{item.error}</p>}
+      <div className="flex flex-wrap gap-2">
+        {dirty && (
+          <button type="button" className="btn px-4 py-2 text-sm" disabled={pending} onClick={() => run(() => updateScenePrompt(item.id, prompt))}>
+            שמירת התיאור
+          </button>
+        )}
+        {item.status === "ready" && !dirty && (
+          <button type="button" className="btn btn-ghost px-4 py-2 text-sm" disabled={pending} onClick={() => run(() => resetScene(item.id))}>
+            ליצור מחדש
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+export function SceneStep({ projectId, ready, scenes, approved }: { projectId: string; ready: boolean; scenes: SceneView[]; approved: boolean }) {
+  const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [quoting, startQuote] = useTransition();
+  const [generating, startGenerate] = useTransition();
+  const [approving, startApprove] = useTransition();
+  const waiting = scenes.some((item) => item.status === "generating");
+  const todo = scenes.filter((item) => item.status === "draft" || item.status === "failed").length;
+  const allReady = scenes.length > 0 && scenes.every((item) => item.status === "ready");
+  const spent = scenes.reduce((sum, item) => sum + (item.status === "ready" ? item.costUsd : 0), 0);
+
+  // Real clips take a minute or two; poll while any is in progress.
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(async () => {
+      const { generating: left } = await refreshScenes(projectId);
+      if (left === 0) router.refresh();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [waiting, projectId, router]);
+
+  const askPrice = () =>
+    startQuote(async () => {
+      setError(null);
+      const result = await quoteScenes(projectId);
+      if ("error" in result) return setError(result.error);
+      setQuote(result);
+      dialogRef.current?.showModal();
+    });
+
+  const generate = () => {
+    dialogRef.current?.close();
+    startGenerate(async () => {
+      const result = await generateScenes(projectId);
+      if (result.error) setError(result.error);
+      router.refresh();
+    });
+  };
+
+  return (
+    <section className="flex flex-col gap-4" aria-labelledby="scenes-title">
+      <div className="clay flex flex-col gap-3 p-6 md:p-8">
+        <h2 id="scenes-title" className="text-2xl">
+          4 · סצנות
+        </h2>
+        <p className="text-ink-2">
+          {ready
+            ? "סצנה לכל חלק בקריינות. הכיתוב מצוטט מהקריינות מילה במילה, והסצנות עצמן בלי שום טקסט — את הכיתוב בעברית אנחנו מוסיפים."
+            : "קודם מאשרים הקראה, ואז יוצרים סצנות."}
+        </p>
+        {ready && (
+          <div className="flex flex-wrap items-center gap-3">
+            {todo > 0 && (
+              <button type="button" className="btn btn-primary" disabled={quoting || generating || waiting} onClick={askPrice}>
+                {generating ? "שולח…" : quoting ? "מחשב מחיר…" : `יצירת ${todo} סצנות`}
+              </button>
+            )}
+            {allReady && !approved && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={approving}
+                onClick={() =>
+                  startApprove(async () => {
+                    const result = await approveScenes(projectId);
+                    if (result.error) setError(result.error);
+                    else router.refresh();
+                  })
+                }
+              >
+                {approving ? "שומר…" : "אישור הסצנות — לסרטון"}
+              </button>
+            )}
+            {waiting && <span className="text-sm text-ink-2">הסצנות נוצרות ב-Higgsfield (בדרך כלל דקה-שתיים). אפשר להישאר בעמוד.</span>}
+            {spent > 0 && <span className="text-sm text-ink-3">עלות הסצנות עד עכשיו: {formatIls(spent)}</span>}
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="rounded-2xl bg-bad-soft px-4 py-3 text-sm text-bad">
+            {error}
+          </p>
+        )}
+      </div>
+
+      <dialog ref={dialogRef} className="clay m-auto w-[min(28rem,calc(100vw-2rem))] p-6 backdrop:bg-ink/30" aria-labelledby="scene-price-title">
+        {quote && (
+          <div className="flex flex-col gap-4">
+            <h3 id="scene-price-title" className="text-xl">
+              לפני שיוצרים
+            </h3>
+            {quote.demo ? (
+              <p className="text-ink-2">
+                <b>מצב דמו — בחינם.</b> עוד לא חובר מפתח Higgsfield, אז כל סצנה תהיה רקע צבעוני לדוגמה, כדי לראות את כל התהליך עד
+                הסרטון.
+              </p>
+            ) : (
+              <p className="text-ink-2">
+                {quote.count} סצנות ב-Seedance. העלות <b>{formatIls(quote.usd)}</b>{" "}
+                <span className="text-ink-3" dir="ltr">
+                  ({formatUsd(quote.usd)})
+                </span>
+                . סצנה שנכשלת לא מחויבת.
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button type="button" className="btn btn-primary" onClick={generate}>
+                {quote.demo ? "צרו סצנות לדוגמה" : "צרו"}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
+
+      {ready && scenes.length > 0 && (
+        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="סצנות">
+          {scenes.map((item) => (
+            // Keyed by prompt so a saved description resets the local draft.
+            <SceneCard key={`${item.id}:${item.prompt}`} item={item} onError={setError} />
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}

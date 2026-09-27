@@ -7,6 +7,7 @@ import { db } from "@/db/client";
 import { project, voiceTake } from "@/db/schema";
 import { approvedScript, getOwnedProject } from "@/lib/projects.server";
 import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
+import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { requireUser } from "@/lib/session";
 import { deleteMedia, putMedia } from "@/lib/storage.server";
 import { isVoiceDemoMode, synthesize, VoiceError } from "@/lib/voice/tts.server";
@@ -139,6 +140,7 @@ export async function approveTake(takeId: string): Promise<{ error?: string }> {
       .set({ status: row.status === "voice" ? "scenes" : row.status })
       .where(eq(project.id, row.projectId)),
   ]);
+  await ensureScenes(row.projectId);
   revalidatePath(`/app/projects/${row.projectId}`);
   return {};
 }

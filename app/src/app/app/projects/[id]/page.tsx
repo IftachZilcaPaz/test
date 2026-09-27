@@ -3,9 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BriefForm } from "@/components/brief-form";
 import { ScriptStep } from "@/components/script-step";
+import { RenderStep } from "@/components/render-step";
+import { SceneStep } from "@/components/scene-step";
 import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
-import { getOwnedProject, listDrafts, listTakes } from "@/lib/projects.server";
+import { getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
+import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { requireUser } from "@/lib/session";
 import { saveBrief } from "./actions";
 
@@ -17,6 +20,10 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
   const [drafts, takes] = await Promise.all([listDrafts(item.id), listTakes(item.id)]);
+  const takeApproved = takes.some((take) => take.approved);
+  // Ownership was verified above; idempotent for projects that reached this step earlier.
+  if (takeApproved) await ensureScenes(item.id);
+  const [scenes, lastRender] = await Promise.all([listScenes(item.id), latestRender(item.id)]);
   const scriptApproved = drafts.some((draft) => draft.chosenScript);
   const current = STEPS.findIndex((step) => step.key === item.status);
 
@@ -88,6 +95,37 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           costUsd: take.costUsd,
           approved: take.approved,
         }))}
+      />
+
+      <SceneStep
+        projectId={item.id}
+        ready={takeApproved}
+        approved={item.status === "render" || item.status === "done"}
+        scenes={scenes.map((entry) => ({
+          id: entry.id,
+          position: entry.position,
+          caption: entry.caption,
+          prompt: entry.prompt,
+          seconds: entry.seconds,
+          status: entry.status,
+          demo: entry.demo,
+          costUsd: entry.costUsd,
+          error: entry.error,
+        }))}
+      />
+
+      <RenderStep
+        projectId={item.id}
+        ready={item.status === "render" || item.status === "done"}
+        latest={
+          lastRender && {
+            id: lastRender.id,
+            status: lastRender.status,
+            durationSeconds: lastRender.durationSeconds,
+            checks: lastRender.checks,
+            error: lastRender.error,
+          }
+        }
       />
     </div>
   );
