@@ -107,3 +107,48 @@ class Aligner:
 
     def cue_time(self, cue: str) -> float:
         return self.time_of_token(self._cues.find(cue))
+
+
+_PREFIXES = "והבלמשכ"
+
+
+def _spoken(word: str, window: set[str]) -> bool:
+    """A caption word counts as spoken if it appears in the window, allowing a dropped prefix (ו/ה/ב/ל/מ/ש/כ)."""
+    if word in window:
+        return True
+    return any(w.endswith(word) and 0 < len(w) - len(word) <= 2 and all(c in _PREFIXES for c in w[:len(w) - len(word)])
+               for w in window)
+
+
+def caption_mismatches(script: str, beats: list[dict], slack: int = 2) -> list[tuple[int, list[str]]]:
+    """Beats whose caption contains words not spoken while the beat is on screen.
+
+    Captions must quote the voice-over (trimmed, never reworded). The window of a beat runs from
+    its cue to the next beat's cue (the first beat starts at word 0), widened by `slack` words on
+    each side to absorb the lead-in. Beats without a cue (the end card) and without a caption are
+    skipped. Returns [(beat index, [missing words])].
+    """
+    tokens = tokenize(script)
+    cursor = CueCursor(tokens)
+    starts: list[int | None] = []
+    for i, b in enumerate(beats):
+        if i == 0:
+            starts.append(0)
+        elif b.get("cue"):
+            try:
+                starts.append(cursor.find(b["cue"]))
+            except ValueError:
+                starts.append(None)
+        else:
+            starts.append(None)
+    out = []
+    for i, b in enumerate(beats):
+        cap = (b.get("caption") or "") + " " + (b.get("sub") or "")
+        if not cap.strip() or starts[i] is None:
+            continue
+        nxt = next((s for s in starts[i + 1:] if s is not None), len(tokens))
+        window = set(tokens[max(0, starts[i] - slack):min(len(tokens), nxt + slack)])
+        missing = [w for w in tokenize(cap) if not _spoken(w, window)]
+        if missing:
+            out.append((i, missing))
+    return out

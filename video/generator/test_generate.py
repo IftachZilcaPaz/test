@@ -45,7 +45,7 @@ class ReproducesShippedAd(Base):
 
     def test_estimate_reuse_costs_only_the_voice(self):
         est = g.estimate(g.finalize(self.plan, self.lexicon), self.brief, self.pricing)
-        self.assertEqual(est["credits"], 1)
+        self.assertEqual(est["credits"], 0.83)
         self.assertTrue(est["within_budget"])
         self.assertTrue(20 < est["seconds"] < 30)
         self.assertEqual(len(est["starts"]), len(self.plan["beats"]))
@@ -57,12 +57,12 @@ class BudgetOptions(Base):
         plan = g.finalize(self.plan, self.lexicon)
         opts = g.budget_options(plan, self.brief, self.pricing)
         by = {o["label"]: o for o in opts}
-        self.assertEqual(by["רק מהספרייה"]["cost"], 1)
-        self.assertEqual(by["רק מהספרייה"]["left"], 69)            # brief balance 70
+        self.assertEqual(by["רק מהספרייה"]["cost"], 0.83)
+        self.assertEqual(by["רק מהספרייה"]["left"], 69.17)         # brief balance 70
         self.assertTrue(by["רק מהספרייה"]["chosen"])
-        self.assertEqual(by["2 שוטים חדשים (720p)"]["cost"], 71)
-        self.assertEqual(by["2 שוטים חדשים (720p)"]["left"], -1)   # shown as "missing 1"
-        self.assertEqual(by["1 שוט חדש (1080p)"]["cost"], 61)
+        self.assertEqual(by["2 שוטים חדשים (720p)"]["cost"], 70.83)
+        self.assertEqual(by["2 שוטים חדשים (720p)"]["left"], -0.83)  # shown as "missing 0.83"
+        self.assertEqual(by["1 שוט חדש (1080p)"]["cost"], 60.83)
         self.assertEqual(sum(o["chosen"] for o in opts), 1)
 
 
@@ -93,6 +93,12 @@ class Brands(Base):
         for src, want in cases.items():
             with self.subTest(src=src):
                 self.assertEqual(g.apply_brands(src, self.lexicon), want)
+
+    def test_client_pointed_words_are_applied(self):
+        brief = dict(self.brief, lexicon=[{"plain": "תראו", "tts": "תַּרְאוּ"}])
+        lex = g.with_client_words(self.lexicon, brief)
+        self.assertEqual(g.apply_brands("בואו תראו להם", lex), "בואו תַּרְאוּ להם")
+        self.assertEqual(g.apply_brands("ותראו", lex), "ותַּרְאוּ")
 
     def test_captions_never_carry_niqqud(self):
         plan = copy.deepcopy(self.plan)
@@ -126,7 +132,7 @@ class Validation(Base):
                               "no readable screens", "why": "matches the Thailand list"}]
         self.assertEqual(self.errors(plan), [])
         plan = g.finalize(plan, self.lexicon)
-        self.assertEqual(g.estimate(plan, self.brief, self.pricing)["credits"], 36)
+        self.assertEqual(g.estimate(plan, self.brief, self.pricing)["credits"], 35.83)
         spec = g.build_spec(plan, self.brief, self.library)
         self.assertEqual(spec["assets"]["bangkok"], "")
         self.assertEqual(spec["generate"]["broll"]["bangkok"]["resolution"], "720p")
@@ -143,7 +149,7 @@ class TallScreensAndEndCard(Base):
 
     def test_plan_is_valid_and_costs_one_clip(self):
         self.assertEqual(g.validate_plan(self.plan, self.brief, self.library, self.pricing), [])
-        self.assertEqual(g.estimate(self.plan, self.brief, self.pricing)["credits"], 36)
+        self.assertEqual(g.estimate(self.plan, self.brief, self.pricing)["credits"], 35.83)
 
     def test_spec_carries_scroll_region_and_card(self):
         spec = g.build_spec(self.plan, self.brief, self.library)
@@ -164,7 +170,7 @@ class TallScreensAndEndCard(Base):
         path = Path(tempfile.mktemp(suffix=".json"))
         path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
         self.assertEqual(render.load_spec(path)["beats"][-1]["card"]["title"], self.brief["endCard"]["title"])
-        spec["beats"][4]["cut"] = [[1048, 896]]
+        next(b for b in spec["beats"] if b["type"] == "scroll")["cut"] = [[1048, 896]]
         spec["beats"][-1]["card"] = {"title": "x"}
         path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
         with self.assertRaises(render.SpecError) as ctx:
@@ -172,9 +178,15 @@ class TallScreensAndEndCard(Base):
         self.assertIn("cut band", str(ctx.exception))
         self.assertIn("card needs ['url']", str(ctx.exception))
 
+    def test_captions_must_quote_the_voice_over(self):
+        plan = copy.deepcopy(self.plan)
+        plan["beats"][1]["caption"] = "או שעה אחת\nעם מי שכבר היה שם"      # the paraphrase the client caught
+        errs = g.validate_plan(plan, self.brief, self.library, self.pricing)
+        self.assertTrue(any("caption must quote" in e and "היה" in e for e in errs), errs)
+
     def test_tall_screen_must_scroll(self):
         plan = copy.deepcopy(self.plan)
-        plan["beats"][4]["type"] = "screen"
+        next(b for b in plan["beats"] if b["type"] == "scroll")["type"] = "screen"
         self.assertTrue(g.validate_plan(plan, self.brief, self.library, self.pricing))
 
     def test_brief_takes_cta_screen_or_end_card_not_both(self):

@@ -1,6 +1,15 @@
 {
   "_about": "Higgsfield credits, measured from the account transaction history (2026-09-25); words_per_second measured on the two Journee ElevenLabs takes (1.78 and 1.91). Update when prices change.",
-  "broll_5s": { "720p": 35, "1080p": 60 },
-  "voiceover_take": 1,
-  "words_per_second": 1.85
+  "broll_5s": {
+    "720p": 35,
+    "1080p": 60
+  },
+  "voiceover_take": 0.83,
+  "words_per_second": 1.85,
+  "voice_wps": {
+    "_about": "Measured Hebrew speech rate per ElevenLabs preset (words/second, before speed-up). Daisy: 1.85 on Journee, 2.05 on mentor it; Alexey 2.19-2.23; Grady 1.80-1.91.",
+    "032386ec-491b-5bdc-81ac-49e9a6a2c89d": 1.95,
+    "7c2133e5-68ab-511f-9aed-9a67664382b1": 2.2,
+    "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678": 1.85
+  }
 }

@@ -62,3 +62,7 @@ shrink to fit instead of wrapping. Rule added to the generator, the studio and t
 Grady, final:
 - ad-1: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/2186e2b1-00cf-4051-b66e-9ed0402ef69c.mp4
 - ad-2: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/5a21bc72-3411-4a0f-a24b-23642e4d57a7.mp4
+
+Contact sheets (one frame per beat) for the final Grady versions:
+- ad-1: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/6e0c6078-87be-4e29-abc2-a749dd5c64a4.png
+- ad-2: https://d2ol7oe51mr4n9.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/e190a60b-2997-4870-9af4-a9c8c28ef149.png

@@ -179,6 +179,19 @@ input[type=color]{width:44px;height:38px;border:1px solid var(--line);border-rad
 .pipe li.done .dot{background:var(--money);border-color:var(--money);color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
 .pipe .c{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+/* niqqud pad + pronunciation dictionary */
+.pad{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.pad button{min-width:40px;height:36px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;cursor:pointer;font-size:20px;line-height:1;display:grid;place-items:center}
+.pad button span{font-family:'Frank Ruhl Libre','David',serif;font-size:26px;line-height:1}
+.pad button small{font-size:9px;color:var(--ink-3);font-family:var(--body);margin-top:1px}
+.pad button:hover{border-color:var(--accent)}
+.lex{display:grid;gap:8px;margin-top:10px}
+.lexrow{display:grid;grid-template-columns:1fr 1fr 34px;gap:8px;align-items:center}
+.lexrow input{font-size:17px}
+.lexrow button{height:34px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;cursor:pointer}
+.said{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px dashed var(--line-strong);font-size:16px;line-height:1.8}
+.said mark{background:var(--warn-soft);color:var(--ink);border-radius:4px;padding:0 2px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin-top:10px}
 /* cost tags + change ledger */
 .ctag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;padding:1px 7px;border-radius:999px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
 .ctag.free{background:var(--money-soft);color:var(--money)}
@@ -240,6 +253,13 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
       </div>
       <div>
         <div class="card">
+          <h2>הגייה <span class="ctag free">0</span></h2>
+          <p class="lede">יודעים לנקד? נקדו כאן מילים שחייבות להישמע נכון: שם העסק, שמות אנשים, מילים באנגלית ופעלים בציווי (כִּתְבוּ, הִצְטָרְפוּ). כל הופעה שלהן בתסריט תוחלף בגרסה המנוקדת לפני שהיא נשלחת לקריין. לא צריך לנקד מילים רגילות.</p>
+          <div class="lex" id="lex"></div>
+          <div class="row" style="margin-top:8px"><button class="btn" type="button" id="lexAdd">+ מילה</button><span class="hint">הכפתורים מוסיפים ניקוד במקום שבו עומד הסמן</span></div>
+          <div class="pad" data-pad></div>
+        </div>
+        <div class="card">
           <h2>סגנון</h2>
           <div class="fields" style="margin-top:12px">
             <div class="f full"><label>קול <span class="ctag paid">החלפה = קריינות חדשה ~0.83</span></label><div class="chips" id="voiceChips"></div></div>
@@ -279,7 +299,10 @@ pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:
           <h2>התסריט שנבחר</h2>
           <p class="lede">זה הטקסט שיישלח לקריין. ניקוד רק במילים שעלולות להיקרא לא נכון.</p>
           <div class="f"><label for="scriptBox">קריינות <span class="ctag paid">כל שינוי בטקסט = קריינות חדשה ~0.83</span></label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="mono"></small></div>
+          <div class="pad" data-pad></div>
           <div id="flags" class="row" style="margin-top:10px"></div>
+          <div class="f" style="margin-top:12px"><label>מה הקריין יקבל בפועל (מסומן: מילים מנוקדות)</label><div class="said" id="said"></div></div>
+          <label class="chk"><input type="checkbox" id="sampleChk"> <span>לפני הקריינות המלאה, להשמיע לי רק את המילים המנוקדות כדי לאשר באוזן <span class="ctag paid">~0.1 (הערכה)</span></span></label>
         </div>
         <div class="card">
           <h2>מה רואים ומתי <span class="ctag free">מסכים, כיתובים, סדר: 0</span></h2>
@@ -372,11 +395,11 @@ const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.crea
 
 /* ---------- constants measured in production ---------- */
 const WPS = 1.85, LEAD = 0.3, END_HOLD = 3.4, MIN_BEAT = 0.5, MIN_SCROLL = 2.5;
-const COST = { voice: 0.83, shot: { "720p": 35, "1080p": 60 } };
+const COST = { voice: 0.83, sample: 0.1, shot: { "720p": 35, "1080p": 60 } };  // sample: estimate, ~0.0033/char
 const VOICES = [
-  { id: "032386ec-491b-5bdc-81ac-49e9a6a2c89d", name: "Daisy", note: "אישה", pace: 1.0 },
-  { id: "7c2133e5-68ab-511f-9aed-9a67664382b1", name: "Alexey", note: "גבר", pace: 1.05 },
-  { id: "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678", name: "Grady", note: "גבר, איטי", pace: 0.9 },
+  { id: "032386ec-491b-5bdc-81ac-49e9a6a2c89d", name: "Daisy", note: "אישה", wps: 1.95 },   // measured words/second
+  { id: "7c2133e5-68ab-511f-9aed-9a67664382b1", name: "Alexey", note: "גבר, מהיר", wps: 2.2 },
+  { id: "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678", name: "Grady", note: "גבר, רגוע", wps: 1.85 },
 ];
 const TONES = ["חם", "בטוח", "אנרגטי", "הומוריסטי", "רציני"];
 const LIBRARY = {
@@ -397,6 +420,7 @@ const S = {
     cta: "mentorit.me", avoid: "לא להזכיר כמה שאלות יש בשאלון",
     voice: VOICES[1].id, tones: ["חם", "בטוח"], len: 20, speed: 1.25, color: "#0f6e57",
     endTitle: "קיצור הדרך\nשלכם", balance: 29.98, res: "720p", newShots: 0,
+    lexicon: [{ plain: "mentor it", tts: "מֶנְטוֹר אִיט" }], sample: true,
   },
   screens: [
     { key: "home", kind: "screenshot", label: "מסך הבית" },
@@ -438,7 +462,7 @@ const images = {};   // screen key -> object URL (never stored)
 S.baselines = {};    // option index -> snapshot of the last produced version
 
 /* ---------- storage (convenience only) ---------- */
-const STORE = "promo-studio-draft-v2";
+const STORE = "promo-studio-draft-v3";
 try {
   const saved = JSON.parse(localStorage.getItem(STORE) || "null");
   if (saved && saved.brief) { Object.assign(S.brief, saved.brief); if (saved.options?.length) { S.options = saved.options; S.pick = saved.pick ?? 0; } if (saved.screens?.length) S.screens = saved.screens; if (saved.baselines) S.baselines = saved.baselines; }
@@ -455,9 +479,44 @@ const voice = () => VOICES.find(v => v.id === S.brief.voice) || VOICES[0];
 const fmt = t => { const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(1).padStart(4, "0")}`; };
 const money = n => (Math.round(n * 100) / 100).toFixed(2);
 
+/* what the narrator actually receives: the script with the client's pointed words applied */
+const esc = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function spoken(script) {
+  let out = script;
+  for (const w of S.brief.lexicon || []) {
+    if (!w.plain?.trim() || !w.tts?.trim()) continue;
+    const re = new RegExp(`(^|[\\s"'(\\-])([והבלמשכ]{0,2})-?${esc(w.plain.trim()).replace(/\s+/g, "\\s+")}(?=$|[\\s.,!?:;"')])`, "giu");
+    out = out.replace(re, (m, lead, pre) => lead + pre + w.tts.trim());
+  }
+  return out;
+}
+const NIQQUD = /[\u05B0-\u05BC\u05C1\u05C2\u05C7]/;
+const pointedWords = s => [...new Set(s.split(/\s+/).map(w => w.replace(/[.,!?:;"'()]/g, "")).filter(w => NIQQUD.test(w)))];
+/* same rule as the engine: a caption quotes the words spoken while it is on screen */
+function captionMismatches(script, beats, slack = 2) {
+  const toks = words(script).map(norm), starts = []; let from = 0;
+  beats.forEach((b, i) => {
+    if (i === 0) { starts.push(0); return; }
+    const c = norm(b.cue || ""); let idx = -1;
+    if (c) for (let j = from; j < toks.length; j++) if (toks[j] === c) { idx = j; break; }
+    if (idx >= 0) from = idx + 1;
+    starts.push(idx >= 0 ? idx : null);
+  });
+  const said = (w, win) => win.has(w) || [...win].some(x => x.endsWith(w) && x.length - w.length <= 2 && x.length > w.length && /^[והבלמשכ]+$/.test(x.slice(0, x.length - w.length)));
+  const out = [];
+  beats.forEach((b, i) => {
+    if (!b.caption?.trim() || starts[i] == null) return;
+    const nxt = starts.slice(i + 1).find(x => x != null) ?? toks.length;
+    const win = new Set(toks.slice(Math.max(0, starts[i] - slack), Math.min(toks.length, nxt + slack)));
+    const miss = words(b.caption).map(norm).filter(w => w && !said(w, win));
+    if (miss.length) out.push([i, miss]);
+  });
+  return out;
+}
+
 /* timeline from script + beats: returns {beats:[{...,start,dur,problem}], total, wordTimes} */
 function timeline(opt) {
-  const ws = words(opt.script), rate = WPS * voice().pace, speed = +S.brief.speed;
+  const ws = words(opt.script), rate = voice().wps, speed = +S.brief.speed;
   const wordTimes = ws.map((_, i) => (LEAD + i / rate) / speed);
   const voEnd = (LEAD + ws.length / rate) / speed;
   let from = 0; const out = [];
@@ -478,7 +537,7 @@ function timeline(opt) {
   out.forEach((b, i) => { b.dur = (i === out.length - 1 ? END_HOLD / speed : out[i + 1].start - b.start); });
   return { beats: out, total: out.length ? out[out.length - 1].start + out[out.length - 1].dur : 0, wordTimes, ws };
 }
-const targetWords = () => Math.round(S.brief.len * S.brief.speed * WPS * voice().pace - 3.8 * WPS);
+const targetWords = () => Math.round(Math.max(S.brief.len * S.brief.speed - 3.8, 5) * voice().wps);
 
 /* ---------- cost ---------- */
 function newShots(opt) { return opt.beats.filter(b => b.type === "broll" && !LIBRARY[b.asset]).length; }
@@ -488,7 +547,7 @@ function cost(opt) { return COST.voice + newShots(opt) * COST.shot[S.brief.res];
    Only a new voice-over or a new shot spends Higgsfield credits; everything else is a free re-render. */
 function snapshot() {
   const o = cur(), b = S.brief;
-  return { script: o.script.trim().replace(/\s+/g, " "), voice: b.voice, res: b.res, speed: b.speed,
+  return { script: spoken(o.script).trim().replace(/\s+/g, " "), voice: b.voice, res: b.res, speed: b.speed,
     look: [b.color, b.endTitle, b.cta, b.name].join("|"),
     screens: S.screens.map(s => `${s.key}:${s.kind}`).join(","),
     beats: o.beats.map(x => ({ type: x.type, asset: x.asset, cue: x.cue || "", caption: x.caption || "" })) };
@@ -496,17 +555,19 @@ function snapshot() {
 const newIn = snap => snap.beats.filter(x => x.type === "broll" && !LIBRARY[x.asset]).length;
 function changes() {
   const base = S.baselines[S.pick], now = snapshot(), out = [], shot = COST.shot[now.res];
+  const sampleRow = () => S.brief.sample && pointedWords(spoken(cur().script)).length ? [["דגימת הגייה לפני הקריינות (הערכה)", COST.sample, "sample"]] : [];
   if (!base) {
-    out.push([`סרטון חדש: קריינות (${voice().name})`, COST.voice]);
-    const n = newIn(now); if (n) out.push([`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${now.res}`, n * shot]);
+    out.push(...sampleRow());
+    out.push([`סרטון חדש: קריינות (${voice().name})`, COST.voice, "voice"]);
+    const n = newIn(now); if (n) out.push([`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${now.res}`, n * shot, "shot"]);
     out.push(["רינדור, כיתובים ובדיקות", 0]);
     return out;
   }
-  if (now.script !== base.script) out.push(["טקסט הקריינות השתנה → קריינות חדשה", COST.voice]);
-  else if (now.voice !== base.voice) out.push([`קול אחר (${voice().name}) → קריינות חדשה`, COST.voice]);
+  if (now.script !== base.script) out.push(...sampleRow(), ["טקסט הקריינות או הניקוד השתנה → קריינות חדשה", COST.voice, "voice"]);
+  else if (now.voice !== base.voice) out.push(...sampleRow(), [`קול אחר (${voice().name}) → קריינות חדשה`, COST.voice, "voice"]);
   const nNew = newIn(now), nBase = newIn(base);
   const addShots = nNew && now.res !== base.res ? nNew : Math.max(0, nNew - nBase);
-  if (addShots) out.push([`${addShots} שוט${addShots > 1 ? "ים" : ""} חדש${addShots > 1 ? "ים" : ""} · ${now.res}`, addShots * shot]);
+  if (addShots) out.push([`${addShots} שוט${addShots > 1 ? "ים" : ""} חדש${addShots > 1 ? "ים" : ""} · ${now.res}`, addShots * shot, "shot"]);
   const diff = (f) => now.beats.length !== base.beats.length || now.beats.some((x, i) => f(x) !== f(base.beats[i]));
   if (diff(x => x.caption)) out.push(["כיתובים", 0]);
   if (diff(x => x.asset + x.type)) out.push(["מסכים או שוטים מהספרייה", 0]);
@@ -773,7 +834,10 @@ function renderChecks() {
   if (ns > S.brief.newShots) add("badx", `התסריט מבקש ${ns} שוטים חדשים, והתקציב שבחרתם מאפשר ${S.brief.newShots}.`);
   const cc = changeCost(), left = S.brief.balance - cc;
   add(left >= 0 ? "ok" : "badx", left >= 0 ? `ההפקה הבאה תעלה ${money(cc)} קרדיטים. יישארו ${money(left)}.` : `חסרים ${money(-left)} קרדיטים.`);
-  if ((o.flagged_words || []).length) add("warnx", `לאשר הגייה: ${o.flagged_words.map(f => `${f.word} (${f.reading})`).join(", ")}.`);
+  captionMismatches(o.script, o.beats).forEach(([i, miss]) => add("badx", `הכיתוב בקטע ${i} לא מה שהקריין אומר (לא נאמר: ${miss.join(" ")}). כיתוב צריך לצטט את הקריינות.`));
+  const pw = pointedWords(spoken(o.script));
+  if (pw.length) add("warnx", `לשמוע ולאשר הגייה: ${pw.join(", ")}${S.brief.sample ? " (תושמע דגימה לפני הקריינות המלאה)" : ""}.`);
+  else add("warnx", "אין מילים מנוקדות. אם יש שם או מילה שעלולה להיקרא לא נכון, נקדו אותה בשלב 1.");
   add("ok", "רינדור, כיתובים, קצב והחלפת מסכים: 0 קרדיטים, אפשר לתקן כמה שרוצים.");
   $("#checks").replaceChildren(...out.map(([lvl, txt]) => el("li", { className: lvl }, el("span", { className: "ic", textContent: lvl === "ok" ? "✓" : "!" }), el("span", { textContent: txt }))));
 }
@@ -794,8 +858,9 @@ function renderCosts() {
 /* ---------- step 4 ---------- */
 function steps() {
   const o = cur(), v = voice(), rows = changes();
-  const vo = rows.find(([t, c]) => c === COST.voice), shots = rows.find(([t, c]) => c && c !== COST.voice);
+  const vo = rows.find(r => r[2] === "voice"), shots = rows.find(r => r[2] === "shot"), smp = rows.find(r => r[2] === "sample");
   return [
+    ...(smp ? [["דגימת הגייה", `${pointedWords(spoken(o.script)).join(", ")} · עוצרים לאישור שלך`, COST.sample, 2]] : []),
     ...(vo ? [["קריינות", `${v.name}, ${words(o.script).length} מילים`, COST.voice, 4]] : [["קריינות", "משתמשים בקיימת", 0, 1]]),
     ...(shots ? [[shots[0], "5 שנ' כל אחד", shots[1], 9]] : []),
     ["בדיקת הקריינות", "עברית, התאמה לתסריט, סנכרון מילים", 0, 3],
@@ -829,10 +894,10 @@ function bundle() {
       targetSeconds: b.len, speed: b.speed, voice: { id: v.id, name: v.name },
       budget: { credits: b.balance, newBrollMax: b.newShots, resolution: b.res },
       brand: { accent: b.color }, endCard: { title: b.endTitle, url: b.cta },
-      lexicon: { brand: b.name, tts: b.tts },
+      lexicon: (b.lexicon || []).filter(w => w.plain && w.tts), pronunciationSample: !!b.sample,
       screens: S.screens.map(s => ({ key: s.key, kind: s.kind, desc: s.label, url: "<upload>" })),
       notes: [b.ask, b.avoid && `Avoid: ${b.avoid}`].filter(Boolean).join(". ") },
-    plan: { script: o.script, flagged_words: o.flagged_words || [], beats,
+    plan: { script: spoken(o.script), flagged_words: o.flagged_words || [], beats,
       new_broll: beats.filter(x => x.asset.startsWith("new")).map(x => ({ key: x.asset, prompt: "<to write>", why: "" })), notes: "" },
   };
 }
@@ -854,7 +919,7 @@ function go(step) {
 $$("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
 function refresh() {
   TL = timeline(cur());
-  renderWallet(); renderLedger(); renderChecks(); renderCosts();
+  renderWallet(); renderLedger(); renderChecks(); renderCosts(); renderSaid();
   $("#json").textContent = JSON.stringify(bundle(), null, 2);
   if (S.step === "preview") { renderBar(); shownBeat = -1; seek(Math.min(t, TL.total)); }
   if (S.step === "produce") renderPipe();
@@ -864,6 +929,41 @@ if (!Object.keys(S.baselines).length && S.options.every(o => o.example)) {
   S.options.forEach((_, i) => { S.pick = i; S.baselines[i] = snapshot(); });  // both examples are already produced
   S.pick = keep;
 }
+const MARKS = [["\u05B8", "קמץ"], ["\u05B7", "פתח"], ["\u05B5", "צירה"], ["\u05B6", "סגול"], ["\u05B4", "חיריק"], ["\u05B9", "חולם"], ["\u05BB", "קובוץ"], ["\u05BC", "דגש"], ["\u05B0", "שווא"], ["\u05C1", "שׁ"], ["\u05C2", "שׂ"]];
+let lastField = null;
+document.addEventListener("focusin", e => { if (e.target.matches("#scriptBox, .lexrow input")) lastField = e.target; });
+$$("[data-pad]").forEach(pad => pad.replaceChildren(...MARKS.map(([m, n]) => {
+  const b = el("button", { type: "button", title: n }, el("span", { textContent: "\u25CC" + m }), el("small", { textContent: n }));
+  b.setAttribute("aria-label", `הוסף ${n}`);
+  b.addEventListener("mousedown", e => e.preventDefault());       // keep the caret where it is
+  b.onclick = () => {
+    const f = lastField; if (!f) return;
+    const a = f.selectionStart ?? f.value.length, z = f.selectionEnd ?? a;
+    f.value = f.value.slice(0, a) + m + f.value.slice(z); f.focus(); f.setSelectionRange(a + 1, a + 1);
+    f.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  return b;
+})));
+function renderLex() {
+  $("#lex").replaceChildren(el("div", { className: "lexrow hint" }, el("span", { textContent: "כך זה כתוב" }), el("span", { textContent: "כך צריך להישמע (מנוקד)" }), el("span")),
+    ...S.brief.lexicon.map((w, i) => {
+      const a = el("input", { type: "text", value: w.plain, id: `lp-${i}`, placeholder: "ג'ורני" }), b = el("input", { type: "text", value: w.tts, id: `lt-${i}`, placeholder: "ג'רְנִי" }), x = el("button", { type: "button", textContent: "×" });
+      a.setAttribute("aria-label", "מילה כפי שהיא כתובה"); b.setAttribute("aria-label", "מילה מנוקדת"); x.setAttribute("aria-label", "הסר מילה");
+      a.oninput = () => { w.plain = a.value; save(); refresh(); };
+      b.oninput = () => { w.tts = b.value; save(); refresh(); };
+      x.onclick = () => { S.brief.lexicon.splice(i, 1); save(); renderLex(); refresh(); };
+      return el("div", { className: "lexrow" }, a, b, x);
+    }));
+}
+$("#lexAdd").onclick = () => { S.brief.lexicon.push({ plain: "", tts: "" }); renderLex(); $(`#lp-${S.brief.lexicon.length - 1}`).focus(); };
+$("#sampleChk").checked = !!S.brief.sample;
+$("#sampleChk").onchange = e => { S.brief.sample = e.target.checked; save(); refresh(); };
+function renderSaid() {
+  const txt = spoken(cur().script), host = $("#said");
+  host.replaceChildren(...txt.split(/(\s+)/).map(t => NIQQUD.test(t) ? el("mark", { textContent: t }) : document.createTextNode(t)));
+}
+if (!Array.isArray(S.brief.lexicon)) S.brief.lexicon = [];
+renderLex();
 renderChips(); renderShots(); renderOpts(); renderScript(); refresh();
 })();
 </script>

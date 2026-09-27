@@ -20,7 +20,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-from align import Aligner, Word
+from align import Aligner, Word, caption_mismatches
 
 ENGINE_DIR = Path(__file__).resolve().parent
 W, H, FPS = 1080, 1920, 30
@@ -395,6 +395,23 @@ def media_key(b: dict) -> str:
     return b.get("key") or b["asset"]
 
 
+def contact_sheet(work: Path, timeline: list[dict], out: Path) -> Path:
+    """One image with a frame from the middle of every beat, labelled with its time and type."""
+    from PIL import Image, ImageDraw  # sandbox-only dependency
+
+    frames = sorted((work / "proj" / "renders").glob("check_*.png"), key=lambda p: float(p.stem[6:]))
+    tw, th, pad, cols = 270, 480, 12, min(4, max(1, len(frames)))
+    rows = -(-len(frames) // cols)
+    sheet = Image.new("RGB", (cols * (tw + pad) + pad, rows * (th + pad + 28) + pad), "#111318")
+    draw = ImageDraw.Draw(sheet)
+    for i, (png, b) in enumerate(zip(frames, timeline)):
+        x, y = pad + (i % cols) * (tw + pad), pad + (i // cols) * (th + pad + 28)
+        sheet.paste(Image.open(png).convert("RGB").resize((tw, th)), (x, y + 28))
+        draw.text((x, y + 6), f"#{i}  {b['start']:.1f}s  {b['type']}", fill="#e8eaed")
+    sheet.save(out)
+    return out
+
+
 def blank_checkpoints(work: Path) -> list[str]:
     from PIL import Image, ImageStat  # sandbox-only dependency
 
@@ -435,6 +452,7 @@ def main() -> int:
     ap.add_argument("--plan", action="store_true", help="only align and print the timeline")
     ap.add_argument("--speed", type=float, help="override the spec speed (e.g. 1.0 for a parity check)")
     ap.add_argument("--skip-lang-check", action="store_true")
+    ap.add_argument("--sheet", type=Path, help="contact sheet PNG (default: <work>/contact.png)")
     args = ap.parse_args()
     if not args.plan and not args.out:
         ap.error("--out is required unless --plan")
@@ -460,6 +478,9 @@ def main() -> int:
     for i, b in enumerate(timeline):
         print(f"  #{i:<2} {b['start']:6.2f}–{b['start'] + b['dur']:6.2f}  {b['type']:<6} {b.get('asset', 'card'):<8} "
               f"{b.get('cue', '') or ''}  {b.get('caption', '').replace(chr(10), ' / ')}")
+    captions_off = caption_mismatches(voice["script"], spec["beats"])
+    for i, missing in captions_off:
+        print(f"  ! caption #{i} is not what the voice says (not spoken: {' '.join(missing)})")
     if args.plan:
         return 0
 
@@ -470,16 +491,19 @@ def main() -> int:
     shutil.rmtree(work / "proj", ignore_errors=True)
     run(["higgsedit", "build", edit.name], cwd=work)
     blank = blank_checkpoints(work)
+    sheet = contact_sheet(work, timeline, (args.sheet or work / "contact.png").resolve())
     run(["higgsedit", "render", "proj", "--out", "renders/silent.mp4"], cwd=work)
     mux(work / "proj" / "renders" / "silent.mp4", vo, lead, speed, args.out.resolve())
 
     report = {"spec": spec["name"], "out": str(args.out), "duration": duration(args.out.resolve()),
               "voice": {"lang": lang, "prob": round(prob, 3), "match": round(ratio, 3)},
-              "blank_checkpoints": blank,
+              "blank_checkpoints": blank, "contact_sheet": str(sheet),
+              "caption_mismatches": [{"beat": i, "not_spoken": m} for i, m in captions_off],
               "timeline": [{"type": b["type"], "asset": b.get("asset", "card"), "start": b["start"],
                             "dur": b["dur"]} for b in timeline]}
     (work / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({k: report[k] for k in ("out", "duration", "voice", "blank_checkpoints")}, ensure_ascii=False))
+    print(json.dumps({k: report[k] for k in ("out", "duration", "voice", "blank_checkpoints", "caption_mismatches")},
+                     ensure_ascii=False))
     return 1 if blank else 0
 
 

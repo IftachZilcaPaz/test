@@ -22,7 +22,7 @@ from pathlib import Path
 
 VIDEO_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(VIDEO_DIR / "engine"))
-from align import CueCursor, normalize, tokenize  # noqa: E402
+from align import CueCursor, caption_mismatches, normalize, tokenize  # noqa: E402
 
 MODEL = "claude-opus-5"
 SCREEN_KINDS = {"screenshot": "screen", "tall": "scroll", "slide": "slide", "cta": "end"}
@@ -31,6 +31,7 @@ SCROLL_FIELDS = ("crop", "cut")  # passed from a tall screen to its scroll beat
 HEBREW_PREFIXES = "והבלמשכ"
 NIQQUD = re.compile(r"[֑-ׇ]")
 MAX_REPAIRS = 2
+END_TAIL = 0.4 + 3.4    # voice lead-in + end-card hold, seconds before speed-up
 
 PLAN_SCHEMA = {
     "type": "object",
@@ -100,6 +101,9 @@ def load_brief(path: Path) -> dict:
         errors.append(f"screen key '{END_CARD_KEY}' is reserved for the generated end card")
     if not (b.get("voice") or {}).get("id"):
         errors.append("voice.id is required (a Higgsfield voice_id)")
+    for i, w in enumerate(b.get("lexicon", [])):
+        if not w.get("plain") or not w.get("tts"):
+            errors.append(f"lexicon #{i}: 'plain' and 'tts' are required")
     if errors:
         raise BriefError("invalid brief:\n  - " + "\n  - ".join(errors))
     b.setdefault("language", "he")
@@ -112,9 +116,15 @@ def load_brief(path: Path) -> dict:
     return b
 
 
+def speech_rate(brief: dict, pricing: dict) -> float:
+    """Measured words/second of the chosen voice; the generic rate for voices not measured yet."""
+    return pricing.get("voice_wps", {}).get(brief["voice"]["id"], pricing["words_per_second"])
+
+
 def word_target(brief: dict, pricing: dict) -> int:
-    """Spoken words for the target length: rendered length × speed-up × measured speech rate."""
-    return round(brief["targetSeconds"] * brief["speed"] * pricing["words_per_second"])
+    """Spoken words for the target length. The target is the finished video, so the lead-in and the
+    end-card hold (together END_TAIL seconds before speed-up) are not speech."""
+    return round(max(brief["targetSeconds"] * brief["speed"] - END_TAIL, 5) * speech_rate(brief, pricing))
 
 
 # ---------------------------------------------------------------- prompt
@@ -222,6 +232,13 @@ def _apply_phrase_brands(script: str, lexicon: dict) -> str:
     return script
 
 
+def with_client_words(lexicon: dict, brief: dict) -> dict:
+    """The client's own pointed spellings (brief.lexicon: [{plain, tts}]) join the brand list, so
+    every occurrence in the script is rewritten to the confirmed pronunciation before TTS."""
+    extra = [{"brand": w["plain"], "tts": w["tts"], "aliases": [w["plain"]]} for w in brief.get("lexicon", [])]
+    return {**lexicon, "brands": lexicon["brands"] + extra}
+
+
 def apply_brands(script: str, lexicon: dict) -> str:
     """Rewrite every brand alias (optionally prefixed by ו/ה/ב/ל/מ/ש/כ) to its confirmed TTS spelling."""
     script = _apply_phrase_brands(script, lexicon)
@@ -291,6 +308,9 @@ def validate_plan(plan: dict, brief: dict, library: dict, pricing: dict) -> list
         except ValueError as e:
             errors.append(f"beat #{i}: {e}")
 
+    for i, missing in caption_mismatches(plan["script"], beats):
+        errors.append(f"beat #{i}: caption must quote the voice-over spoken during it; not spoken: {' '.join(missing)}")
+
     words, target = len(tokenize(plan["script"])), word_target(brief, pricing)
     if not 0.8 * target <= words <= 1.2 * target:
         errors.append(f"script has {words} words; target is {target} (±20%)")
@@ -316,7 +336,7 @@ def finalize(plan: dict, lexicon: dict) -> dict:
 
 
 def estimate(plan: dict, brief: dict, pricing: dict) -> dict:
-    wps, speed = pricing["words_per_second"], brief["speed"]
+    wps, speed = speech_rate(brief, pricing), brief["speed"]
     tokens = tokenize(plan["script"])
     cursor = CueCursor(tokens)
     starts = [0.0]
@@ -479,6 +499,7 @@ def main() -> int:
 
     brief = load_brief(args.brief)
     library, lexicon = load_json(VIDEO_DIR / "library.json"), load_json(VIDEO_DIR / "lexicon.json")
+    lexicon = with_client_words(lexicon, brief)
     pricing = load_json(VIDEO_DIR / "pricing.json")
     system = build_system_prompt(brief, library, lexicon, pricing)
     args.review_dir.mkdir(parents=True, exist_ok=True)

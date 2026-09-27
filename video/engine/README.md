@@ -34,6 +34,11 @@ engine there: zip `engine/` + `specs/`, upload it with `media_upload` (type `fil
 because a tool call times out after 60s. Reserve the output's `media_upload` URL *before* the render,
 and PUT the file in the same sandbox command.
 
+Every render also writes `work-<name>/contact.png` (or `--sheet out.png`): one frame from the middle
+of every beat, labelled. Send it with the video link so the client checks all screens and captions
+at a glance. `--plan` and the report flag every caption that is not what the voice says during
+its beat (`align.caption_mismatches`; the generator rejects such plans outright).
+
 Exit codes: `0` OK · `1` rendered, but a checkpoint frame is blank · `2` spec, alignment or tool error.
 `work-<name>/report.json` holds the timeline, voice checks and QA results.
 
