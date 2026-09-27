@@ -3,13 +3,13 @@
  * Verifies the two providers of the standalone reynovation app before we price
  * it for customers:
  *   1. ElevenLabs: renders the approved mentor it script (1ב) in Hebrew with
- *      eleven_v3 and eleven_multilingual_v2, so we can compare pronunciation.
+ *      eleven_v3 (the model we chose), so a new voice can be auditioned.
  *   2. Higgsfield API: asks the free /estimate endpoint what one 5-second
  *      vertical scene costs on Seedance 2.0 and 2.5. Nothing is generated.
  *
  * Keys are read from .env (see .env.example) and never printed.
  * Usage: node tools/check-providers.mjs [--skip-voice] [--skip-video]
- * Spend: ~0.06 USD of ElevenLabs characters; the Higgsfield estimate is free.
+ * Spend: ~0.02 USD of ElevenLabs characters; the Higgsfield estimate is free.
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -26,7 +26,8 @@ const env = (name) => process.env[name]?.trim() || "";
 // Approved script 1ב, with the brand pointed exactly as in video/lexicon.json.
 const SCRIPT =
   "שנה של ניסוי וטעייה, או שעה אחת עם מישהו שכבר טעה בשבילכם? במֶנְטוֹר אִיט מוצאים מנטור לקריירה, ליזמות, לזוגיות או לכסף, רואים מראש מה תקבלו וכמה זה עולה, ונפגשים אונליין או פנים מול פנים. מֶנְטוֹר אִיט. קיצור הדרך שלכם.";
-const VOICE_MODELS = ["eleven_v3", "eleven_multilingual_v2"];
+// eleven_multilingual_v2 was tested and rejected for Hebrew (1/5); v3 scored 5/5.
+const VOICE_MODELS = ["eleven_v3"];
 const USD_PER_1K_CHARS = 0.1; // ElevenLabs API list price for both models (Sep 2026).
 
 const SCENE = {
