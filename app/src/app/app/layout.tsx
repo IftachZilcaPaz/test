@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
           <span className="font-round text-xl">reynovation</span>
         </Link>
         <p className="text-center text-sm text-ink-2">
-          שלום, <span className="font-semibold text-ink">{user.name}</span>
+          שלום, <bdi className="font-semibold text-ink">{user.name}</bdi>
         </p>
         <SignOutButton />
       </aside>
