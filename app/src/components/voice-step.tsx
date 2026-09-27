@@ -76,7 +76,7 @@ function SamplePlayer({ voiceId }: { voiceId: string }) {
   return (
     <>
       <button type="button" onClick={toggle} className="btn px-4 py-2 text-sm" aria-label={`השמעת דגימה של ${voiceName(voiceId)}`}>
-        {state === "loading" ? "טוען… (בפעם הראשונה כמה שניות)" : state === "playing" ? "■ עצירה" : "▶ האזנה"}
+        {state === "loading" ? "טוען…" : state === "playing" ? "■ עצירה" : "▶ האזנה"}
       </button>
       {error && (
         <span role="alert" className="w-full text-xs text-bad">
@@ -142,13 +142,25 @@ export function VoiceStep({
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [quote, setQuote] = useState<{ demo: boolean; usd: number; characters: number } | null>(null);
+  const [quote, setQuote] = useState<{ demo: boolean; usd: number; characters: number; duplicate: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selecting, startSelect] = useTransition();
   const [quoting, startQuote] = useTransition();
   const [recording, startRecord] = useTransition();
   const [approving, startApprove] = useTransition();
   const latest = takes[0];
+  const newestRef = useRef<HTMLDivElement>(null);
+  const [freshId, setFreshId] = useState<string | null>(null);
+  const seenLatest = useRef(latest?.id);
+
+  // After a new take arrives, bring it into view so the customer sees what they paid for.
+  useEffect(() => {
+    if (latest && latest.id !== seenLatest.current) {
+      seenLatest.current = latest.id;
+      setFreshId(latest.id);
+      newestRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [latest]);
 
   const choose = (voiceId: string) =>
     startSelect(async () => {
@@ -238,6 +250,11 @@ export function VoiceStep({
             <h3 id="voice-price-title" className="text-xl">
               לפני שמקריאים
             </h3>
+            {!quote.demo && quote.duplicate && (
+              <p role="alert" className="rounded-2xl bg-tint-3 px-4 py-3 text-sm text-ink">
+                כבר יש לכם הקראה של אותו טקסט באותו קול (למטה). הקראה נוספת תיצור גרסה חדשה ותעלה שוב.
+              </p>
+            )}
             {quote.demo ? (
               <p className="text-ink-2">עוד לא חובר מפתח ElevenLabs, אז אי אפשר להקריא. הוסיפו ELEVENLABS_API_KEY ל-.env.local.</p>
             ) : (
@@ -252,7 +269,7 @@ export function VoiceStep({
             <div className="flex gap-2">
               {!quote.demo && (
                 <button type="button" className="btn btn-primary" onClick={record}>
-                  הקריאו
+                  {quote.duplicate ? "כן, הקראה נוספת" : "הקריאו"}
                 </button>
               )}
               <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>
@@ -265,9 +282,10 @@ export function VoiceStep({
 
       {recording && <div className="clay h-48 animate-pulse" aria-busy="true" aria-label="מקריא" />}
       {!recording &&
-        takes.slice(0, 3).map((take) => (
+        takes.slice(0, 3).map((take, index) => (
+          <div key={take.id} ref={index === 0 ? newestRef : undefined} className={take.id === freshId ? "rounded-[2rem] ring-4 ring-accent-2/60" : ""}>
+            {take.id === freshId && <p className="px-2 pb-2 text-sm font-semibold text-accent">ההקראה החדשה ↓</p>}
           <TakePlayer
-            key={take.id}
             take={take}
             approving={approving}
             onApprove={() =>
@@ -278,6 +296,7 @@ export function VoiceStep({
               })
             }
           />
+          </div>
         ))}
     </section>
   );

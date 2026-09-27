@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
@@ -36,14 +36,45 @@ async function narrationFor(userId: string, projectId: string): Promise<Narratio
   return { voiceId: item.voiceId, text: applyLexicon(script, parseLexicon(item.lexicon)) };
 }
 
-export type VoiceQuote = { demo: boolean; usd: number; characters: number } | { error: string };
+export type VoiceQuote =
+  | { demo: boolean; usd: number; characters: number; duplicate: boolean }
+  | { error: string };
+
+// A retake of the exact same text in the same voice within this window is almost
+// certainly a double click, so it is refused instead of billed twice.
+const DUPLICATE_WINDOW_MS = 60_000;
+
+async function latestTake(projectId: string) {
+  const [take] = await db
+    .select({ voiceId: voiceTake.voiceId, spokenText: voiceTake.spokenText, createdAt: voiceTake.createdAt })
+    .from(voiceTake)
+    .where(eq(voiceTake.projectId, projectId))
+    .orderBy(desc(voiceTake.createdAt))
+    .limit(1);
+  return take ?? null;
+}
 
 /** ElevenLabs bills per character, so the price is exact before we ask. */
 export async function quoteNarration(projectId: string): Promise<VoiceQuote> {
   const user = await requireUser();
   const narration = await narrationFor(user.id, projectId);
   if ("error" in narration) return { error: narration.error };
-  return { demo: isVoiceDemoMode(), usd: voiceCostUsd(narration.text), characters: narration.text.length };
+  const [{ same }] = await db
+    .select({ same: count() })
+    .from(voiceTake)
+    .where(
+      and(
+        eq(voiceTake.projectId, projectId),
+        eq(voiceTake.voiceId, narration.voiceId),
+        eq(voiceTake.spokenText, narration.text),
+      ),
+    );
+  return {
+    demo: isVoiceDemoMode(),
+    usd: voiceCostUsd(narration.text),
+    characters: narration.text.length,
+    duplicate: same > 0,
+  };
 }
 
 export async function recordNarration(projectId: string): Promise<{ error?: string }> {
@@ -54,6 +85,15 @@ export async function recordNarration(projectId: string): Promise<{ error?: stri
 
   const [{ takes }] = await db.select({ takes: count() }).from(voiceTake).where(eq(voiceTake.projectId, projectId));
   if (takes >= MAX_TAKES_PER_PROJECT) return { error: "הגעתם למספר ההקלטות המרבי בפרויקט הזה." };
+  const last = await latestTake(projectId);
+  if (
+    last &&
+    last.voiceId === narration.voiceId &&
+    last.spokenText === narration.text &&
+    Date.now() - last.createdAt.getTime() < DUPLICATE_WINDOW_MS
+  ) {
+    return { error: "ההקראה הזו בדיוק נוצרה עכשיו — היא מופיעה למטה." };
+  }
 
   try {
     const { audio, words, duration } = await synthesize(narration.text, narration.voiceId);
