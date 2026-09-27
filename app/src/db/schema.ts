@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 const createdAt = () =>
   integer("created_at", { mode: "timestamp_ms" })
@@ -94,6 +94,10 @@ export const project = sqliteTable(
     about: text("about"),
     audience: text("audience"),
     callToAction: text("call_to_action"),
+    tone: text("tone").notNull().default("warm"),
+    seconds: integer("seconds").notNull().default(20),
+    /** Pronunciation lexicon, one "word = pointed" pair per line. */
+    lexicon: text("lexicon").notNull().default(""),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -101,3 +105,29 @@ export const project = sqliteTable(
 );
 
 export type Project = typeof project.$inferSelect;
+
+/** One "write me 3 scripts" request: the options, what it cost, and which one was approved. */
+export const scriptDraft = sqliteTable(
+  "script_draft",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => project.id, { onDelete: "cascade" }),
+    options: text("options", { mode: "json" }).notNull().$type<import("@/lib/script/types").ScriptOption[]>(),
+    chosenIndex: integer("chosen_index"),
+    /** The approved narration, after the customer's edits. */
+    chosenScript: text("chosen_script"),
+    model: text("model").notNull(),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    costUsd: real("cost_usd").notNull().default(0),
+    demo: integer("demo", { mode: "boolean" }).notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (table) => [index("script_draft_project_created_idx").on(table.projectId, table.createdAt)],
+);
+
+export type ScriptDraft = typeof scriptDraft.$inferSelect;

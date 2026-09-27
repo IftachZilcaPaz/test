@@ -1,24 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { project } from "@/db/schema";
+import { BriefForm } from "@/components/brief-form";
+import { ScriptStep } from "@/components/script-step";
 import { STEPS } from "@/lib/brand";
+import { getOwnedProject, listDrafts } from "@/lib/projects.server";
 import { requireUser } from "@/lib/session";
+import { saveBrief } from "./actions";
 
 export const metadata: Metadata = { title: "פרויקט · reynovation" };
 
 export default async function ProjectPage({ params }: PageProps<"/app/projects/[id]">) {
   const user = await requireUser();
   const { id } = await params;
-  const [item] = await db
-    .select()
-    .from(project)
-    .where(and(eq(project.id, id), eq(project.userId, user.id)))
-    .limit(1);
+  const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
-
+  const drafts = await listDrafts(item.id);
   const current = STEPS.findIndex((step) => step.key === item.status);
 
   return (
@@ -26,29 +23,56 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
       <Link href="/app" className="text-sm text-ink-2 hover:text-accent">
         → כל הפרויקטים
       </Link>
-      <section className="clay flex flex-col gap-2 p-6 md:p-8">
+
+      <section className="clay flex flex-col gap-4 p-6 md:p-8">
         <h1 className="text-3xl">{item.name}</h1>
-        <p className="text-ink-2">חמישה צעדים מסרטון. כל צעד שעולה כסף יראה לכם מחיר מדויק לפני שתאשרו.</p>
+        <ol className="flex flex-wrap gap-2" aria-label="שלבי הפרויקט">
+          {STEPS.map((step, index) => {
+            const state = index < current ? "done" : index === current ? "current" : "later";
+            return (
+              <li
+                key={step.key}
+                aria-current={state === "current" ? "step" : undefined}
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                  state === "current" ? "bg-accent text-white" : state === "done" ? "bg-tint-1 text-accent" : "bg-well text-ink-3"
+                }`}
+              >
+                {index + 1}. {step.title}
+                {state === "done" ? " ✓" : ""}
+              </li>
+            );
+          })}
+        </ol>
       </section>
-      <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" aria-label="שלבי הפרויקט">
-        {STEPS.map((step, index) => {
-          const state = index < current ? "done" : index === current ? "current" : "later";
-          return (
-            <li
-              key={step.key}
-              aria-current={state === "current" ? "step" : undefined}
-              className={`clay flex flex-col gap-1 p-5 ${state === "later" ? "opacity-60" : ""}`}
-            >
-              <span className="font-round text-3xl text-accent">{index + 1}</span>
-              <span className="font-semibold">{step.title}</span>
-              <span className="text-sm text-ink-2">{step.hint}</span>
-              <span className="mt-2 text-xs font-semibold text-ink-3">
-                {state === "current" ? "הצעד הבא — בקרוב" : state === "done" ? "הושלם" : "בהמשך"}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+
+      <BriefForm
+        action={saveBrief.bind(null, item.id)}
+        values={{
+          business: item.business ?? "",
+          about: item.about ?? "",
+          audience: item.audience ?? "",
+          callToAction: item.callToAction ?? "",
+          tone: item.tone,
+          seconds: item.seconds,
+          lexicon: item.lexicon,
+        }}
+      />
+
+      <ScriptStep
+        projectId={item.id}
+        ready={item.status !== "brief"}
+        seconds={item.seconds}
+        lexicon={item.lexicon}
+        drafts={drafts.map((draft) => ({
+          id: draft.id,
+          options: draft.options,
+          chosenIndex: draft.chosenIndex,
+          chosenScript: draft.chosenScript,
+          costUsd: draft.costUsd,
+          demo: draft.demo,
+          createdAt: draft.createdAt.toISOString(),
+        }))}
+      />
     </div>
   );
 }
