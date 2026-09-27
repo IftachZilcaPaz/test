@@ -8,7 +8,9 @@ import { project, voiceTake } from "@/db/schema";
 import { approvedScript, getOwnedProject } from "@/lib/projects.server";
 import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
+import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
+import { assertCanPay, balance, charge, InsufficientFunds } from "@/lib/wallet.server";
 import { deleteMedia, putMedia } from "@/lib/storage.server";
 import { isVoiceDemoMode, synthesize, VoiceError } from "@/lib/voice/tts.server";
 import { isVoiceId, voiceCostUsd } from "@/lib/voice/voices";
@@ -38,7 +40,7 @@ async function narrationFor(userId: string, projectId: string): Promise<Narratio
 }
 
 export type VoiceQuote =
-  | { demo: boolean; usd: number; characters: number; duplicate: boolean }
+  | { demo: boolean; usd: number; characters: number; duplicate: boolean; balanceIls: number }
   | { error: string };
 
 // A retake of the exact same text in the same voice within this window is almost
@@ -75,6 +77,7 @@ export async function quoteNarration(projectId: string): Promise<VoiceQuote> {
     usd: voiceCostUsd(narration.text),
     characters: narration.text.length,
     duplicate: same > 0,
+    balanceIls: await balance(user.id),
   };
 }
 
@@ -96,7 +99,9 @@ export async function recordNarration(projectId: string): Promise<{ error?: stri
     return { error: "ההקראה הזו בדיוק נוצרה עכשיו — היא מופיעה למטה." };
   }
 
+  const price = customerPriceIls(voiceCostUsd(narration.text));
   try {
+    await assertCanPay(user.id, price);
     const { audio, words, duration } = await synthesize(narration.text, narration.voiceId);
     const id = crypto.randomUUID();
     const audioKey = `projects/${projectId}/voice/${id}.mp3`;
@@ -112,8 +117,9 @@ export async function recordNarration(projectId: string): Promise<{ error?: stri
       characters: narration.text.length,
       costUsd: voiceCostUsd(narration.text),
     });
+    await charge(user.id, price, "הקראת התסריט", projectId, `take:${id}`);
   } catch (error) {
-    if (error instanceof VoiceError) return { error: error.message };
+    if (error instanceof VoiceError || error instanceof InsufficientFunds) return { error: error.message };
     console.error("[voice] record failed", error instanceof Error ? error.message : error);
     return { error: "משהו השתבש בהקלטה. נסו שוב." };
   }

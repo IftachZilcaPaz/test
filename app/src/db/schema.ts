@@ -78,6 +78,7 @@ export const verification = sqliteTable(
 export const PROJECT_STATUSES = ["brief", "script", "voice", "scenes", "render", "done"] as const;
 export const SCENE_STATUSES = ["draft", "generating", "ready", "failed"] as const;
 export const RENDER_STATUSES = ["rendering", "done", "failed"] as const;
+export const WALLET_KINDS = ["gift", "topup", "charge", "refund"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 /** One promo video in the making. Brief fields are filled on the first screen (stage 1). */
@@ -213,3 +214,26 @@ export const render = sqliteTable(
 );
 
 export type Render = typeof render.$inferSelect;
+
+/** Customer wallet ledger in shekels: positive = credit, negative = charge. Balance = sum. */
+export const walletEntry = sqliteTable(
+  "wallet_entry",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    amountIls: real("amount_ils").notNull(),
+    kind: text("kind", { enum: WALLET_KINDS }).notNull(),
+    description: text("description").notNull(),
+    projectId: text("project_id"),
+    /** Idempotency key (e.g. "gift:<user>", "refund:scene:<id>"): each is recorded at most once. */
+    reference: text("reference").unique(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("wallet_entry_user_created_idx").on(table.userId, table.createdAt)],
+);
+
+export type WalletEntry = typeof walletEntry.$inferSelect;

@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { approveScript, estimateScriptCost, generateScripts } from "@/app/app/projects/[id]/actions";
-import { formatIls, formatUsd } from "@/lib/money";
+import { canAfford, WalletLine } from "@/components/wallet-line";
+import { customerPriceIls, formatCustomerPrice } from "@/lib/pricing";
 import { applyLexicon, countWords, estimateSeconds, lengthVerdict, parseLexicon, wordTarget } from "@/lib/script/hebrew";
 import type { ScriptOption } from "@/lib/script/types";
 
@@ -122,7 +123,7 @@ export function ScriptStep({
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [quote, setQuote] = useState<{ demo: boolean; maxUsd: number } | null>(null);
+  const [quote, setQuote] = useState<{ demo: boolean; maxUsd: number; balanceIls: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [estimating, startEstimate] = useTransition();
   const [writing, startWrite] = useTransition();
@@ -188,16 +189,21 @@ export function ScriptStep({
                 <b>מצב דמו — בחינם.</b> עוד לא חובר מפתח Claude, אז תקבלו תסריטים לדוגמה כדי לראות איך המסך עובד.
               </p>
             ) : (
-              <p className="text-ink-2">
-                שלושה תסריטים ייכתבו על ידי Claude. העלות <b>לכל היותר {formatIls(quote.maxUsd)}</b>{" "}
-                <span className="text-ink-3" dir="ltr">
-                  ({formatUsd(quote.maxUsd)})
-                </span>
-                , ובדרך כלל פחות. המחיר המדויק יופיע אחרי הכתיבה.
-              </p>
+              <>
+                <p className="text-ink-2">
+                  שלושה תסריטים. המחיר <b>לכל היותר {formatCustomerPrice(quote.maxUsd)}</b>, ובדרך כלל פחות — תחויבו רק על מה
+                  שנכתב בפועל.
+                </p>
+                <WalletLine balanceIls={quote.balanceIls} priceIls={customerPriceIls(quote.maxUsd)} />
+              </>
             )}
             <div className="flex gap-2">
-              <button type="button" className="btn btn-primary" onClick={write}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!quote.demo && !canAfford(quote.balanceIls, customerPriceIls(quote.maxUsd))}
+                onClick={write}
+              >
                 {quote.demo ? "הראו לי דוגמה" : "כתבו"}
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>
@@ -223,10 +229,7 @@ export function ScriptStep({
               <span className="rounded-full bg-tint-3 px-3 py-1 font-semibold">תסריטים לדוגמה · מצב דמו · ₪0</span>
             ) : (
               <>
-                עלות הכתיבה: <b>{formatIls(shown.costUsd)}</b>{" "}
-                <span className="text-ink-3" dir="ltr">
-                  ({formatUsd(shown.costUsd)})
-                </span>
+                חויבתם על הכתיבה: <b>{formatCustomerPrice(shown.costUsd)}</b>
               </>
             )}
           </p>

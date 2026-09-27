@@ -8,7 +8,9 @@ import { project, scene, type Scene } from "@/db/schema";
 import { getOwnedProject, listScenes } from "@/lib/projects.server";
 import { demoSceneClip } from "@/lib/scenes/demo.server";
 import { estimateScene, isSceneDemoMode, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
+import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
+import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
 import { putMedia } from "@/lib/storage.server";
 
 const NO_TEXT = "Vertical 9:16 cinematic shot. No text, letters, captions, logos, signs or readable screens.";
@@ -42,7 +44,7 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
   return {};
 }
 
-export type SceneQuote = { demo: boolean; usd: number; count: number } | { error: string };
+export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | { error: string };
 
 export async function quoteScenes(projectId: string): Promise<SceneQuote> {
   const user = await requireUser();
@@ -50,10 +52,12 @@ export async function quoteScenes(projectId: string): Promise<SceneQuote> {
   if (!list) return { error: "הפרויקט לא נמצא." };
   const todo = pending(list);
   if (todo.length === 0) return { error: "כל הסצנות כבר מוכנות." };
-  if (isSceneDemoMode()) return { demo: true, usd: 0, count: todo.length };
+  const balanceIls = await balance(user.id);
+  if (isSceneDemoMode()) return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
     const prices = await Promise.all(todo.map((item) => estimateScene(`${item.prompt}. ${NO_TEXT}`, item.seconds)));
-    return { demo: false, usd: prices.reduce((sum, value) => sum + value, 0), count: todo.length };
+    const priceIls = prices.reduce((sum, value) => sum + customerPriceIls(value), 0);
+    return { demo: false, usd: prices.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
   } catch (error) {
     return { error: error instanceof SceneError ? error.message : "לא הצלחנו לחשב מחיר כרגע." };
   }
@@ -74,15 +78,20 @@ export async function generateScenes(projectId: string): Promise<{ error?: strin
         await db.update(scene).set({ status: "ready", demo: true, mediaKey: key, costUsd: 0, error: null }).where(eq(scene.id, item.id));
       }
     } else {
-      for (const item of todo) {
-        const prompt = `${item.prompt}. ${NO_TEXT}`;
-        const [usd, requestId] = await Promise.all([estimateScene(prompt, item.seconds), submitScene(prompt, item.seconds)]);
+      const prompts = todo.map((item) => `${item.prompt}. ${NO_TEXT}`);
+      const prices = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds)));
+      await assertCanPay(user.id, prices.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
+      for (const [index, item] of todo.entries()) {
+        const requestId = await submitScene(prompts[index]!, item.seconds);
+        const usd = prices[index]!;
         await db.update(scene).set({ status: "generating", demo: false, requestId, costUsd: usd, error: null }).where(eq(scene.id, item.id));
+        await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${requestId}`);
       }
     }
   } catch (error) {
     refresh(projectId);
-    return { error: error instanceof SceneError ? error.message : "משהו השתבש ביצירת הסצנות." };
+    if (error instanceof SceneError || error instanceof InsufficientFunds) return { error: error.message };
+    return { error: "משהו השתבש ביצירת הסצנות." };
   }
   refresh(projectId);
   return {};
@@ -104,8 +113,9 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
         await putMedia(key, new Uint8Array(await response.arrayBuffer()));
         await db.update(scene).set({ status: "ready", mediaKey: key }).where(eq(scene.id, item.id));
       } else if (status.state === "failed") {
-        // Failed and moderated requests are not billed by Higgsfield.
+        // Failed and moderated requests are not billed by Higgsfield, so the customer is refunded too.
         await db.update(scene).set({ status: "failed", error: status.reason, costUsd: 0 }).where(eq(scene.id, item.id));
+        await refund(user.id, customerPriceIls(item.costUsd), `החזר: סצנה ${item.position + 1} לא נוצרה`, projectId, `refund:scene:${item.requestId}`);
       }
     } catch (error) {
       console.error("[scenes] poll failed", error instanceof Error ? error.message : error);

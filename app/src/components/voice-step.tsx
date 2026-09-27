@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { approveTake, deleteTake, quoteNarration, recordNarration, selectVoice } from "@/app/app/projects/[id]/voice-actions";
-import { formatIls, formatUsd } from "@/lib/money";
+import { canAfford, WalletLine } from "@/components/wallet-line";
+import { customerPriceIls, formatCustomerPrice } from "@/lib/pricing";
 import { END_CARD_SECONDS, PLAYBACK_SPEED } from "@/lib/script/hebrew";
 import { VOICES, type TimedWord } from "@/lib/voice/voices";
 
@@ -127,8 +128,8 @@ function TakePlayer({
         </p>
       )}
       <p className="text-sm text-ink-2 tabular-nums">
-        {take.durationSeconds.toFixed(1)} שניות קריינות · בסרטון (×{PLAYBACK_SPEED} + כרטיס סיום) כ־{finalSeconds.toFixed(1)} שניות · עלות{" "}
-        {formatIls(take.costUsd)}
+        {take.durationSeconds.toFixed(1)} שניות קריינות · בסרטון (×{PLAYBACK_SPEED} + כרטיס סיום) כ־{finalSeconds.toFixed(1)} שניות · מחיר{" "}
+        {formatCustomerPrice(take.costUsd)}
       </p>
       {!take.approved && (
         <div className="flex flex-wrap gap-2">
@@ -157,7 +158,7 @@ export function VoiceStep({
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [quote, setQuote] = useState<{ demo: boolean; usd: number; characters: number; duplicate: boolean } | null>(null);
+  const [quote, setQuote] = useState<{ demo: boolean; usd: number; characters: number; duplicate: boolean; balanceIls: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selecting, startSelect] = useTransition();
   const [quoting, startQuote] = useTransition();
@@ -273,17 +274,16 @@ export function VoiceStep({
             {quote.demo ? (
               <p className="text-ink-2">עוד לא חובר מפתח ElevenLabs, אז אי אפשר להקריא. הוסיפו ELEVENLABS_API_KEY ל-.env.local.</p>
             ) : (
-              <p className="text-ink-2">
-                {quote.characters} תווים בקול של {voiceName(selectedVoiceId ?? "")}. העלות <b>{formatIls(quote.usd)}</b>{" "}
-                <span className="text-ink-3" dir="ltr">
-                  ({formatUsd(quote.usd)})
-                </span>
-                .
-              </p>
+              <>
+                <p className="text-ink-2">
+                  {quote.characters} תווים בקול של {voiceName(selectedVoiceId ?? "")}. המחיר <b>{formatCustomerPrice(quote.usd)}</b>.
+                </p>
+                <WalletLine balanceIls={quote.balanceIls} priceIls={customerPriceIls(quote.usd)} />
+              </>
             )}
             <div className="flex gap-2">
               {!quote.demo && (
-                <button type="button" className="btn btn-primary" onClick={record}>
+                <button type="button" className="btn btn-primary" disabled={!canAfford(quote.balanceIls, customerPriceIls(quote.usd))} onClick={record}>
                   {quote.duplicate ? "כן, הקראה נוספת" : "הקריאו"}
                 </button>
               )}

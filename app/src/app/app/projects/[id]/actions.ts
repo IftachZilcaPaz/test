@@ -8,7 +8,9 @@ import { project, scriptDraft } from "@/db/schema";
 import { getOwnedProject } from "@/lib/projects.server";
 import { briefSchema, type Brief } from "@/lib/script/types";
 import { estimateScripts, ScriptWriterError, writeScripts } from "@/lib/script/writer.server";
+import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
+import { assertCanPay, balance, charge, InsufficientFunds } from "@/lib/wallet.server";
 
 // Guard against runaway spend from repeated clicks or scripted abuse.
 const MAX_DRAFTS_PER_PROJECT = 30;
@@ -57,7 +59,7 @@ export async function saveBrief(projectId: string, _previous: BriefState, formDa
   return { ok: true };
 }
 
-export type EstimateResult = { demo: boolean; maxUsd: number } | { error: string };
+export type EstimateResult = { demo: boolean; maxUsd: number; balanceIls: number } | { error: string };
 
 export async function estimateScriptCost(projectId: string): Promise<EstimateResult> {
   const user = await requireUser();
@@ -65,7 +67,7 @@ export async function estimateScriptCost(projectId: string): Promise<EstimateRes
   const brief = item && briefFromProject(item);
   if (!brief?.success) return { error: "קודם שומרים את הפרטים על העסק." };
   try {
-    return await estimateScripts(brief.data);
+    return { ...(await estimateScripts(brief.data)), balanceIls: await balance(user.id) };
   } catch (error) {
     console.error("[scripts] estimate failed", error instanceof Error ? error.message : error);
     return { error: "לא הצלחנו לחשב מחיר כרגע. נסו שוב." };
@@ -82,10 +84,13 @@ export async function generateScripts(projectId: string): Promise<{ error?: stri
   if (drafts >= MAX_DRAFTS_PER_PROJECT) return { error: "הגעתם למספר הגרסאות המרבי בפרויקט הזה." };
 
   try {
+    const quote = await estimateScripts(brief.data);
+    await assertCanPay(user.id, customerPriceIls(quote.maxUsd));
     const { options, usage } = await writeScripts(brief.data);
-    await db.insert(scriptDraft).values({ projectId, options, ...usage });
+    const [draft] = await db.insert(scriptDraft).values({ projectId, options, ...usage }).returning({ id: scriptDraft.id });
+    await charge(user.id, customerPriceIls(usage.costUsd), "כתיבת 3 תסריטים", projectId, `script:${draft.id}`);
   } catch (error) {
-    if (error instanceof ScriptWriterError) return { error: error.message };
+    if (error instanceof ScriptWriterError || error instanceof InsufficientFunds) return { error: error.message };
     console.error("[scripts] write failed", error instanceof Error ? error.message : error);
     return { error: "משהו השתבש בכתיבה. נסו שוב." };
   }

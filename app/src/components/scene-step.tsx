@@ -10,7 +10,8 @@ import {
   resetScene,
   updateScenePrompt,
 } from "@/app/app/projects/[id]/scene-actions";
-import { formatIls, formatUsd } from "@/lib/money";
+import { canAfford, WalletLine } from "@/components/wallet-line";
+import { formatCustomerPrice, formatShekels } from "@/lib/pricing";
 
 export type SceneView = {
   id: string;
@@ -95,7 +96,7 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
 export function SceneStep({ projectId, ready, scenes, approved }: { projectId: string; ready: boolean; scenes: SceneView[]; approved: boolean }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number } | null>(null);
+  const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quoting, startQuote] = useTransition();
   const [generating, startGenerate] = useTransition();
@@ -168,7 +169,7 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
               </button>
             )}
             {waiting && <span className="text-sm text-ink-2">הסצנות נוצרות ב-Higgsfield (בדרך כלל דקה-שתיים). אפשר להישאר בעמוד.</span>}
-            {spent > 0 && <span className="text-sm text-ink-3">עלות הסצנות עד עכשיו: {formatIls(spent)}</span>}
+            {spent > 0 && <span className="text-sm text-ink-3">שילמתם על הסצנות: {formatCustomerPrice(spent)}</span>}
           </div>
         )}
         {error && (
@@ -190,16 +191,15 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
                 הסרטון.
               </p>
             ) : (
-              <p className="text-ink-2">
-                {quote.count} סצנות ב-Seedance. העלות <b>{formatIls(quote.usd)}</b>{" "}
-                <span className="text-ink-3" dir="ltr">
-                  ({formatUsd(quote.usd)})
-                </span>
-                . סצנה שנכשלת לא מחויבת.
-              </p>
+              <>
+                <p className="text-ink-2">
+                  {quote.count} סצנות. המחיר <b>{formatShekels(quote.priceIls)}</b>. סצנה שנכשלת — הכסף חוזר לארנק.
+                </p>
+                <WalletLine balanceIls={quote.balanceIls} priceIls={quote.priceIls} />
+              </>
             )}
             <div className="flex gap-2">
-              <button type="button" className="btn btn-primary" onClick={generate}>
+              <button type="button" className="btn btn-primary" disabled={!quote.demo && !canAfford(quote.balanceIls, quote.priceIls)} onClick={generate}>
                 {quote.demo ? "צרו סצנות לדוגמה" : "צרו"}
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>
