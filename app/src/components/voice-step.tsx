@@ -26,30 +26,6 @@ function SamplePlayer({ voiceId }: { voiceId: string }) {
 
   useEffect(() => () => audioRef.current?.pause(), []);
 
-  async function toggle() {
-    if (state === "playing") {
-      audioRef.current?.pause();
-      return setState("idle");
-    }
-    // Stop any other sample that is playing.
-    document.dispatchEvent(new CustomEvent("voice-sample-play", { detail: voiceId }));
-    setState("loading");
-    setError(null);
-    if (!audioRef.current) {
-      const response = await fetch(`/api/voices/${voiceId}/sample`);
-      if (!response.ok) {
-        setError(await response.text());
-        return setState("error");
-      }
-      const audio = new Audio(URL.createObjectURL(await response.blob()));
-      audio.onended = () => setState("idle");
-      audioRef.current = audio;
-    }
-    audioRef.current.currentTime = 0;
-    await audioRef.current.play();
-    setState("playing");
-  }
-
   useEffect(() => {
     const stop = (event: Event) => {
       if ((event as CustomEvent<string>).detail !== voiceId && audioRef.current) {
@@ -61,13 +37,49 @@ function SamplePlayer({ voiceId }: { voiceId: string }) {
     return () => document.removeEventListener("voice-sample-play", stop);
   }, [voiceId]);
 
+  async function explainFailure() {
+    // The <audio> element hides the server's reason; ask for it once.
+    const response = await fetch(`/api/voices/${voiceId}/sample`).catch(() => null);
+    setError(response && !response.ok ? await response.text() : "לא הצלחנו להשמיע את הדגימה. נסו שוב.");
+    setState("error");
+  }
+
+  function toggle() {
+    if (state === "playing" || state === "loading") {
+      audioRef.current?.pause();
+      return setState("idle");
+    }
+    document.dispatchEvent(new CustomEvent("voice-sample-play", { detail: voiceId }));
+    setError(null);
+    if (!audioRef.current) {
+      const audio = new Audio(`/api/voices/${voiceId}/sample`);
+      audio.preload = "auto";
+      audio.onplaying = () => setState("playing");
+      audio.onended = () => setState("idle");
+      audio.onerror = () => void explainFailure();
+      audioRef.current = audio;
+    }
+    audioRef.current.currentTime = 0;
+    setState("loading");
+    // play() is called inside the click, so the browser allows sound even though the
+    // first sample takes a few seconds to render.
+    audioRef.current.play().catch((reason: unknown) => {
+      if (reason instanceof DOMException && reason.name === "AbortError") return;
+      if (reason instanceof DOMException && reason.name === "NotAllowedError") {
+        setError("הדפדפן חסם את ההשמעה. לחצו שוב על האזנה.");
+        return setState("error");
+      }
+      void explainFailure();
+    });
+  }
+
   return (
     <>
-      <button type="button" onClick={toggle} disabled={state === "loading"} className="btn px-4 py-2 text-sm" aria-label={`השמעת דגימה של ${voiceName(voiceId)}`}>
-        {state === "loading" ? "טוען…" : state === "playing" ? "■ עצירה" : "▶ האזנה"}
+      <button type="button" onClick={toggle} className="btn px-4 py-2 text-sm" aria-label={`השמעת דגימה של ${voiceName(voiceId)}`}>
+        {state === "loading" ? "טוען… (בפעם הראשונה כמה שניות)" : state === "playing" ? "■ עצירה" : "▶ האזנה"}
       </button>
       {error && (
-        <span role="alert" className="text-xs text-bad">
+        <span role="alert" className="w-full text-xs text-bad">
           {error}
         </span>
       )}
