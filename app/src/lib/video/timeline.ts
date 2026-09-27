@@ -24,6 +24,27 @@ const normalize = (word: string) => stripNiqqud(word).replace(/[^\p{L}\p{N}]/gu,
 
 const PREFIXES = "והבלמשכ";
 
+/** Shortest time a scene may stay on screen; faster cuts read as glitches. */
+export const MIN_SCENE_SECONDS = 1.2;
+
+const round = (seconds: number) => Math.round(seconds * 1000) / 1000;
+
+/**
+ * Nudges cut points so every slot lasts at least MIN_SCENE_SECONDS while staying
+ * as close as possible to the spoken cues. Falls back to even slots when the
+ * narration is too short to fit them all.
+ */
+function spaceCuts(cuts: number[], end: number): number[] {
+  const count = cuts.length;
+  if (end < count * MIN_SCENE_SECONDS) return cuts.map((_, index) => round((end / count) * index));
+  const spaced = [...cuts];
+  for (let i = 1; i < count; i++) spaced[i] = Math.max(spaced[i]!, spaced[i - 1]! + MIN_SCENE_SECONDS);
+  for (let i = count - 1; i >= 1; i--) {
+    spaced[i] = Math.min(spaced[i]!, (i + 1 < count ? spaced[i + 1]! : end) - MIN_SCENE_SECONDS);
+  }
+  return spaced.map(round);
+}
+
 /** Same word, allowing one Hebrew prefix letter on either side ("ומקום" ≈ "מקום"). */
 function sameWord(spoken: string, written: string): boolean {
   if (spoken === written) return true;
@@ -66,17 +87,20 @@ export function buildTimeline(words: TimedWord[], captions: string[], speed = PL
     }
   }
 
+  // Captions follow the voice exactly; only the visual cuts are spaced out.
+  const cuts = spaceCuts(starts, narrationEnd);
   const scenes: TimelineScene[] = Array.from({ length: count }, (_, index) => {
     const hit = located[index];
+    const nextCaption = index + 1 < count ? starts[index + 1]! : narrationEnd + 0.35;
     return {
       index,
-      start: starts[index] ?? 0,
-      end: index + 1 < count ? starts[index + 1]! : narrationEnd,
+      start: cuts[index]!,
+      end: index + 1 < count ? cuts[index + 1]! : narrationEnd,
       caption: hit
         ? {
             text: hit.text,
             start: toFinal(words[hit.first]!.start),
-            end: Math.min(toFinal(words[hit.last]!.end) + 0.35, index + 1 < count ? starts[index + 1]! : narrationEnd + 0.35),
+            end: round(Math.min(toFinal(words[hit.last]!.end) + 0.35, nextCaption)),
           }
         : null,
     };

@@ -75,7 +75,7 @@ export function RenderStep({ projectId, ready, latest }: { projectId: string; re
           />
           <div className="flex flex-col gap-4">
             <h3 className="text-xl">הסרטון מוכן 🎬</h3>
-            <p className="text-ink-2 tabular-nums">אורך: {latest.durationSeconds?.toFixed(1)} שניות · 720×1280 (אנכי, לרילס, טיקטוק וסטוריז)</p>
+            <p className="text-ink-2 tabular-nums">אורך: {latest.durationSeconds?.toFixed(1)} שניות · <bdi dir="ltr">720×1280</bdi> (אנכי, לרילס, טיקטוק וסטוריז)</p>
             {latest.checks && (
               <ul className="flex flex-col gap-2" aria-label="בדיקות אוטומטיות">
                 {latest.checks.map((check) => (
