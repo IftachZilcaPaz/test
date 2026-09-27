@@ -40,7 +40,7 @@
 
 ## נכסים
 
-- דמות reynovation, גרסה 2 (0.25 קרדיט), בחורה עם בוב שחור, משקפיים עגולים וקלאפר, כדי שלא תדמה לדמות מהרפרנס:
+- דמות reynovation, גרסה 2 (0.25 קרדיט, **מאושרת**), בחורה עם בוב שחור, משקפיים עגולים וקלאפר, כדי שלא תדמה לדמות מהרפרנס:
   https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260927_072442_76d960bd-3b0c-4a28-b490-301f9361b144.png
 - גרסה 1 (0.25 קרדיט, נפסלה כי הייתה דומה מדי לרפרנס):
   https://d8j0ntlcm91z4.cloudfront.net/user_3JmONODBWc3nm2ewZfPJcp0njwW/hf_20260927_070311_27a6bc40-8f4c-4e83-994b-58bf4c735da8.png
