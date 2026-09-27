@@ -1,5 +1,5 @@
 import "server-only";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, normalize, sep } from "node:path";
 
 /**
@@ -26,6 +26,10 @@ export async function getMedia(key: string): Promise<Uint8Array | null> {
   } catch {
     return null;
   }
+}
+
+export async function deleteMedia(key: string): Promise<void> {
+  await rm(resolveKey(key), { force: true });
 }
 
 export async function hasMedia(key: string): Promise<boolean> {

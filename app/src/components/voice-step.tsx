@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { approveTake, quoteNarration, recordNarration, selectVoice } from "@/app/app/projects/[id]/voice-actions";
+import { approveTake, deleteTake, quoteNarration, recordNarration, selectVoice } from "@/app/app/projects/[id]/voice-actions";
 import { formatIls, formatUsd } from "@/lib/money";
 import { END_CARD_SECONDS, PLAYBACK_SPEED } from "@/lib/script/hebrew";
 import { VOICES, type TimedWord } from "@/lib/voice/voices";
@@ -87,7 +87,17 @@ function SamplePlayer({ voiceId }: { voiceId: string }) {
   );
 }
 
-function TakePlayer({ take, onApprove, approving }: { take: TakeView; onApprove: () => void; approving: boolean }) {
+function TakePlayer({
+  take,
+  onApprove,
+  onDelete,
+  busy,
+}: {
+  take: TakeView;
+  onApprove: () => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
   const [now, setNow] = useState(-1);
   const finalSeconds = take.durationSeconds / PLAYBACK_SPEED + END_CARD_SECONDS;
   return (
@@ -121,9 +131,14 @@ function TakePlayer({ take, onApprove, approving }: { take: TakeView; onApprove:
         {formatIls(take.costUsd)}
       </p>
       {!take.approved && (
-        <button type="button" className="btn btn-primary self-start" disabled={approving} onClick={onApprove}>
-          {approving ? "שומר…" : "אישור ההקראה"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
+            {busy ? "שומר…" : "אישור ההקראה"}
+          </button>
+          <button type="button" className="btn btn-ghost" disabled={busy} onClick={onDelete}>
+            מחיקה
+          </button>
+        </div>
       )}
     </article>
   );
@@ -287,7 +302,15 @@ export function VoiceStep({
             {take.id === freshId && <p className="px-2 pb-2 text-sm font-semibold text-accent">ההקראה החדשה ↓</p>}
           <TakePlayer
             take={take}
-            approving={approving}
+            busy={approving}
+            onDelete={() => {
+              if (!window.confirm("למחוק את ההקראה הזו? (העלות שכבר שולמה לא חוזרת)")) return;
+              startApprove(async () => {
+                const result = await deleteTake(take.id);
+                if (result.error) setError(result.error);
+                else router.refresh();
+              });
+            }}
             onApprove={() =>
               startApprove(async () => {
                 const result = await approveTake(take.id);

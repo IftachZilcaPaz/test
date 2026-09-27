@@ -8,7 +8,7 @@ import { project, voiceTake } from "@/db/schema";
 import { approvedScript, getOwnedProject } from "@/lib/projects.server";
 import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
 import { requireUser } from "@/lib/session";
-import { putMedia } from "@/lib/storage.server";
+import { deleteMedia, putMedia } from "@/lib/storage.server";
 import { isVoiceDemoMode, synthesize, VoiceError } from "@/lib/voice/tts.server";
 import { isVoiceId, voiceCostUsd } from "@/lib/voice/voices";
 
@@ -139,6 +139,25 @@ export async function approveTake(takeId: string): Promise<{ error?: string }> {
       .set({ status: row.status === "voice" ? "scenes" : row.status })
       .where(eq(project.id, row.projectId)),
   ]);
+  revalidatePath(`/app/projects/${row.projectId}`);
+  return {};
+}
+
+/** Removes an unapproved take and its audio. Paid characters are not refunded by the provider. */
+export async function deleteTake(takeId: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const id = z.string().uuid().safeParse(takeId);
+  if (!id.success) return { error: "ההקראה לא נמצאה." };
+  const [row] = await db
+    .select({ projectId: project.id, approved: voiceTake.approved, audioKey: voiceTake.audioKey })
+    .from(voiceTake)
+    .innerJoin(project, eq(voiceTake.projectId, project.id))
+    .where(and(eq(voiceTake.id, id.data), eq(project.userId, user.id)))
+    .limit(1);
+  if (!row) return { error: "ההקראה לא נמצאה." };
+  if (row.approved) return { error: "אי אפשר למחוק את ההקראה המאושרת." };
+  await db.delete(voiceTake).where(eq(voiceTake.id, id.data));
+  await deleteMedia(row.audioKey);
   revalidatePath(`/app/projects/${row.projectId}`);
   return {};
 }
