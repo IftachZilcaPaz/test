@@ -98,6 +98,8 @@ export const project = sqliteTable(
     seconds: integer("seconds").notNull().default(20),
     /** Pronunciation lexicon, one "word = pointed" pair per line. */
     lexicon: text("lexicon").notNull().default(""),
+    /** ElevenLabs voice chosen in the voice step. */
+    voiceId: text("voice_id"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -131,3 +133,29 @@ export const scriptDraft = sqliteTable(
 );
 
 export type ScriptDraft = typeof scriptDraft.$inferSelect;
+
+/** One narration take: the audio, per-word timings for captions, and what it cost. */
+export const voiceTake = sqliteTable(
+  "voice_take",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => project.id, { onDelete: "cascade" }),
+    voiceId: text("voice_id").notNull(),
+    /** Exactly what the narrator read (approved script with the lexicon applied). */
+    spokenText: text("spoken_text").notNull(),
+    audioKey: text("audio_key").notNull(),
+    words: text("words", { mode: "json" }).notNull().$type<import("@/lib/voice/voices").TimedWord[]>(),
+    durationSeconds: real("duration_seconds").notNull(),
+    characters: integer("characters").notNull(),
+    costUsd: real("cost_usd").notNull(),
+    approved: integer("approved", { mode: "boolean" }).notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (table) => [index("voice_take_project_created_idx").on(table.projectId, table.createdAt)],
+);
+
+export type VoiceTake = typeof voiceTake.$inferSelect;

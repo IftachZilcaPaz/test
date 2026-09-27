@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BriefForm } from "@/components/brief-form";
 import { ScriptStep } from "@/components/script-step";
+import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
-import { getOwnedProject, listDrafts } from "@/lib/projects.server";
+import { getOwnedProject, listDrafts, listTakes } from "@/lib/projects.server";
 import { requireUser } from "@/lib/session";
 import { saveBrief } from "./actions";
 
@@ -15,7 +16,8 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const { id } = await params;
   const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
-  const drafts = await listDrafts(item.id);
+  const [drafts, takes] = await Promise.all([listDrafts(item.id), listTakes(item.id)]);
+  const scriptApproved = drafts.some((draft) => draft.chosenScript);
   const current = STEPS.findIndex((step) => step.key === item.status);
 
   return (
@@ -71,6 +73,20 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           costUsd: draft.costUsd,
           demo: draft.demo,
           createdAt: draft.createdAt.toISOString(),
+        }))}
+      />
+
+      <VoiceStep
+        projectId={item.id}
+        ready={scriptApproved}
+        selectedVoiceId={item.voiceId}
+        takes={takes.map((take) => ({
+          id: take.id,
+          voiceId: take.voiceId,
+          durationSeconds: take.durationSeconds,
+          words: take.words,
+          costUsd: take.costUsd,
+          approved: take.approved,
         }))}
       />
     </div>
