@@ -245,6 +245,24 @@ details.adv summary{cursor:pointer;color:var(--ink-2);font-weight:600;font-size:
 .prices{width:100%;border-collapse:collapse;font-size:15px}
 .prices td{padding:9px 6px;border-bottom:1px solid var(--line)}
 .prices td:last-child{text-align:end;white-space:nowrap}
+html[data-palette="lav"]{--ground:#F4F2F9;--ground-2:#EAE5F6;--accent:#6A58C9;--accent-2:#8A79DE;--accent-soft:#ECE8FA}
+@media (prefers-color-scheme:dark){html[data-palette="lav"]:not([data-theme="light"]){--accent:#B3A6F2;--accent-2:#C8BEF7;--accent-soft:#27223D}}
+html[data-palette="lav"][data-theme="dark"]{--accent:#B3A6F2;--accent-2:#C8BEF7;--accent-soft:#27223D}
+html[data-palette="rose"]{--ground:#FAF4F1;--ground-2:#F5E6E0;--accent:#C35F4E;--accent-2:#DB7C69;--accent-soft:#F9E6E1}
+@media (prefers-color-scheme:dark){html[data-palette="rose"]:not([data-theme="light"]){--accent:#F0A393;--accent-2:#F5BCAF;--accent-soft:#3A2420}}
+html[data-palette="rose"][data-theme="dark"]{--accent:#F0A393;--accent-2:#F5BCAF;--accent-soft:#3A2420}
+html[data-palette="sky"]{--ground:#F1F5F9;--ground-2:#E3ECF5;--accent:#2F6DB0;--accent-2:#4B8AD0;--accent-soft:#E2EDF8}
+@media (prefers-color-scheme:dark){html[data-palette="sky"]:not([data-theme="light"]){--accent:#8DB9EA;--accent-2:#A9CBF0;--accent-soft:#1C2A3A}}
+html[data-palette="sky"][data-theme="dark"]{--accent:#8DB9EA;--accent-2:#A9CBF0;--accent-soft:#1C2A3A}
+html[data-palette="sand"]{--ground:#F7F4EE;--ground-2:#EFE7D8;--accent:#94702F;--accent-2:#B08C4A;--accent-soft:#F3EAD6}
+@media (prefers-color-scheme:dark){html[data-palette="sand"]:not([data-theme="light"]){--accent:#DDBB7C;--accent-2:#E8CD99;--accent-soft:#342A1A}}
+html[data-palette="sand"][data-theme="dark"]{--accent:#DDBB7C;--accent-2:#E8CD99;--accent-soft:#342A1A}
+html[data-palette="sage"]{--ground:#F2F4F1;--ground-2:#E9EFEA;--accent:#2E6B5E;--accent-2:#3F8A79;--accent-soft:#E2EFEA}
+@media (prefers-color-scheme:dark){html[data-palette="sage"]:not([data-theme="light"]){--accent:#7CC4AE;--accent-2:#98D3C0;--accent-soft:#1D2F29}}
+html[data-palette="sage"][data-theme="dark"]{--accent:#7CC4AE;--accent-2:#98D3C0;--accent-soft:#1D2F29}
+.palette{display:flex;gap:6px;align-items:center;background:var(--surface);border-radius:999px;padding:6px 8px;box-shadow:var(--shadow)}
+.palette button{width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;background:var(--c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);transition:transform .15s}
+.palette button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--c);transform:scale(1.08)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -252,6 +270,7 @@ details.adv summary{cursor:pointer;color:var(--ink-2);font-weight:600;font-size:
   <header class="top">
     <div class="top-row">
       <div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>סטודיו פרומו</h1><p>סרטון לעסק שלכם, בעברית, בלי לדעת כלום</p></div></div>
+      <div class="palette" role="group" aria-label="צבעי הממשק"><button type="button" data-pal="lav" style="--c:#6A58C9" aria-label="צבע לילך" title="לילך"></button><button type="button" data-pal="rose" style="--c:#C35F4E" aria-label="צבע אפרסק" title="אפרסק"></button><button type="button" data-pal="sky" style="--c:#2F6DB0" aria-label="צבע תכלת" title="תכלת"></button><button type="button" data-pal="sand" style="--c:#94702F" aria-label="צבע חול" title="חול"></button><button type="button" data-pal="sage" style="--c:#2E6B5E" aria-label="צבע מרווה" title="מרווה"></button></div>
       <div class="wallet" aria-live="polite">
         <div><div class="k">יתרה</div><div class="v num" id="wBal">29.98</div></div>
         <div class="next"><div class="k">הצעד הבא יעלה</div><div class="v num" id="wCost">0</div></div>
@@ -1033,6 +1052,19 @@ function renderSaid() {
 }
 if (!Array.isArray(S.brief.lexicon)) S.brief.lexicon = [];
 renderLex();
+
+/* interface palette (per-viewer convenience) */
+(() => {
+  let pal = "lav";
+  try { pal = localStorage.getItem("promo-studio-palette") || "lav"; } catch {}
+  const apply = k => {
+    document.documentElement.dataset.palette = k;
+    $$("[data-pal]").forEach(b => b.setAttribute("aria-pressed", b.dataset.pal === k));
+    try { localStorage.setItem("promo-studio-palette", k); } catch {}
+  };
+  $$("[data-pal]").forEach(b => b.onclick = () => apply(b.dataset.pal));
+  apply(pal);
+})();
 renderChips(); renderShots(); renderOpts(); renderScript(); refresh();
 })();
 </script>
