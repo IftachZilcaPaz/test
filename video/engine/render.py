@@ -395,8 +395,9 @@ def media_key(b: dict) -> str:
     return b.get("key") or b["asset"]
 
 
-def contact_sheet(work: Path, timeline: list[dict], out: Path) -> Path:
-    """One image with a frame from the middle of every beat, labelled with its time and type."""
+def contact_sheet(work: Path, timeline: list[dict], out: Path, speed: float = 1.0) -> Path:
+    """One image with a frame from the middle of every beat, labelled with its start time in the
+    finished (sped-up) video and its type, so the labels match what the viewer's player shows."""
     from PIL import Image, ImageDraw  # sandbox-only dependency
 
     frames = sorted((work / "proj" / "renders").glob("check_*.png"), key=lambda p: float(p.stem[6:]))
@@ -407,7 +408,7 @@ def contact_sheet(work: Path, timeline: list[dict], out: Path) -> Path:
     for i, (png, b) in enumerate(zip(frames, timeline)):
         x, y = pad + (i % cols) * (tw + pad), pad + (i // cols) * (th + pad + 28)
         sheet.paste(Image.open(png).convert("RGB").resize((tw, th)), (x, y + 28))
-        draw.text((x, y + 6), f"#{i}  {b['start']:.1f}s  {b['type']}", fill="#e8eaed")
+        draw.text((x, y + 6), f"#{i}  {b['start'] / speed:.1f}s  {b['type']}", fill="#e8eaed")
     sheet.save(out)
     return out
 
@@ -491,7 +492,7 @@ def main() -> int:
     shutil.rmtree(work / "proj", ignore_errors=True)
     run(["higgsedit", "build", edit.name], cwd=work)
     blank = blank_checkpoints(work)
-    sheet = contact_sheet(work, timeline, (args.sheet or work / "contact.png").resolve())
+    sheet = contact_sheet(work, timeline, (args.sheet or work / "contact.png").resolve(), speed)
     run(["higgsedit", "render", "proj", "--out", "renders/silent.mp4"], cwd=work)
     mux(work / "proj" / "renders" / "silent.mp4", vo, lead, speed, args.out.resolve())
 
