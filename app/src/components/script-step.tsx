@@ -54,7 +54,7 @@ function OptionCard({
       </header>
       <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-2">
         הטקסט של הקריין (אפשר לערוך)
-        <textarea value={text} onChange={(event) => setText(event.target.value)} rows={7} className="field leading-7" />
+        <textarea value={text} onChange={(event) => setText(event.target.value)} rows={7} className="field field-sizing-content min-h-40 resize-none leading-7" />
       </label>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className={`rounded-full px-3 py-1 font-semibold ${verdict.className}`}>{verdict.label}</span>
