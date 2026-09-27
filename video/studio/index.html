@@ -1,386 +1,426 @@
 <title>סטודיו פרומו</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;700&family=IBM+Plex+Mono:wght@500&family=Secular+One&family=Frank+Ruhl+Libre:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@300;500;700;800&family=IBM+Plex+Mono:wght@500&family=Frank+Ruhl+Libre:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ground:#F1F2F4; --surface:#FFFFFF; --surface-2:#F7F8FA; --line:#DFE2E7; --line-strong:#C6CBD3;
-  --ink:#15171B; --ink-2:#4B5260; --ink-3:#7A8290;
-  --accent:#F0521F; --accent-ink:#FFFFFF; --accent-soft:#FDE7DE;
-  --money:#0E7F58; --money-soft:#DDF3EA; --warn:#B26A00; --warn-soft:#FFF1D6; --bad:#C62B2B; --bad-soft:#FCE3E3;
-  --stage:#0B0C0E; --shadow:0 1px 2px rgba(20,23,27,.06),0 8px 24px rgba(20,23,27,.06);
-  --t-broll:#5B6BF0; --t-screen:#0E7F58; --t-scroll:#0A8FA8; --t-slide:#B35CD6; --t-end:#F0521F;
-  --display:'Secular One','IBM Plex Sans Hebrew',system-ui,sans-serif;
-  --body:'IBM Plex Sans Hebrew',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --ground:#F2F4F1; --ground-2:#E9EFEA; --surface:#FFFFFF; --surface-2:#F7F9F7; --line:#E2E7E2; --line-strong:#CBD3CC;
+  --ink:#1C2320; --ink-2:#4E5A54; --ink-3:#88938D;
+  --accent:#2E6B5E; --accent-2:#3F8A79; --accent-soft:#E2EFEA; --accent-ink:#FFFFFF;
+  --warm:#A9622F; --warm-soft:#F8EBDF; --bad:#B23A3A; --bad-soft:#F8E3E2;
+  --stage:#0B0D0C;
+  --shadow:0 1px 2px rgba(22,34,28,.04),0 14px 40px -12px rgba(22,34,28,.12);
+  --shadow-lift:0 2px 4px rgba(22,34,28,.05),0 24px 60px -18px rgba(22,34,28,.22);
+  --t-broll:#7C8BD9; --t-screen:#3F8A79; --t-scroll:#5AA7B8; --t-slide:#C08BC8; --t-end:#D98B5F;
+  --display:'Heebo','Assistant',system-ui,sans-serif;
+  --body:'Assistant','Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:22px; --r-sm:12px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
-  --ground:#0F1114; --surface:#181B20; --surface-2:#1E2228; --line:#2A2F37; --line-strong:#3A414B;
-  --ink:#ECEEF1; --ink-2:#B3BAC5; --ink-3:#848C98;
-  --accent:#FF6A3D; --accent-ink:#1A0B05; --accent-soft:#3A1D12;
-  --money:#3CC48F; --money-soft:#12301F; --warn:#F2B143; --warn-soft:#33260E; --bad:#FF7070; --bad-soft:#3A1717;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  --ground:#0E1211; --ground-2:#131A17; --surface:#161C1A; --surface-2:#1C2320; --line:#28302C; --line-strong:#3A4440;
+  --ink:#E8EDEA; --ink-2:#B1BCB6; --ink-3:#7E8A84;
+  --accent:#7CC4AE; --accent-2:#98D3C0; --accent-soft:#1D2F29; --accent-ink:#0B1511;
+  --warm:#E3A375; --warm-soft:#33261C; --bad:#F08A85; --bad-soft:#3A1E1D;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 40px -12px rgba(0,0,0,.5);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.4),0 24px 60px -18px rgba(0,0,0,.6);
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --ground:#0F1114; --surface:#181B20; --surface-2:#1E2228; --line:#2A2F37; --line-strong:#3A414B;
-  --ink:#ECEEF1; --ink-2:#B3BAC5; --ink-3:#848C98;
-  --accent:#FF6A3D; --accent-ink:#1A0B05; --accent-soft:#3A1D12;
-  --money:#3CC48F; --money-soft:#12301F; --warn:#F2B143; --warn-soft:#33260E; --bad:#FF7070; --bad-soft:#3A1717;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  --ground:#0E1211; --ground-2:#131A17; --surface:#161C1A; --surface-2:#1C2320; --line:#28302C; --line-strong:#3A4440;
+  --ink:#E8EDEA; --ink-2:#B1BCB6; --ink-3:#7E8A84;
+  --accent:#7CC4AE; --accent-2:#98D3C0; --accent-soft:#1D2F29; --accent-ink:#0B1511;
+  --warm:#E3A375; --warm-soft:#33261C; --bad:#F08A85; --bad-soft:#3A1E1D;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 14px 40px -12px rgba(0,0,0,.5);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.4),0 24px 60px -18px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box}
-body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 48px}
-.wrap{max-width:1180px;margin:0 auto}
+body{background:var(--ground);background-image:radial-gradient(1200px 600px at 85% -10%,var(--ground-2),transparent 70%),radial-gradient(900px 500px at 0% 110%,var(--ground-2),transparent 70%);background-attachment:fixed;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 64px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto}
 h1,h2,h3{text-wrap:balance;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
 
-/* top bar */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);padding-block:14px 10px;border-bottom:1px solid var(--line);margin-bottom:20px}
-.top-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px;margin-inline-end:auto}
-.tally{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-.brand h1{font-family:var(--display);font-size:22px;font-weight:400;letter-spacing:.2px}
-.drybadge{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:3px 8px;border-radius:4px;background:var(--warn-soft);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
-.steps{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}
-.step{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;display:flex;gap:8px;align-items:center;color:var(--ink-2)}
-.step b{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--ink-3)}
-.step[aria-current="step"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.step[aria-current="step"] b{color:var(--surface)}
-.wallet{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 12px}
-.wallet .k{font-size:12px;color:var(--ink-3)}
-.wallet .v{font-family:var(--mono);font-size:15px}
-.wallet .v.good{color:var(--money)} .wallet .v.bad{color:var(--bad)}
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:18px 14px;margin-bottom:28px;background:color-mix(in srgb,var(--ground) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.top-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;margin-inline-end:auto}
+.mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--accent-2),var(--accent));box-shadow:0 6px 16px -6px var(--accent);display:grid;place-items:center}
+.mark::after{content:"";width:0;height:0;border-block:6px solid transparent;border-inline-end:10px solid var(--accent-ink);margin-inline-start:3px}
+.brand h1{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.2px}
+.brand p{margin:0;font-size:13px;color:var(--ink-3)}
+.wallet{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:999px;padding:5px;box-shadow:var(--shadow)}
+.wallet > div{padding:4px 14px;border-radius:999px;text-align:center}
+.wallet > div + div{border-inline-start:1px solid var(--line)}
+.wallet .k{font-size:11.5px;color:var(--ink-3);line-height:1.3}
+.wallet .v{font-size:15px;font-weight:700;line-height:1.3}
+.wallet .v.good{color:var(--accent)} .wallet .v.bad{color:var(--bad)}
+.wallet .next{background:var(--accent-soft)}
+.steps{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap;align-items:center}
+.step{border:0;background:transparent;border-radius:999px;padding:6px 14px 6px 10px;cursor:pointer;display:flex;gap:10px;align-items:center;color:var(--ink-3);font-weight:600;transition:background .2s,color .2s}
+.step b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:var(--surface);box-shadow:var(--shadow);color:var(--ink-2);transition:background .2s,color .2s}
+.step:hover{color:var(--ink)}
+.step[aria-current="step"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.step[aria-current="step"] b{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.sep{width:22px;height:1px;background:var(--line-strong)}
+@media (max-width:640px){.sep{display:none}.wallet{width:100%;justify-content:space-between}}
+
+/* step intro */
+.intro{margin:4px 0 22px}
+.intro h2{font-family:var(--display);font-weight:300;font-size:clamp(26px,4vw,36px);letter-spacing:-.6px;line-height:1.15}
+.intro h2 b{font-weight:700;color:var(--accent)}
+.intro p{margin:8px 0 0;color:var(--ink-2);max-width:62ch;font-size:16.5px}
 
 /* layout */
 .panel{display:none}
-.panel.on{display:block}
-.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:20px;align-items:start}
+.panel.on{display:block;animation:fade .35s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid2{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:22px;align-items:start}
 @media (max-width:900px){.grid2{grid-template-columns:1fr}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:var(--shadow)}
-.card + .card{margin-top:16px}
-.card h2{font-size:17px;font-weight:700;margin-bottom:4px}
-.lede{color:var(--ink-2);margin:0 0 16px;max-width:65ch}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.card{background:var(--surface);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+.card + .card{margin-top:18px}
+.card h3{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lede{color:var(--ink-2);margin:0 0 16px;max-width:62ch;font-size:15px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
 @media (max-width:560px){.fields{grid-template-columns:1fr}}
-.f{display:flex;flex-direction:column;gap:5px}
+.f{display:flex;flex-direction:column;gap:6px}
 .f.full{grid-column:1/-1}
-.f label{font-size:13px;font-weight:500;color:var(--ink-2)}
-.f small{color:var(--ink-3);font-size:12px}
-input[type=text],input[type=number],select,textarea{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
-textarea{resize:vertical;min-height:84px;line-height:1.6}
-input[type=color]{width:44px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:3px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:9px;padding:9px 16px;cursor:pointer;font-weight:500;display:inline-flex;gap:8px;align-items:center}
-.btn:hover{background:var(--surface-2)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{filter:brightness(1.05)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
+.f label,.f > .lab{font-size:14px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.f small{color:var(--ink-3);font-size:13px}
+input[type=text],input[type=number],select,textarea{background:var(--surface-2);border:1px solid transparent;border-radius:var(--r-sm);padding:11px 13px;width:100%;transition:border-color .15s,background .15s,box-shadow .15s}
+input[type=text]:hover,input[type=number]:hover,select:hover,textarea:hover{border-color:var(--line)}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{outline:none;background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+textarea{resize:vertical;min-height:88px;line-height:1.7}
+input[type=color]{width:48px;height:42px;border:0;border-radius:12px;background:var(--surface-2);padding:4px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 15px;cursor:pointer;font-size:15px;transition:all .15s}
+.chip:hover{border-color:var(--line-strong)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent);font-weight:600}
+.btn{border:0;background:var(--surface-2);border-radius:999px;padding:11px 20px;cursor:pointer;font-weight:600;display:inline-flex;gap:8px;align-items:center;transition:transform .12s,box-shadow .2s,background .15s}
+.btn:hover{background:var(--line)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(145deg,var(--accent-2),var(--accent));color:var(--accent-ink);box-shadow:0 10px 24px -10px var(--accent)}
+.btn.primary:hover{box-shadow:0 14px 30px -10px var(--accent)}
+.btn.ghost{background:transparent;border:1px solid var(--line-strong)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .row.end{justify-content:flex-end}
-.hint{font-size:13px;color:var(--ink-3)}
+.next-row{display:flex;justify-content:flex-end;margin-top:22px}
+.hint{font-size:13.5px;color:var(--ink-3)}
 
 /* screens */
-.drop{border:1.5px dashed var(--line-strong);border-radius:10px;padding:14px;text-align:center;color:var(--ink-2);cursor:pointer;background:var(--surface-2)}
-.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-top:12px}
-.shot{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column}
+.drop{display:block;border:1.5px dashed var(--line-strong);border-radius:var(--r-sm);padding:22px;text-align:center;color:var(--ink-2);cursor:pointer;background:var(--surface-2);transition:all .15s}
+.drop b{display:block;font-size:16px;color:var(--ink);margin-bottom:2px}
+.drop.over,.drop:hover{border-color:var(--accent);background:var(--accent-soft)}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;margin-top:14px}
+.shot{border-radius:16px;overflow:hidden;background:var(--surface-2);display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 .shot .thumb{aspect-ratio:9/16;background:var(--line);position:relative;overflow:hidden}
 .shot .thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.shot .meta{padding:6px;display:flex;flex-direction:column;gap:4px}
-.shot .meta input,.shot .meta select{padding:4px 6px;font-size:12px}
-.shot .x{position:absolute;top:4px;inset-inline-start:4px;border:0;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;width:22px;height:22px;cursor:pointer;line-height:1}
+.shot .meta{padding:8px;display:flex;flex-direction:column;gap:6px}
+.shot .meta input,.shot .meta select{padding:6px 8px;font-size:13px;border-radius:9px}
+.shot .x{position:absolute;top:6px;inset-inline-start:6px;border:0;background:rgba(0,0,0,.45);color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;line-height:1;backdrop-filter:blur(4px)}
 .mock{position:absolute;inset:0;padding:8% 9%;display:flex;flex-direction:column;gap:6%;background:linear-gradient(180deg,#fbfaf6,#f1efe8)}
-.mock i{display:block;height:5%;border-radius:4px;background:#d9ddd6}
-.mock i.h{height:7%;width:70%;background:#b9c2bb;margin-inline-start:auto}
-.mock i.b{height:8%;border-radius:99px;background:var(--brand,#0f6e57)}
-.mock span{font-size:10px;color:#56605a;text-align:center;margin-top:auto;font-weight:500}
+.mock i{display:block;height:5%;border-radius:4px;background:#dde1da}
+.mock i.h{height:7%;width:70%;background:#bec7c0;margin-inline-start:auto}
+.mock i.b{height:8%;border-radius:99px;background:var(--brand,#2e6b5e)}
+.mock span{font-size:10px;color:#56605a;text-align:center;margin-top:auto;font-weight:600}
 
 /* script options */
 .opts{display:grid;gap:12px}
-.opt{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface-2);cursor:pointer;display:grid;gap:6px}
-.opt[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:var(--surface)}
-.opt h3{font-size:15px;display:flex;gap:8px;align-items:center}
-.opt .tag{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--line);color:var(--ink-2);font-weight:500}
-.opt p{margin:0;line-height:1.75}
-.opt .angle{color:var(--ink-3);font-size:13px}
-.status{font-size:14px;color:var(--ink-2);min-height:22px}
+.opt{border:1px solid var(--line);border-radius:18px;padding:16px 18px;background:var(--surface);cursor:pointer;display:grid;gap:6px;transition:all .18s}
+.opt:hover{border-color:var(--line-strong)}
+.opt[aria-checked="true"]{border-color:transparent;box-shadow:0 0 0 2px var(--accent),var(--shadow-lift)}
+.opt h4{margin:0;font-family:var(--display);font-size:16px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.opt .tag{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-weight:600}
+.opt p{margin:0;line-height:1.8;color:var(--ink)}
+.opt .angle{color:var(--ink-3);font-size:14px}
+.status{font-size:14.5px;color:var(--ink-2);min-height:22px}
 .status.err{color:var(--bad)}
-.beats{width:100%;border-collapse:collapse;font-size:14px}
-.beats th{font-size:12px;color:var(--ink-3);font-weight:500;text-align:start;padding:6px 6px;border-bottom:1px solid var(--line)}
-.beats td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
-.beats td input,.beats td select{padding:5px 7px;font-size:13px}
+.beats{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:14.5px}
+.beats th{font-size:12.5px;color:var(--ink-3);font-weight:600;text-align:start;padding:2px 8px}
+.beats td{padding:6px 6px;background:var(--surface-2);vertical-align:top}
+.beats td:first-child{border-start-start-radius:12px;border-end-start-radius:12px;padding-inline-start:12px}
+.beats td:last-child{border-start-end-radius:12px;border-end-end-radius:12px}
+.beats td input,.beats td select{padding:7px 9px;font-size:14px;background:var(--surface);border-radius:9px}
 .tscroll{overflow-x:auto}
-.typedot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:6px}
-.flag{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--surface-2);font-size:13px}
+.typedot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:6px}
+.flag{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:4px 12px;background:var(--warm-soft);color:var(--warm);font-size:14px}
 
 /* preview */
-.stage-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+.stage-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
 @media (max-width:860px){.stage-wrap{grid-template-columns:1fr}}
-.phone{width:100%;max-width:340px;aspect-ratio:9/16;background:var(--stage);border-radius:26px;overflow:hidden;position:relative;margin-inline:auto;box-shadow:0 20px 50px rgba(0,0,0,.35);border:6px solid #1b1d21}
+.phone-wrap{position:sticky;top:150px}
+@media (max-width:860px){.phone-wrap{position:static}}
+.phone{width:100%;max-width:330px;aspect-ratio:9/16;background:var(--stage);border-radius:38px;overflow:hidden;position:relative;margin-inline:auto;box-shadow:0 40px 80px -30px rgba(20,40,32,.55),0 0 0 8px #1a1d1c,0 0 0 9px #2a2e2c}
 .layer{position:absolute;inset:0;transition:opacity .25s}
-.cap{position:absolute;inset-inline:6%;text-align:center;color:#fff;font-family:'IBM Plex Sans Hebrew',sans-serif;font-weight:700;font-size:clamp(17px,5.6vw,24px);line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.6);white-space:pre-line;animation:capin .45s ease-out both}
+.cap{position:absolute;inset-inline:6%;text-align:center;color:#fff;font-family:'Heebo',sans-serif;font-weight:800;font-size:clamp(17px,5.4vw,23px);line-height:1.15;text-shadow:0 2px 14px rgba(0,0,0,.55);white-space:pre-line;animation:capin .5s cubic-bezier(.2,.8,.2,1) both}
 .cap small{display:block;font-weight:500;font-size:.66em;opacity:.9;margin-top:4px}
 @keyframes capin{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
-.broll{background:radial-gradient(120% 80% at 70% 20%,#4a3a2a,#141210 70%);display:flex;align-items:center;justify-content:center;animation:ken 6s linear both}
+.broll{background:radial-gradient(120% 80% at 70% 20%,#4a3f33,#15130f 70%);display:flex;align-items:center;justify-content:center;animation:ken 6s linear both}
 @keyframes ken{from{transform:scale(1)}to{transform:scale(1.06)}}
-.broll .lbl{color:rgba(255,255,255,.72);font-size:12px;text-align:center;padding:0 16%;font-family:var(--mono);line-height:1.5}
+.broll .lbl{color:rgba(255,255,255,.7);font-size:12.5px;text-align:center;padding:0 16%;line-height:1.5;white-space:pre-line}
 .scrim{position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(0deg,rgba(0,0,0,.72),transparent)}
-.dev{position:absolute;left:13.9%;right:13.9%;top:23.4%;bottom:4.4%;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(0,0,0,.55);animation:devin .5s ease-out both}
-@keyframes devin{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.dev{position:absolute;left:13.9%;right:13.9%;top:23.4%;bottom:4.4%;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,.5);animation:devin .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes devin{from{transform:scale(.93);opacity:0}to{transform:none;opacity:1}}
 .dev img{width:100%;display:block}
 .dev .sc{will-change:transform}
 .full img{width:100%;height:100%;object-fit:cover;object-position:top}
-.endc{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:0 10%;animation:endin .5s ease-out both}
-@keyframes endin{from{opacity:0;transform:scale(1)}to{opacity:1;transform:scale(1.03)}}
-.endc .wm{font-family:'IBM Plex Sans Hebrew',sans-serif;font-weight:700;font-size:22px;direction:ltr;display:flex;gap:4px;align-items:center}
+.endc{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:0 10%;animation:endin .6s ease-out both}
+@keyframes endin{from{opacity:0}to{opacity:1}}
+.endc .wm{font-family:'Heebo',sans-serif;font-weight:800;font-size:22px;direction:ltr;display:flex;gap:4px;align-items:center}
 .endc .wm em{font-style:normal;color:#fff;border-radius:6px;padding:0 6px 2px}
 .endc .tt{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:26px;line-height:1.1;white-space:pre-line}
-.endc .st{font-size:12px;opacity:.75}
 .endc .bt{color:#fff;border-radius:99px;padding:8px 18px;font-weight:700;font-size:14px;margin-top:6px}
 .endc .ul{font-weight:700;direction:ltr}
-.controls{display:flex;align-items:center;gap:10px;margin-top:12px;max-width:340px;margin-inline:auto}
-.tc{font-family:var(--mono);font-size:13px;color:var(--ink-2);min-width:92px;text-align:center}
-.bar{position:relative;height:30px;border-radius:6px;overflow:hidden;display:flex;cursor:pointer;background:var(--line);direction:ltr}
-.seg{height:100%;border-inline-end:2px solid var(--surface);opacity:.85;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-family:var(--mono);overflow:hidden;white-space:nowrap}
-.head{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);pointer-events:none}
-.karaoke{line-height:2;font-size:16px;margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
-.karaoke span{transition:color .15s,background .15s;border-radius:4px;padding:0 1px}
+.controls{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:22px}
+.play{width:52px;height:52px;border-radius:50%;border:0;background:linear-gradient(145deg,var(--accent-2),var(--accent));color:var(--accent-ink);font-size:17px;cursor:pointer;box-shadow:0 12px 26px -10px var(--accent)}
+.tc{font-family:var(--mono);font-size:13px;color:var(--ink-2);min-width:100px;text-align:center}
+.bar{position:relative;height:34px;border-radius:12px;overflow:hidden;display:flex;cursor:pointer;background:var(--line);direction:ltr;gap:2px}
+.seg{height:100%;opacity:.9;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10.5px;font-family:var(--mono);overflow:hidden;white-space:nowrap;border-radius:4px}
+.head{position:absolute;top:-2px;bottom:-2px;width:3px;border-radius:2px;background:var(--ink);pointer-events:none;box-shadow:0 0 0 2px var(--surface)}
+.karaoke{line-height:2.1;font-size:17px;margin-top:16px;padding:14px 16px;border-radius:16px;background:var(--surface-2)}
+.karaoke span{transition:color .15s,background .15s;border-radius:6px;padding:1px 2px}
 .karaoke span.past{color:var(--ink)}
 .karaoke span.fut{color:var(--ink-3)}
-.karaoke span.now{background:var(--accent-soft);color:var(--ink)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:8px}
-.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.checks li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;font-size:14px}
-.checks .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;font-family:var(--mono)}
-.ok .ic{background:var(--money-soft);color:var(--money)}
-.warnx .ic{background:var(--warn-soft);color:var(--warn)}
+.karaoke span.now{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);margin-top:10px}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.checks li{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;font-size:15px}
+.checks .ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700}
+.ok .ic{background:var(--accent-soft);color:var(--accent)}
+.warnx .ic{background:var(--warm-soft);color:var(--warm)}
 .badx .ic{background:var(--bad-soft);color:var(--bad)}
-.costs{width:100%;border-collapse:collapse;font-size:14px}
-.costs td,.costs th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:start}
-.costs th{font-size:12px;color:var(--ink-3);font-weight:500}
-.costs td.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.costs tr.pick{background:var(--accent-soft)}
+.costs{width:100%;border-collapse:collapse;font-size:15px}
+.costs td,.costs th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:start}
+.costs th{font-size:12.5px;color:var(--ink-3);font-weight:600}
+.costs td.n{font-variant-numeric:tabular-nums;font-weight:600}
+.costs tr.pick td{background:var(--accent-soft)}
 .costs tr{cursor:pointer}
-.stat{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
-.stat:last-child{border-bottom:0}
-.stat b{font-family:var(--mono);font-weight:500}
 
-/* production */
-.pipe{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.pipe li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
-.pipe .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line-strong);display:grid;place-items:center;font-size:12px}
-.pipe li.run .dot{border-color:var(--accent);border-top-color:transparent;animation:spin .8s linear infinite}
-.pipe li.done .dot{background:var(--money);border-color:var(--money);color:#fff}
-@keyframes spin{to{transform:rotate(360deg)}}
-.pipe .c{font-family:var(--mono);font-size:13px;color:var(--ink-2)}
+/* production: staged approvals */
+.stages{display:grid;gap:14px}
+.stg{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:18px;border-radius:18px;background:var(--surface-2);transition:all .25s}
+.stg .n{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--surface);color:var(--ink-3);box-shadow:var(--shadow)}
+.stg h4{margin:0;font-family:var(--display);font-size:16.5px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stg p{margin:4px 0 10px;color:var(--ink-2);font-size:15px}
+.stg.lock{opacity:.5}
+.stg.lock .row{display:none}
+.stg.run .n{background:conic-gradient(var(--accent) var(--p,30%),var(--surface) 0);color:var(--ink)}
+.stg.done{background:var(--accent-soft)}
+.stg.done .n{background:var(--accent);color:var(--accent-ink)}
+.stg.skip{opacity:.6}
+.res{margin-top:4px;font-size:14.5px;color:var(--accent);font-weight:600}
+pre.json{background:var(--surface-2);border-radius:14px;padding:14px;max-height:240px;overflow:auto;font-size:12px;direction:ltr;text-align:left;font-family:var(--mono);margin:12px 0 0}
+details.adv summary{cursor:pointer;color:var(--ink-2);font-weight:600;font-size:15px}
+
 /* niqqud pad + pronunciation dictionary */
-.pad{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.pad button{min-width:40px;height:36px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;cursor:pointer;font-size:20px;line-height:1;display:grid;place-items:center}
-.pad button span{font-family:'Frank Ruhl Libre','David',serif;font-size:26px;line-height:1}
-.pad button small{font-size:9px;color:var(--ink-3);font-family:var(--body);margin-top:1px}
-.pad button:hover{border-color:var(--accent)}
+.pad{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pad button{min-width:44px;height:44px;border:0;background:var(--surface-2);border-radius:12px;cursor:pointer;display:grid;place-items:center;align-content:center;gap:1px;transition:background .15s}
+.pad button span{font-family:'Frank Ruhl Libre','David',serif;font-size:24px;line-height:1}
+.pad button small{font-size:10px;color:var(--ink-3);font-family:var(--body)}
+.pad button:hover{background:var(--accent-soft)}
 .lex{display:grid;gap:8px;margin-top:10px}
-.lexrow{display:grid;grid-template-columns:1fr 1fr 34px;gap:8px;align-items:center}
+.lexrow{display:grid;grid-template-columns:1fr 1fr 36px;gap:8px;align-items:center}
 .lexrow input{font-size:17px}
-.lexrow button{height:34px;border:1px solid var(--line);background:var(--surface-2);border-radius:7px;cursor:pointer}
-.said{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--surface-2);border:1px dashed var(--line-strong);font-size:16px;line-height:1.8}
-.said mark{background:var(--warn-soft);color:var(--ink);border-radius:4px;padding:0 2px}
-.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin-top:10px}
+.lexrow button{height:36px;border:0;background:var(--surface-2);border-radius:10px;cursor:pointer}
+.said{margin-top:4px;padding:12px 14px;border-radius:14px;background:var(--surface-2);font-size:16.5px;line-height:1.9}
+.said mark{background:var(--warm-soft);color:var(--warm);border-radius:6px;padding:0 3px;font-weight:600}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;margin-top:14px;cursor:pointer}
+.chk input{margin-top:5px;accent-color:var(--accent);width:17px;height:17px}
+
 /* cost tags + change ledger */
-.ctag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;padding:1px 7px;border-radius:999px;margin-inline-start:6px;vertical-align:middle;white-space:nowrap}
-.ctag.free{background:var(--money-soft);color:var(--money)}
-.ctag.paid{background:var(--warn-soft);color:var(--warn)}
-.ledger{list-style:none;margin:0;padding:0;display:grid;gap:0}
-.ledger li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
-.ledger li b{font-family:var(--mono);font-weight:500;white-space:nowrap}
-.ledger li.paid b{color:var(--warn)} .ledger li.free b{color:var(--money)}
-.ledger li.total{border-bottom:0;font-weight:700}
-.ledger li.total b{color:var(--ink);font-size:15px}
-.basis{font-size:12px;color:var(--ink-3);margin-top:6px}
-.prices{width:100%;border-collapse:collapse;font-size:14px}
-.prices td{padding:7px 6px;border-bottom:1px solid var(--line)}
+.ctag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ctag.free{background:var(--accent-soft);color:var(--accent)}
+.ctag.paid{background:var(--warm-soft);color:var(--warm)}
+.ledger{list-style:none;margin:0;padding:0;display:grid}
+.ledger li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.ledger li b{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ledger li.paid b{color:var(--warm)} .ledger li.free b{color:var(--accent)}
+.ledger li.total{border-bottom:0;font-weight:700;padding-top:12px}
+.ledger li.total b{color:var(--ink);font-size:16px}
+.basis{font-size:13px;color:var(--ink-3);margin-top:6px}
+.prices{width:100%;border-collapse:collapse;font-size:15px}
+.prices td{padding:9px 6px;border-bottom:1px solid var(--line)}
 .prices td:last-child{text-align:end;white-space:nowrap}
-pre.json{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;max-height:260px;overflow:auto;font-size:12px;direction:ltr;text-align:left;font-family:var(--mono)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
 <div class="wrap" dir="rtl">
   <header class="top">
     <div class="top-row">
-      <div class="brand"><span class="tally" aria-hidden="true"></span><h1>סטודיו פרומו</h1><span class="drybadge">DRY RUN · 0 קרדיטים</span></div>
+      <div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>סטודיו פרומו</h1><p>סרטון לעסק שלכם, בעברית, בלי לדעת כלום</p></div></div>
       <div class="wallet" aria-live="polite">
-        <div><div class="k">יתרה</div><div class="v mono" id="wBal">29.98</div></div>
-        <div><div class="k">השינוי הבא</div><div class="v mono" id="wCost">0.83</div></div>
-        <div><div class="k">יישאר</div><div class="v mono good" id="wLeft">29.15</div></div>
+        <div><div class="k">יתרה</div><div class="v num" id="wBal">29.98</div></div>
+        <div class="next"><div class="k">הצעד הבא יעלה</div><div class="v num" id="wCost">0</div></div>
+        <div><div class="k">יישאר</div><div class="v num good" id="wLeft">29.98</div></div>
       </div>
     </div>
     <nav class="steps" aria-label="שלבים">
-      <button class="step" data-go="brief" aria-current="step"><b>1</b>בריף ומסכים</button>
-      <button class="step" data-go="script"><b>2</b>תסריט</button>
-      <button class="step" data-go="preview"><b>3</b>תצוגה מקדימה</button>
-      <button class="step" data-go="produce"><b>4</b>הפקה</button>
+      <button class="step" data-go="brief" aria-current="step"><b>1</b>מספרים לנו</button><span class="sep" aria-hidden="true"></span>
+      <button class="step" data-go="script"><b>2</b>בוחרים טקסט</button><span class="sep" aria-hidden="true"></span>
+      <button class="step" data-go="preview"><b>3</b>רואים לפני שמשלמים</button><span class="sep" aria-hidden="true"></span>
+      <button class="step" data-go="produce"><b>4</b>מקבלים סרטון</button>
     </nav>
   </header>
 
   <!-- 1. BRIEF -->
   <section class="panel on" id="p-brief">
+    <div class="intro"><h2>ספרו לנו <b>על העסק</b>, אנחנו נדאג לשאר.</h2><p>כמה משפטים וצילומי מסך מהאפליקציה. הטקסט ייכתב רק ממה שתכתבו כאן, בלי להמציא. הדוגמה ממולאת לפי mentor it.</p></div>
     <div class="grid2">
       <div>
         <div class="card">
-          <h2>מה מפרסמים?</h2>
-          <p class="lede">כמה שורות מספיקות. התסריט נכתב רק ממה שכתוב כאן ומהמסכים, בלי להמציא נתונים. הדוגמה ממולאת לפי mentor it.</p>
-          <div class="fields">
-            <div class="f"><label for="bName">שם המוצר</label><input type="text" id="bName"></div>
-            <div class="f"><label for="bTts">איך מבטאים אותו (מנוקד)</label><input type="text" id="bTts"><small>ייכנס כך לקריינות</small></div>
-            <div class="f full"><label for="bWhat">מה הוא עושה, ולמי</label><textarea id="bWhat" rows="3"></textarea></div>
-            <div class="f full"><label for="bAsk">מה אתם רוצים שהסרטון יעשה?</label><textarea id="bAsk" rows="2"></textarea><small>למשל: "סרטון שמגייס מנטורים, בטון חם ובטוח"</small></div>
-            <div class="f"><label for="bCta">לאן שולחים בסוף</label><input type="text" id="bCta"></div>
+          <h3>מה מפרסמים?</h3>
+          <div class="fields" style="margin-top:14px">
+            <div class="f"><label for="bName">שם העסק</label><input type="text" id="bName"></div>
+            <div class="f"><label for="bTts">איך אומרים את השם</label><input type="text" id="bTts"><small>אפשר עם ניקוד, בדיוק כמו שצריך להישמע</small></div>
+            <div class="f full"><label for="bWhat">מה העסק עושה, ולמי</label><textarea id="bWhat" rows="3"></textarea></div>
+            <div class="f full"><label for="bAsk">מה הסרטון צריך להשיג?</label><textarea id="bAsk" rows="2"></textarea><small>למשל: "לגייס מנטורים חדשים, בטון חם ובטוח"</small></div>
+            <div class="f"><label for="bCta">לאן שולחים את הצופים</label><input type="text" id="bCta"></div>
             <div class="f"><label for="bAvoid">מה לא להגיד</label><input type="text" id="bAvoid"></div>
           </div>
         </div>
         <div class="card">
-          <h2>מסכים <span class="ctag free">הוספה והחלפה: 0</span></h2>
-          <p class="lede">צילומי מסך אמיתיים מהאפליקציה. צילום ארוך (עמוד שלם) מזוהה אוטומטית ונגלל בתוך הטלפון.</p>
-          <label class="drop" id="drop" for="fileIn">גררו לכאן צילומי מסך, או לחצו לבחירה<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
+          <h3>צילומי מסך <span class="ctag free">בחינם</span></h3>
+          <p class="lede">צילומים אמיתיים מהאפליקציה. צילום של עמוד שלם יזוהה לבד ויוצג בגלילה בתוך הטלפון.</p>
+          <label class="drop" id="drop" for="fileIn"><b>גררו לכאן צילומי מסך</b>או לחצו כדי לבחור<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
           <div class="shots" id="shots"></div>
         </div>
       </div>
       <div>
         <div class="card">
-          <h2>הגייה <span class="ctag free">0</span></h2>
-          <p class="lede">יודעים לנקד? נקדו כאן מילים שחייבות להישמע נכון: שם העסק, שמות אנשים, מילים באנגלית ופעלים בציווי (כִּתְבוּ, הִצְטָרְפוּ). כל הופעה שלהן בתסריט תוחלף בגרסה המנוקדת לפני שהיא נשלחת לקריין. לא צריך לנקד מילים רגילות.</p>
+          <h3>שהקול יגיד את זה נכון <span class="ctag free">בחינם</span></h3>
+          <p class="lede">יודעים לנקד? כתבו כאן מילים שחייבות להישמע נכון: שם העסק, שמות אנשים, מילים באנגלית. כל פעם שהמילה מופיעה בטקסט, הקריין יקבל אותה מנוקדת. מילים רגילות לא צריך.</p>
           <div class="lex" id="lex"></div>
-          <div class="row" style="margin-top:8px"><button class="btn" type="button" id="lexAdd">+ מילה</button><span class="hint">הכפתורים מוסיפים ניקוד במקום שבו עומד הסמן</span></div>
+          <div class="row" style="margin-top:10px"><button class="btn ghost" type="button" id="lexAdd">+ עוד מילה</button><span class="hint">הכפתורים מוסיפים ניקוד במקום שבו עומד הסמן</span></div>
           <div class="pad" data-pad></div>
         </div>
         <div class="card">
-          <h2>סגנון</h2>
-          <div class="fields" style="margin-top:12px">
-            <div class="f full"><label>קול <span class="ctag paid">החלפה = קריינות חדשה ~0.83</span></label><div class="chips" id="voiceChips"></div></div>
-            <div class="f full"><label>טון</label><div class="chips" id="toneChips"></div></div>
-            <div class="f"><label for="bLen">אורך יעד (שניות)</label><input type="number" id="bLen" min="12" max="45" step="1"></div>
-            <div class="f"><label for="bSpeed">קצב <span class="ctag free">0</span></label><select id="bSpeed"><option value="1">×1.0</option><option value="1.15">×1.15</option><option value="1.2">×1.2</option><option value="1.25">×1.25</option><option value="1.3">×1.3</option></select></div>
-            <div class="f"><label for="bColor">צבע מותג <span class="ctag free">0</span></label><input type="color" id="bColor"></div>
-            <div class="f"><label for="bEnd">כותרת כרטיס הסיום <span class="ctag free">0</span></label><input type="text" id="bEnd"></div>
+          <h3>איך זה יישמע וייראה</h3>
+          <div class="fields" style="margin-top:14px">
+            <div class="f full"><span class="lab">קול <span class="ctag paid">החלפה ~0.83</span></span><div class="chips" id="voiceChips"></div></div>
+            <div class="f full"><span class="lab">טון</span><div class="chips" id="toneChips"></div></div>
+            <div class="f"><label for="bLen">אורך (שניות)</label><input type="number" id="bLen" min="12" max="45" step="1"></div>
+            <div class="f"><label for="bSpeed">קצב <span class="ctag free">בחינם</span></label><select id="bSpeed"><option value="1">רגיל</option><option value="1.15">מעט מהיר</option><option value="1.2">מהיר</option><option value="1.25">מהיר (מומלץ)</option><option value="1.3">מהיר מאוד</option></select></div>
+            <div class="f"><label for="bColor">צבע המותג <span class="ctag free">בחינם</span></label><input type="color" id="bColor"></div>
+            <div class="f"><label for="bEnd">משפט הסיום <span class="ctag free">בחינם</span></label><input type="text" id="bEnd"></div>
           </div>
         </div>
         <div class="card">
-          <h2>תקציב</h2>
-          <div class="fields" style="margin-top:12px">
-            <div class="f"><label for="bBal">יתרת קרדיטים</label><input type="number" id="bBal" step="0.01" min="0"></div>
-            <div class="f"><label for="bRes">איכות שוט חדש</label><select id="bRes"><option value="720p">720p · 35</option><option value="1080p">1080p · 60</option></select></div>
-            <div class="f full"><label>שוטים קולנועיים חדשים</label><div class="chips" id="newChips"></div><small>שוט מהספרייה עולה 0. שוט חדש הוא ההוצאה הגדולה.</small></div>
+          <h3>תקציב</h3>
+          <div class="fields" style="margin-top:14px">
+            <div class="f"><label for="bBal">כמה קרדיטים יש לכם</label><input type="number" id="bBal" step="0.01" min="0"></div>
+            <div class="f"><label for="bRes">איכות סצנה מצולמת</label><select id="bRes"><option value="720p">רגילה · 35</option><option value="1080p">גבוהה · 60</option></select></div>
+            <div class="f full"><span class="lab">סצנות מצולמות חדשות</span><div class="chips" id="newChips"></div><small>סצנה מהספרייה שלנו עולה 0. סצנה חדשה שמצלמים במיוחד בשבילכם היא ההוצאה הגדולה.</small></div>
           </div>
         </div>
-        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="script">לתסריט ←</button></div>
+        <div class="next-row"><button class="btn primary" data-go="script">לבחירת הטקסט ←</button></div>
       </div>
     </div>
   </section>
 
   <!-- 2. SCRIPT -->
   <section class="panel" id="p-script">
+    <div class="intro"><h2>שלוש דרכים <b>לספר את זה</b>.</h2><p>בוחרים את הכיוון שמדבר אליכם ומשנים חופשי. כתיבה ועריכה לא עולות כלום.</p></div>
     <div class="grid2">
       <div>
         <div class="card">
-          <h2>שלוש זוויות לבחירה</h2>
-          <p class="lede">Claude כותב שלוש גרסאות, כל אחת מזווית אחרת. בוחרים אחת ומתקנים חופשי. כתיבת תסריט לא עולה קרדיטים.</p>
-          <div class="row"><button class="btn primary" id="genBtn">כתבו לי תסריטים</button><button class="btn" id="stopBtn" hidden>עצור</button><span class="status" id="genStatus"></span></div>
-          <div class="opts" id="opts" role="radiogroup" aria-label="גרסאות תסריט" style="margin-top:14px"></div>
+          <h3>כיוונים לבחירה</h3>
+          <div class="row" style="margin-top:12px"><button class="btn primary" id="genBtn">כתבו לי טקסטים חדשים</button><button class="btn ghost" id="stopBtn" hidden>עצור</button><span class="status" id="genStatus"></span></div>
+          <div class="opts" id="opts" role="radiogroup" aria-label="כיווני טקסט" style="margin-top:16px"></div>
         </div>
       </div>
       <div>
         <div class="card">
-          <h2>התסריט שנבחר</h2>
-          <p class="lede">זה הטקסט שיישלח לקריין. ניקוד רק במילים שעלולות להיקרא לא נכון.</p>
-          <div class="f"><label for="scriptBox">קריינות <span class="ctag paid">כל שינוי בטקסט = קריינות חדשה ~0.83</span></label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="mono"></small></div>
+          <h3>הטקסט של הקריין</h3>
+          <div class="f" style="margin-top:12px"><label for="scriptBox">מה נאמר בסרטון <span class="ctag paid">שינוי אחרי הפקה ~0.83</span></label><textarea id="scriptBox" rows="6"></textarea><small id="wordInfo" class="num"></small></div>
           <div class="pad" data-pad></div>
-          <div id="flags" class="row" style="margin-top:10px"></div>
-          <div class="f" style="margin-top:12px"><label>מה הקריין יקבל בפועל (מסומן: מילים מנוקדות)</label><div class="said" id="said"></div></div>
-          <label class="chk"><input type="checkbox" id="sampleChk"> <span>לפני הקריינות המלאה, להשמיע לי רק את המילים המנוקדות כדי לאשר באוזן <span class="ctag paid">~0.1 (הערכה)</span></span></label>
+          <div id="flags" class="row" style="margin-top:12px"></div>
+          <div class="f" style="margin-top:14px"><span class="lab">מה הקריין יקבל בפועל</span><div class="said" id="said"></div></div>
+          <label class="chk"><input type="checkbox" id="sampleChk"> <span>לפני הכול, להשמיע לי רק את המילים המנוקדות כדי שאאשר באוזן <span class="ctag paid">~0.1 (הערכה)</span></span></label>
         </div>
         <div class="card">
-          <h2>מה רואים ומתי <span class="ctag free">מסכים, כיתובים, סדר: 0</span></h2>
-          <p class="lede">כל שורה מתחלפת כשהקריין מגיע למילה שבעמודה "מתחיל ב". אפשר לשנות מסך, מילה או כיתוב.</p>
+          <h3>מה רואים ומתי <span class="ctag free">בחינם</span></h3>
+          <p class="lede">כל שורה עולה למסך כשהקריין מגיע למילה בעמודה "מתחיל ב". הכיתוב צריך לחזור על מה שנאמר.</p>
           <div class="tscroll"><table class="beats" id="beatsTbl"><thead><tr><th>#</th><th>מה על המסך</th><th>מתחיל ב</th><th>כיתוב</th></tr></thead><tbody></tbody></table></div>
         </div>
-        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="preview">לתצוגה מקדימה ←</button></div>
+        <div class="next-row"><button class="btn primary" data-go="preview">לראות איך זה ייצא ←</button></div>
       </div>
     </div>
   </section>
 
   <!-- 3. PREVIEW -->
   <section class="panel" id="p-preview">
+    <div class="intro"><h2>ככה זה <b>ייראה</b>. עדיין לא שילמתם כלום.</h2><p>לחצו על הניגון. המילים מסומנות בזמן שהקריין אומר אותן, והמסכים מתחלפים בדיוק במקום.</p></div>
     <div class="stage-wrap">
-      <div>
+      <div class="phone-wrap">
         <div class="phone" id="phone" aria-label="תצוגה מקדימה של הסרטון"></div>
         <div class="controls">
-          <button class="btn" id="playBtn" aria-label="נגן">▶</button>
+          <button class="play" id="playBtn" aria-label="נגן">▶</button>
           <div class="tc" id="tc" dir="ltr">0:00.0 / 0:00.0</div>
         </div>
       </div>
       <div>
         <div class="card">
-          <h2>מה השינויים יעלו ב-Higgsfield</h2>
-          <p class="lede">מחושב לפני כל הפקה, מול הגרסה האחרונה שהופקה. רק קריינות חדשה ושוט חדש עולים קרדיטים.</p>
+          <h3>מה זה יעלה</h3>
+          <p class="lede">מחושב מול הגרסה האחרונה שהפקתם. רק קול חדש וסצנה מצולמת חדשה עולים קרדיטים.</p>
           <ul class="ledger" id="ledger"></ul>
           <div class="basis" id="basis"></div>
         </div>
         <div class="card">
-          <h2>ציר הזמן</h2>
-          <p class="lede">כך ייחתך הסרטון, בערך. לחיצה על הציר קופצת לנקודה. הזמנים מחושבים מקצב דיבור ממוצע של 1.85 מילים בשנייה, ובהפקה האמיתית הם מסתנכרנים למילים של הקריין.</p>
-          <div class="bar" id="bar"><div class="head" id="head"></div></div>
+          <h3>ציר הזמן</h3>
+          <div class="bar" id="bar" style="margin-top:12px"><div class="head" id="head"></div></div>
           <div class="legend" id="legend"></div>
           <div class="karaoke" id="karaoke" aria-live="off"></div>
         </div>
         <div class="card">
-          <h2>בדיקות לפני שמוציאים קרדיט</h2>
-          <ul class="checks" id="checks"></ul>
+          <h3>בדקנו בשבילכם</h3>
+          <ul class="checks" id="checks" style="margin-top:10px"></ul>
         </div>
         <div class="card">
-          <h2>אם מפיקים סרטון חדש מאפס</h2>
-          <table class="costs" id="costs"><thead><tr><th>אפשרות</th><th>עלות</th><th>יישאר</th></tr></thead><tbody></tbody></table>
-          <p class="hint" style="margin-top:8px">לחיצה על שורה בוחרת אותה. רינדור, החלפת מסך, כיתוב וקצב עולים 0.</p>
+          <h3>אם מתחילים סרטון חדש מאפס</h3>
+          <table class="costs" id="costs" style="margin-top:8px"><thead><tr><th>אפשרות</th><th>עלות</th><th>יישאר</th></tr></thead><tbody></tbody></table>
         </div>
-        <div class="row end" style="margin-top:16px"><button class="btn primary" data-go="produce">להפקה ←</button></div>
+        <div class="next-row"><button class="btn primary" data-go="produce">להפקה ←</button></div>
       </div>
     </div>
   </section>
 
   <!-- 4. PRODUCE -->
   <section class="panel" id="p-produce">
+    <div class="intro"><h2>מפיקים <b>בשלבים</b>, ומאשרים לפני כל תשלום.</h2><p>קודם שומעים, אחר כך רואים טיוטה אמיתית, ורק בסוף משלמים על סצנה מצולמת. בדמו לא נשלח שום דבר ולא יוצא אף קרדיט.</p></div>
     <div class="grid2">
       <div class="card">
-        <h2>מה יקרה כשלוחצים "הפק"</h2>
-        <p class="lede">בדמו הזה שום דבר לא נשלח ל-Higgsfield. הסימולציה מראה את הסדר, הזמן והעלות של כל שלב.</p>
-        <ul class="ledger" id="ledger2" style="margin-bottom:14px"></ul>
-        <ul class="pipe" id="pipe"></ul>
-        <div class="row" style="margin-top:14px"><button class="btn primary" id="simBtn">הרץ סימולציה</button><button class="btn" id="resetBase">התחל סרטון חדש</button><span class="status" id="simStatus"></span></div>
+        <h3>השלבים</h3>
+        <ul class="ledger" id="ledger2" style="margin:8px 0 16px"></ul>
+        <div class="stages" id="stages"></div>
+        <div class="row" style="margin-top:16px"><button class="btn ghost" id="resetBase">להתחיל סרטון חדש</button><span class="status" id="simStatus"></span></div>
       </div>
-      <div class="card">
-        <h2>להפקה אמיתית</h2>
-        <p class="lede">מעתיקים את החבילה ומדביקים ל-Claude Code עם המשפט "תפיק את זה". היא בפורמט של המחולל, כך שההפקה רצה בלי שאלות נוספות.</p>
-        <div class="row"><button class="btn" id="copyBtn">העתק חבילה</button><span class="status" id="copyStatus"></span></div>
-        <pre class="json" id="json"></pre>
-      </div>
-      <div class="card">
-        <h2>מחירון שינויים</h2>
-        <p class="lede">מה כל שינוי עולה אחרי שסרטון כבר הופק. המחירים נמדדו בחשבון שלכם.</p>
-        <table class="prices"><tbody>
-          <tr><td>שינוי מילה בקריינות, או קול אחר</td><td><span class="ctag paid">~0.83 לסרטון</span></td></tr>
-          <tr><td>שוט קולנועי חדש, 5 שניות, 720p</td><td><span class="ctag paid">35</span></td></tr>
-          <tr><td>שוט קולנועי חדש, 5 שניות, 1080p</td><td><span class="ctag paid">60</span></td></tr>
-          <tr><td>שוט מהספרייה (כבר שולם בעבר)</td><td><span class="ctag free">0</span></td></tr>
-          <tr><td>החלפת מסך או תמונה, תיקון טקסט בתמונה</td><td><span class="ctag free">0</span></td></tr>
-          <tr><td>כיתובים, סדר, מילת התחלה</td><td><span class="ctag free">0</span></td></tr>
-          <tr><td>קצב (×1.15, ×1.25…), צבע, כרטיס סיום</td><td><span class="ctag free">0</span></td></tr>
-          <tr><td>רינדור מחדש, כמה פעמים שרוצים</td><td><span class="ctag free">0</span></td></tr>
-        </tbody></table>
+      <div>
+        <div class="card">
+          <h3>מחירון</h3>
+          <p class="lede">כמה עולה כל שינוי אחרי שהסרטון כבר קיים. המחירים נמדדו בפועל.</p>
+          <table class="prices"><tbody>
+            <tr><td>מילה בטקסט, ניקוד, או קול אחר</td><td><span class="ctag paid">~0.83 לסרטון</span></td></tr>
+            <tr><td>סצנה מצולמת חדשה, איכות רגילה</td><td><span class="ctag paid">35</span></td></tr>
+            <tr><td>סצנה מצולמת חדשה, איכות גבוהה</td><td><span class="ctag paid">60</span></td></tr>
+            <tr><td>סצנה מהספרייה</td><td><span class="ctag free">0</span></td></tr>
+            <tr><td>החלפת צילום מסך, תיקון טקסט בתמונה</td><td><span class="ctag free">0</span></td></tr>
+            <tr><td>כיתובים, סדר, מתי כל דבר עולה</td><td><span class="ctag free">0</span></td></tr>
+            <tr><td>קצב, צבע, משפט הסיום</td><td><span class="ctag free">0</span></td></tr>
+            <tr><td>הרכבה מחדש, כמה פעמים שרוצים</td><td><span class="ctag free">0</span></td></tr>
+          </tbody></table>
+        </div>
+        <div class="card">
+          <details class="adv">
+            <summary>להפקה אמיתית עכשיו</summary>
+            <p class="lede" style="margin-top:10px">מעתיקים את החבילה ומדביקים אצל Claude עם המשפט "תפיק את זה".</p>
+            <div class="row"><button class="btn" id="copyBtn">העתקת החבילה</button><span class="status" id="copyStatus"></span></div>
+            <pre class="json" id="json"></pre>
+          </details>
+        </div>
       </div>
     </div>
   </section>
@@ -407,7 +447,9 @@ const LIBRARY = {
   cafe: "מנטורית ובחור בבית קפה מואר",
   plane: "חלון מטוס מעל העננים בזריחה",
 };
-const TYPE_NAMES = { broll: "שוט", screen: "מסך", scroll: "מסך נגלל", slide: "שקף", end: "סיום" };
+const TYPE_NAMES = { broll: "סצנה", screen: "מסך", scroll: "מסך נגלל", slide: "שקף", end: "סיום" };
+const QUALITY = { "720p": "איכות רגילה", "1080p": "איכות גבוהה" };
+const scenes = n => n === 1 ? "סצנה מצולמת חדשה" : `${n} סצנות מצולמות חדשות`;
 const KIND_TO_TYPE = { screenshot: "screen", tall: "scroll", slide: "slide" };
 
 /* ---------- state (example: mentor it) ---------- */
@@ -559,31 +601,31 @@ function changes() {
   if (!base) {
     out.push(...sampleRow());
     out.push([`סרטון חדש: קריינות (${voice().name})`, COST.voice, "voice"]);
-    const n = newIn(now); if (n) out.push([`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${now.res}`, n * shot, "shot"]);
-    out.push(["רינדור, כיתובים ובדיקות", 0]);
+    const n = newIn(now); if (n) out.push([`${scenes(n)} · ${QUALITY[now.res]}`, n * shot, "shot"]);
+    out.push(["הרכבת הסרטון, כיתובים ובדיקות", 0]);
     return out;
   }
   if (now.script !== base.script) out.push(...sampleRow(), ["טקסט הקריינות או הניקוד השתנה → קריינות חדשה", COST.voice, "voice"]);
   else if (now.voice !== base.voice) out.push(...sampleRow(), [`קול אחר (${voice().name}) → קריינות חדשה`, COST.voice, "voice"]);
   const nNew = newIn(now), nBase = newIn(base);
   const addShots = nNew && now.res !== base.res ? nNew : Math.max(0, nNew - nBase);
-  if (addShots) out.push([`${addShots} שוט${addShots > 1 ? "ים" : ""} חדש${addShots > 1 ? "ים" : ""} · ${now.res}`, addShots * shot, "shot"]);
+  if (addShots) out.push([`${scenes(addShots)} · ${QUALITY[now.res]}`, addShots * shot, "shot"]);
   const diff = (f) => now.beats.length !== base.beats.length || now.beats.some((x, i) => f(x) !== f(base.beats[i]));
   if (diff(x => x.caption)) out.push(["כיתובים", 0]);
-  if (diff(x => x.asset + x.type)) out.push(["מסכים או שוטים מהספרייה", 0]);
+  if (diff(x => x.asset + x.type)) out.push(["מסכים או סצנות מהספרייה", 0]);
   if (diff(x => x.cue) && now.script === base.script) out.push(["מתי כל קטע נכנס", 0]);
   if (now.screens !== base.screens) out.push(["תמונות מסכים", 0]);
   if (now.speed !== base.speed) out.push([`קצב ×${now.speed}`, 0]);
   if (now.look !== base.look) out.push(["צבע, שם או כרטיס סיום", 0]);
   if (!out.length) out.push(["אין שינויים מאז ההפקה האחרונה", 0]);
-  else out.push(["רינדור מחדש", 0]);
+  else out.push(["הרכבה מחדש", 0]);
   return out;
 }
 const changeCost = () => changes().reduce((a, [, c]) => a + c, 0);
 function renderLedger() {
   const rows = changes(), total = rows.reduce((a, [, c]) => a + c, 0), left = S.brief.balance - total;
-  const li = ([t, c]) => el("li", { className: c ? "paid" : "free" }, el("span", { textContent: t }), el("b", { textContent: c ? `${money(c)} קר'` : "0" }));
-  const totalRow = el("li", { className: "total" }, el("span", { textContent: `סה"כ · יישאר ${left >= 0 ? money(left) : "חסרים " + money(-left)}` }), el("b", { textContent: `${money(total)} קר'` }));
+  const li = ([t, c]) => el("li", { className: c ? "paid" : "free" }, el("span", { textContent: t }), el("b", { textContent: c ? money(c) : "0" }));
+  const totalRow = el("li", { className: "total" }, el("span", { textContent: `סה"כ · יישאר ${left >= 0 ? money(left) : "חסרים " + money(-left)}` }), el("b", { textContent: money(total) }));
   for (const id of ["#ledger", "#ledger2"]) $(id).replaceChildren(...rows.map(li), totalRow.cloneNode(true));
   $("#basis").textContent = S.baselines[S.pick] ? "בהשוואה לגרסה שהופקה לאחרונה מהתסריט הזה." : "התסריט הזה עוד לא הופק, אז זו עלות של סרטון מלא.";
 }
@@ -652,7 +694,7 @@ function renderOpts() {
   $("#opts").replaceChildren(...S.options.map((o, i) => {
     const d = el("div", { className: "opt", tabIndex: 0 });
     d.setAttribute("role", "radio"); d.setAttribute("aria-checked", i === S.pick);
-    d.append(el("h3", {}, o.title, o.example ? el("span", { className: "tag", textContent: "דוגמה" }) : null, el("span", { className: "tag", textContent: `${words(o.script).length} מילים` })),
+    d.append(el("h4", {}, o.title, o.example ? el("span", { className: "tag", textContent: "דוגמה" }) : null, el("span", { className: "tag", textContent: `${words(o.script).length} מילים` })),
       el("div", { className: "angle", textContent: o.angle || "" }), el("p", { textContent: o.script }));
     const choose = () => { S.pick = i; save(); renderOpts(); renderScript(); refresh(); };
     d.onclick = choose; d.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); } };
@@ -660,7 +702,7 @@ function renderOpts() {
   }));
 }
 function assetChoices(type) {
-  if (type === "broll") return [...Object.entries(LIBRARY).map(([k, v]) => [k, `ספרייה: ${v}`]), ["new", `שוט חדש (${COST.shot[S.brief.res]} קרדיטים)`]];
+  if (type === "broll") return [...Object.entries(LIBRARY).map(([k, v]) => [k, `מהספרייה: ${v}`]), ["new", `סצנה חדשה (${COST.shot[S.brief.res]})`]];
   if (type === "end") return [["endcard", "כרטיס סיום אוטומטי"]];
   return S.screens.map(s => [s.key, s.label]);
 }
@@ -757,7 +799,7 @@ function renderBeat(i) {
   const layer = el("div", { className: "layer" });
   const brand = S.brief.color;
   if (b.type === "broll") {
-    const lbl = LIBRARY[b.asset] ? `ספרייה · ${LIBRARY[b.asset]}` : `שוט חדש · ${COST.shot[S.brief.res]} קרדיטים\n${b.prompt || "יתואר בהפקה"}`;
+    const lbl = LIBRARY[b.asset] ? `מהספרייה\n${LIBRARY[b.asset]}` : `סצנה חדשה · ${COST.shot[S.brief.res]} קרדיטים\n${b.prompt || "יתואר בהפקה"}`;
     const bg = el("div", { className: "layer broll" }, el("div", { className: "lbl", textContent: lbl }));
     bg.style.animationDuration = `${b.dur}s`;
     layer.append(bg, el("div", { className: "scrim" }));
@@ -831,18 +873,18 @@ function renderChecks() {
   if (unused.length) add("warnx", `מסכים שלא בשימוש: ${unused.map(s => s.label).join(", ")}.`);
   S.screens.forEach(s => { const bt = o.beats.find(b => b.asset === s.key); if (bt && bt.type !== KIND_TO_TYPE[s.kind]) add("warnx", `"${s.label}" מסומן כ${s.kind === "tall" ? "מסך ארוך" : s.kind === "slide" ? "שקף" : "מסך"} אבל מוצג כ${TYPE_NAMES[bt.type]}.`); });
   const ns = newShots(o);
-  if (ns > S.brief.newShots) add("badx", `התסריט מבקש ${ns} שוטים חדשים, והתקציב שבחרתם מאפשר ${S.brief.newShots}.`);
+  if (ns > S.brief.newShots) add("badx", `הטקסט מבקש ${ns} סצנות חדשות, והתקציב שבחרתם מאפשר ${S.brief.newShots}.`);
   const cc = changeCost(), left = S.brief.balance - cc;
   add(left >= 0 ? "ok" : "badx", left >= 0 ? `ההפקה הבאה תעלה ${money(cc)} קרדיטים. יישארו ${money(left)}.` : `חסרים ${money(-left)} קרדיטים.`);
   captionMismatches(o.script, o.beats).forEach(([i, miss]) => add("badx", `הכיתוב בקטע ${i} לא מה שהקריין אומר (לא נאמר: ${miss.join(" ")}). כיתוב צריך לצטט את הקריינות.`));
   const pw = pointedWords(spoken(o.script));
   if (pw.length) add("warnx", `לשמוע ולאשר הגייה: ${pw.join(", ")}${S.brief.sample ? " (תושמע דגימה לפני הקריינות המלאה)" : ""}.`);
   else add("warnx", "אין מילים מנוקדות. אם יש שם או מילה שעלולה להיקרא לא נכון, נקדו אותה בשלב 1.");
-  add("ok", "רינדור, כיתובים, קצב והחלפת מסכים: 0 קרדיטים, אפשר לתקן כמה שרוצים.");
+  add("ok", "כיתובים, מסכים, קצב והרכבה מחדש: בחינם, אפשר לתקן כמה שרוצים.");
   $("#checks").replaceChildren(...out.map(([lvl, txt]) => el("li", { className: lvl }, el("span", { className: "ic", textContent: lvl === "ok" ? "✓" : "!" }), el("span", { textContent: txt }))));
 }
 function renderCosts() {
-  const rows = [["רק שוטים מהספרייה", 0], ...[1, 2].flatMap(n => ["720p", "1080p"].map(r => [`${n} שוט${n > 1 ? "ים" : ""} חדש${n > 1 ? "ים" : ""} · ${r}`, n, r]))];
+  const rows = [["רק סצנות מהספרייה", 0], ...[1, 2].flatMap(n => ["720p", "1080p"].map(r => [`${scenes(n)} · ${QUALITY[r]}`, n, r]))];
   const ns = newShots(cur());
   $("#costs tbody").replaceChildren(...rows.map(([label, n, r]) => {
     const c = COST.voice + n * (r ? COST.shot[r] : 0), left = S.brief.balance - c;
@@ -855,37 +897,64 @@ function renderCosts() {
   }));
 }
 
-/* ---------- step 4 ---------- */
-function steps() {
-  const o = cur(), v = voice(), rows = changes();
-  const vo = rows.find(r => r[2] === "voice"), shots = rows.find(r => r[2] === "shot"), smp = rows.find(r => r[2] === "sample");
+/* ---------- step 4: staged production, an approval before every spend ---------- */
+let flowIdx = 0, flowRun = -1, flowReady = -1;
+function stageDefs() {
+  const rows = changes(), smp = rows.find(r => r[2] === "sample"), vo = rows.find(r => r[2] === "voice"), sh = rows.find(r => r[2] === "shot");
+  const pw = pointedWords(spoken(cur().script));
   return [
-    ...(smp ? [["דגימת הגייה", `${pointedWords(spoken(o.script)).join(", ")} · עוצרים לאישור שלך`, COST.sample, 2]] : []),
-    ...(vo ? [["קריינות", `${v.name}, ${words(o.script).length} מילים`, COST.voice, 4]] : [["קריינות", "משתמשים בקיימת", 0, 1]]),
-    ...(shots ? [[shots[0], "5 שנ' כל אחד", shots[1], 9]] : []),
-    ["בדיקת הקריינות", "עברית, התאמה לתסריט, סנכרון מילים", 0, 3],
-    ["רינדור", `${o.beats.length} קטעים, ×${S.brief.speed}, 1080×1920`, 0, 6],
-    ["בדיקת איכות ומסירה", "פריימים ריקים, אורך, קישור לסרטון", 0, 2],
+    { title: "שומעים את ההגייה", cost: smp ? smp[1] : 0, skip: !smp,
+      text: smp ? `הקריין אומר רק את המילים המנוקדות: ${pw.join(", ")}. אם משהו לא נשמע נכון, מתקנים את הניקוד בחינם.` : "אין מילים מנוקדות לבדוק, או שבחרתם לדלג על השלב.",
+      action: "השמיעו לי", ready: "הדגימה מוכנה. בהפקה אמיתית היא מתנגנת כאן.", ok: "נשמע נכון", fix: ["לתקן ניקוד", "brief"] },
+    { title: "טיוטה עם הקול האמיתי", cost: vo ? vo[1] : 0,
+      text: `${vo ? "מקליטים את הקריינות ו" : ""}מרכיבים סרטון מלא עם המסכים והכיתובים${sh ? ". במקום הסצנה החדשה מופיעה זמנית סצנה מהספרייה" : ""}. מקבלים סרטון ודף בדיקה, ומתקנים בחינם כמה שרוצים.`,
+      action: "צרו טיוטה", ready: "הטיוטה מוכנה: סרטון ודף בדיקה עם תמונה מכל קטע.", ok: "הטיוטה מאושרת", fix: ["לתקן, בחינם", "script"] },
+    { title: "סרטון סופי", cost: sh ? sh[1] : 0,
+      text: sh ? `מצלמים את ה${sh[0]} ומרכיבים את הגרסה הסופית. זה השלב היחיד עם הוצאה גדולה, והוא מגיע רק אחרי שאישרתם הכול.` : "אין סצנה חדשה, אז הטיוטה שאישרתם היא הסרטון הסופי.",
+      action: sh ? "הפיקו את הסרטון הסופי" : "סיום", ready: "הסרטון מוכן להורדה ולפרסום.", ok: null },
   ];
 }
-function renderPipe(doneUpTo = -1, running = -1) {
-  $("#pipe").replaceChildren(...steps().map(([name, sub, c], i) => {
-    const li = el("li", { className: i <= doneUpTo ? "done" : i === running ? "run" : "" },
-      el("span", { className: "dot", textContent: i <= doneUpTo ? "✓" : "" }),
-      el("div", {}, el("div", { textContent: name }), el("div", { className: "hint", textContent: sub })),
-      el("span", { className: "c", textContent: c ? `${money(c)} קר'` : "0" }));
-    return li;
+function renderStages() {
+  const defs = stageDefs();
+  while (flowIdx < defs.length && defs[flowIdx].skip) flowIdx++;
+  $("#stages").replaceChildren(...defs.map((d, i) => {
+    const state = d.skip ? "skip" : i < flowIdx ? "done" : i === flowIdx ? (flowRun === i ? "run" : "") : "lock";
+    const box = el("div", { className: `stg ${state}` });
+    const n = el("div", { className: "n", textContent: state === "done" || state === "skip" ? "✓" : String(i + 1) });
+    const body = el("div", {}, el("h4", {}, d.title, el("span", { className: `ctag ${d.cost ? "paid" : "free"}`, textContent: d.cost ? money(d.cost) : "בחינם" })), el("p", { textContent: d.text }));
+    if (state === "done") body.append(el("div", { className: "res", textContent: d.ready }));
+    if (state === "" || state === "run") {
+      const row = el("div", { className: "row" });
+      if (flowReady === i) {
+        body.append(el("div", { className: "res", textContent: d.ready }));
+        if (d.ok) { const ok = el("button", { className: "btn primary", textContent: d.ok }); ok.onclick = () => { flowIdx = i + 1; flowReady = -1; renderStages(); }; row.append(ok); }
+        if (d.fix) { const fx = el("button", { className: "btn ghost", textContent: d.fix[0] }); fx.onclick = () => { flowReady = -1; go(d.fix[1]); }; row.append(fx); }
+      } else {
+        const go1 = el("button", { className: "btn primary", textContent: d.action, disabled: flowRun >= 0 });
+        go1.onclick = () => runStage(i, d);
+        row.append(go1, el("span", { className: "hint", textContent: d.cost ? `יחויב ${money(d.cost)} קרדיטים (בדמו: 0)` : "לא יחויב" }));
+      }
+      body.append(row);
+    }
+    box.append(n, body);
+    return box;
   }));
 }
-$("#simBtn").onclick = async () => {
-  const st = steps(), btn = $("#simBtn"), s = $("#simStatus"); btn.disabled = true;
-  for (let i = 0; i < st.length; i++) { renderPipe(i - 1, i); s.textContent = `${st[i][0]}...`; await new Promise(r => setTimeout(r, st[i][3] * 180)); }
-  renderPipe(st.length - 1); btn.disabled = false;
-  const spent = st.reduce((a, x) => a + x[2], 0);
-  s.textContent = `בהפקה אמיתית: כ-${Math.max(1, Math.round(st.reduce((a, x) => a + x[3], 0) * 12 / 60))} דקות, ${money(spent)} קרדיטים. בדמו לא יצא אף קרדיט. הגרסה הזו נשמרה כ"הופקה", ומעכשיו כל שינוי מחושב מולה.`;
-  S.baselines[S.pick] = snapshot(); save(); refresh();
-};
-$("#resetBase").onclick = () => { delete S.baselines[S.pick]; save(); refresh(); $("#simStatus").textContent = "מתחילים מאפס: העלות היא של סרטון מלא."; };
+async function runStage(i, d) {
+  flowRun = i; renderStages();
+  const box = $$("#stages .stg")[i];
+  for (let p = 0; p <= 100; p += 5) { box?.style.setProperty("--p", `${p}%`); await new Promise(r => setTimeout(r, 45)); }
+  flowRun = -1;
+  if (d.ok) { flowReady = i; }
+  else {                                   // final stage: this version is now "produced"
+    flowIdx = i + 1; flowReady = -1;
+    S.baselines[S.pick] = snapshot(); save();
+    $("#simStatus").textContent = "הסרטון הופק (בדמו). מעכשיו כל שינוי מחושב מול הגרסה הזו.";
+    refresh();
+  }
+  renderStages();
+}
+$("#resetBase").onclick = () => { delete S.baselines[S.pick]; flowIdx = 0; flowReady = -1; save(); refresh(); renderStages(); $("#simStatus").textContent = "מתחילים מאפס: העלות היא של סרטון מלא."; };
 function bundle() {
   const b = S.brief, o = cur(), v = voice();
   let n = 0; const beats = o.beats.map(x => ({ type: x.type, asset: x.type === "broll" && !LIBRARY[x.asset] ? `new${++n}` : x.asset, cue: x.cue || "", caption: x.caption || "", sub: "" }));
@@ -913,7 +982,7 @@ function go(step) {
   $$(".panel").forEach(p => p.classList.toggle("on", p.id === `p-${step}`));
   $$(".step").forEach(b => b.setAttribute("aria-current", b.dataset.go === step ? "step" : "false"));
   if (step === "preview") { t = 0; shownBeat = -1; renderBar(); seek(0); }
-  if (step === "produce") renderPipe();
+  if (step === "produce") { flowIdx = 0; flowReady = -1; renderStages(); }
   window.scrollTo({ top: 0 });
 }
 $$("[data-go]").forEach(b => b.addEventListener("click", () => go(b.dataset.go)));
@@ -922,7 +991,7 @@ function refresh() {
   renderWallet(); renderLedger(); renderChecks(); renderCosts(); renderSaid();
   $("#json").textContent = JSON.stringify(bundle(), null, 2);
   if (S.step === "preview") { renderBar(); shownBeat = -1; seek(Math.min(t, TL.total)); }
-  if (S.step === "produce") renderPipe();
+  if (S.step === "produce" && flowRun < 0) renderStages();
 }
 if (!Object.keys(S.baselines).length && S.options.every(o => o.example)) {
   const keep = S.pick;
