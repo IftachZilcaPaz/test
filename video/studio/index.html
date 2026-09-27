@@ -1,7 +1,7 @@
 <title>סטודיו פרומו</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@300;500;700;800&family=IBM+Plex+Mono:wght@500&family=Frank+Ruhl+Libre:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@300;500;700;800&family=IBM+Plex+Mono:wght@500&family=Frank+Ruhl+Libre:wght@300;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --ground:#F2F4F1; --ground-2:#E9EFEA; --surface:#FFFFFF; --surface-2:#F7F9F7; --line:#E2E7E2; --line-strong:#CBD3CC;
@@ -263,6 +263,69 @@ html[data-palette="sage"][data-theme="dark"]{--accent:#7CC4AE;--accent-2:#98D3C0
 .palette{display:flex;gap:6px;align-items:center;background:var(--surface);border-radius:999px;padding:6px 8px;box-shadow:var(--shadow)}
 .palette button{width:22px;height:22px;border-radius:50%;border:0;cursor:pointer;background:var(--c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);transition:transform .15s}
 .palette button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--c);transform:scale(1.08)}
+
+/* ---------- motion (all palettes, gentle) ---------- */
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 20% 25%,var(--accent-soft),transparent 70%),radial-gradient(35% 30% at 80% 70%,var(--accent-soft),transparent 70%);opacity:.7;animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(3%,-2%,0) scale(1.05)}100%{transform:translate3d(-2%,3%,0) scale(1.02)}}
+.panel.on .intro h2{animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+.panel.on .intro p{animation:rise .7s .08s cubic-bezier(.2,.8,.2,1) both}
+.panel.on .card{animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+.panel.on .grid2 > div > .card:nth-child(1),.panel.on .grid2 > .card:nth-child(1){animation-delay:.12s}
+.panel.on .grid2 > div > .card:nth-child(2),.panel.on .grid2 > .card:nth-child(2){animation-delay:.2s}
+.panel.on .grid2 > div > .card:nth-child(3){animation-delay:.28s}
+.panel.on .grid2 > div > .card:nth-child(4){animation-delay:.36s}
+.panel.on .stage-wrap .card:nth-child(1){animation-delay:.12s}
+.panel.on .stage-wrap .card:nth-child(2){animation-delay:.2s}
+.panel.on .stage-wrap .card:nth-child(3){animation-delay:.28s}
+.panel.on .phone{animation:phonein .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes phonein{from{opacity:0;transform:translateY(24px) rotate(-2deg) scale(.97)}to{opacity:1;transform:none}}
+.btn.primary{position:relative;overflow:hidden}
+.btn.primary::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.45) 50%,transparent 65%);transform:translateX(120%);transition:transform .8s}
+.btn.primary:hover::after{transform:translateX(-120%)}
+.card{transition:transform .25s,box-shadow .25s}
+.card:hover{box-shadow:var(--shadow-lift)}
+.stg.done .n{animation:pop .45s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+.wallet .v{transition:color .3s}
+.wallet .v.flash{animation:flash .6s ease-out}
+@keyframes flash{0%{transform:scale(1.18)}100%{transform:scale(1)}}
+.step[aria-current="step"] b{animation:pop .4s cubic-bezier(.3,1.6,.5,1) both}
+
+/* ---------- luxury: black & gold ---------- */
+html[data-palette="lux"][data-palette]{
+  color-scheme:dark;
+  --ground:#0A0907; --ground-2:#15110A; --surface:#12100C; --surface-2:#1A1712; --line:#2B261C; --line-strong:#473D2B;
+  --ink:#F4EEE2; --ink-2:#CFC4B0; --ink-3:#8E8472;
+  --accent:#D6B062; --accent-2:#F2D896; --accent-soft:#2A2215; --accent-ink:#161005;
+  --warm:#E9BE7C; --warm-soft:#2E2517; --bad:#F09088; --bad-soft:#3A1F1C;
+  --shadow:0 1px 0 rgba(214,176,98,.10) inset,0 18px 50px -20px rgba(0,0,0,.8);
+  --shadow-lift:0 1px 0 rgba(214,176,98,.18) inset,0 30px 70px -24px rgba(0,0,0,.9);
+  --display:'Frank Ruhl Libre','Heebo',serif;
+  --t-broll:#8C7BC8; --t-screen:#B8954E; --t-scroll:#7FA7A0; --t-slide:#B07CA0; --t-end:#E0B35E;
+}
+html[data-palette="lux"] body{background:var(--ground);background-image:radial-gradient(1000px 520px at 85% -10%,#2A2010,transparent 70%),radial-gradient(900px 500px at 0% 110%,#1D170C,transparent 70%)}
+html[data-palette="lux"] body::before{background:radial-gradient(30% 28% at 18% 22%,rgba(214,176,98,.10),transparent 70%),radial-gradient(28% 26% at 82% 72%,rgba(242,216,150,.07),transparent 70%);opacity:1}
+html[data-palette="lux"] .card,html[data-palette="lux"] .wallet,html[data-palette="lux"] .palette,html[data-palette="lux"] .step[aria-current="step"]{border:1px solid rgba(214,176,98,.16)}
+html[data-palette="lux"] .intro h2{font-weight:300;letter-spacing:-.3px}
+html[data-palette="lux"] .intro h2 b,html[data-palette="lux"] .brand h1{background:linear-gradient(100deg,#B8904A 0%,#F6DE9E 25%,#C99E52 50%,#F6DE9E 75%,#B8904A 100%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gold 6s linear infinite}
+html[data-palette="lux"] .brand h1{font-family:var(--display);font-weight:700;letter-spacing:.3px}
+@keyframes gold{to{background-position:200% center}}
+html[data-palette="lux"] .mark{background:linear-gradient(145deg,#F2D896,#B8904A);box-shadow:0 0 0 1px rgba(242,216,150,.4),0 8px 24px -6px rgba(214,176,98,.6)}
+html[data-palette="lux"] .btn.primary,html[data-palette="lux"] .play{background:linear-gradient(135deg,#F2D896 0%,#D6B062 45%,#A9823C 100%);color:#161005;box-shadow:0 12px 30px -12px rgba(214,176,98,.8),inset 0 1px 0 rgba(255,255,255,.35)}
+html[data-palette="lux"] .btn.primary::after{background:linear-gradient(105deg,transparent 35%,rgba(255,250,235,.7) 50%,transparent 65%)}
+html[data-palette="lux"] .btn.ghost{border-color:rgba(214,176,98,.35);color:var(--accent-2)}
+html[data-palette="lux"] .chip[aria-pressed="true"]{background:rgba(214,176,98,.12);color:var(--accent-2);border-color:rgba(214,176,98,.5)}
+html[data-palette="lux"] .opt[aria-checked="true"]{box-shadow:0 0 0 1px var(--accent),0 0 30px -8px rgba(214,176,98,.5),var(--shadow-lift)}
+html[data-palette="lux"] .phone{box-shadow:0 40px 90px -30px rgba(0,0,0,.95),0 0 0 7px #16130D,0 0 0 8px #C9A45A,0 0 60px -10px rgba(214,176,98,.35)}
+html[data-palette="lux"] .stg.done{background:linear-gradient(135deg,rgba(214,176,98,.14),rgba(214,176,98,.04))}
+html[data-palette="lux"] .stg.done .n{background:linear-gradient(135deg,#F2D896,#B8904A);color:#161005}
+html[data-palette="lux"] .karaoke span.now{background:rgba(214,176,98,.16);color:var(--accent-2)}
+html[data-palette="lux"] .top{background:color-mix(in srgb,#0A0907 80%,transparent)}
+html[data-palette="lux"] input[type=text]:focus,html[data-palette="lux"] textarea:focus,html[data-palette="lux"] select:focus,html[data-palette="lux"] input[type=number]:focus{box-shadow:0 0 0 4px rgba(214,176,98,.15)}
+.palette button[data-pal="lux"]{background:conic-gradient(from 200deg,#0A0907 0 50%,#D6B062 50% 100%);box-shadow:inset 0 0 0 1.5px #D6B062}
+.palette .div{width:1px;height:16px;background:var(--line-strong);margin-inline:2px}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -270,7 +333,7 @@ html[data-palette="sage"][data-theme="dark"]{--accent:#7CC4AE;--accent-2:#98D3C0
   <header class="top">
     <div class="top-row">
       <div class="brand"><span class="mark" aria-hidden="true"></span><div><h1>סטודיו פרומו</h1><p>סרטון לעסק שלכם, בעברית, בלי לדעת כלום</p></div></div>
-      <div class="palette" role="group" aria-label="צבעי הממשק"><button type="button" data-pal="lav" style="--c:#6A58C9" aria-label="צבע לילך" title="לילך"></button><button type="button" data-pal="rose" style="--c:#C35F4E" aria-label="צבע אפרסק" title="אפרסק"></button><button type="button" data-pal="sky" style="--c:#2F6DB0" aria-label="צבע תכלת" title="תכלת"></button><button type="button" data-pal="sand" style="--c:#94702F" aria-label="צבע חול" title="חול"></button><button type="button" data-pal="sage" style="--c:#2E6B5E" aria-label="צבע מרווה" title="מרווה"></button></div>
+      <div class="palette" role="group" aria-label="צבעי הממשק"><button type="button" data-pal="lav" style="--c:#6A58C9" aria-label="צבע לילך" title="לילך"></button><button type="button" data-pal="rose" style="--c:#C35F4E" aria-label="צבע אפרסק" title="אפרסק"></button><button type="button" data-pal="sky" style="--c:#2F6DB0" aria-label="צבע תכלת" title="תכלת"></button><button type="button" data-pal="sand" style="--c:#94702F" aria-label="צבע חול" title="חול"></button><button type="button" data-pal="sage" style="--c:#2E6B5E" aria-label="צבע מרווה" title="מרווה"></button><span class="div" aria-hidden="true"></span><button type="button" data-pal="lux" style="--c:#D6B062" aria-label="שחור וזהב" title="שחור וזהב"></button></div>
       <div class="wallet" aria-live="polite">
         <div><div class="k">יתרה</div><div class="v num" id="wBal">29.98</div></div>
         <div class="next"><div class="k">הצעד הבא יעלה</div><div class="v num" id="wCost">0</div></div>
@@ -648,12 +711,21 @@ function renderLedger() {
   for (const id of ["#ledger", "#ledger2"]) $(id).replaceChildren(...rows.map(li), totalRow.cloneNode(true));
   $("#basis").textContent = S.baselines[S.pick] ? "בהשוואה לגרסה שהופקה לאחרונה מהתסריט הזה." : "התסריט הזה עוד לא הופק, אז זו עלות של סרטון מלא.";
 }
+const shown = {};
+function tween(id, to, fmtFn) {
+  const node = $(id), from = shown[id] ?? to; shown[id] = to;
+  if (from === to || matchMedia("(prefers-reduced-motion: reduce)").matches) { node.textContent = fmtFn(to); return; }
+  node.classList.remove("flash"); void node.offsetWidth; node.classList.add("flash");
+  const t0 = performance.now(), D = 550;
+  const step = now => { const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3); node.textContent = fmtFn(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
 function renderWallet() {
   const c = changeCost(), left = S.brief.balance - c;
-  $("#wBal").textContent = money(S.brief.balance);
-  $("#wCost").textContent = money(c);
-  const l = $("#wLeft"); l.textContent = left >= 0 ? money(left) : `חסרים ${money(-left)}`;
-  l.className = "v mono " + (left >= 0 ? "good" : "bad");
+  tween("#wBal", S.brief.balance, money);
+  tween("#wCost", c, money);
+  tween("#wLeft", left, v => v >= 0 ? money(v) : `חסרים ${money(-v)}`);
+  $("#wLeft").classList.toggle("good", left >= 0); $("#wLeft").classList.toggle("bad", left < 0);
 }
 
 /* ---------- step 1 ---------- */
