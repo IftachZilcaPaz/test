@@ -62,15 +62,19 @@ async function checkVoice() {
   }
 
   await mkdir(outDir, { recursive: true });
+  const speak = (model, withLanguage) =>
+    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+      method: "POST",
+      headers: { ...headers, "content-type": "application/json" },
+      body: JSON.stringify({ text: SCRIPT, model_id: model, ...(withLanguage ? { language_code: "he" } : {}) }),
+    });
   for (const model of VOICE_MODELS) {
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: { ...headers, "content-type": "application/json" },
-        body: JSON.stringify({ text: SCRIPT, model_id: model, language_code: "he" }),
-      },
-    );
+    let response = await speak(model, true);
+    // Models without official Hebrew reject the hint; retry letting the model detect the language.
+    if (response.status === 400 && (await response.clone().text()).includes("unsupported_language")) {
+      console.log(`• ${model}: Hebrew is not an official language here, retrying without the language hint`);
+      response = await speak(model, false);
+    }
     if (!response.ok) {
       console.log(`• ${model}: FAILED ${await failBody(response)}`);
       continue;
