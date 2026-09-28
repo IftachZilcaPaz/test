@@ -33,11 +33,15 @@
   --hi: rgba(255, 255, 255, 0.95);
 }
 
+/* No rubber-band overscroll: on iOS it drags the page past its end and reveals a
+   bare strip that reads as "more page". The app should feel installed, not like a web page. */
 html {
-  background: var(--color-bg1);
+  background: var(--color-bg2);
+  overscroll-behavior-y: none;
 }
 
 body {
+  overscroll-behavior-y: none;
   min-height: 100dvh;
   background: linear-gradient(135deg, var(--color-bg1) 0%, var(--color-bg2) 100%) fixed;
   color: var(--color-ink);

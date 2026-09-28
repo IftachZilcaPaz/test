@@ -6,6 +6,14 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Turbopack's build cache records env values; Netlify keeps it privately between
+  # builds and never publishes it. The published output itself is still scanned.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"
+
+# Declared explicitly: with the app in a subfolder, auto-detection can skip it and
+# Netlify then publishes .next as plain static files (404 on every page).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # The service worker must never be cached, or installed apps keep stale code.
 [[headers]]
