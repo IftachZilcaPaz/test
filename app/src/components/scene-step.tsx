@@ -12,6 +12,7 @@ import {
   updateScenePrompt,
 } from "@/app/app/projects/[id]/scene-actions";
 import { canAfford, WalletLine } from "@/components/wallet-line";
+import type { Resolution } from "@/lib/scenes/higgsfield.server";
 import { formatCustomerPrice, formatShekels } from "@/lib/pricing";
 
 export type SceneView = {
@@ -112,6 +113,7 @@ export function SceneStep({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quality, setQuality] = useState<Resolution>("720p");
   const [quoting, startQuote] = useTransition();
   const [generating, startGenerate] = useTransition();
   const [approving, startApprove] = useTransition();
@@ -140,19 +142,24 @@ export function SceneStep({
     return () => clearInterval(timer);
   }, [waiting, demoWaiting, projectId, router]);
 
-  const askPrice = (mode: SceneMode) =>
+  const askPrice = (mode: SceneMode, resolution: Resolution = quality) =>
     startQuote(async () => {
       setError(null);
-      const result = await quoteScenes(projectId, mode);
+      const result = await quoteScenes(projectId, mode, resolution);
       if ("error" in result) return setError(result.error);
       setQuote(result);
-      dialogRef.current?.showModal();
+      if (!dialogRef.current?.open) dialogRef.current?.showModal();
     });
+
+  const chooseQuality = (resolution: Resolution) => {
+    setQuality(resolution);
+    askPrice("real", resolution); // the price depends on the quality: ask Higgsfield again
+  };
 
   const generate = (mode: SceneMode) => {
     dialogRef.current?.close();
     startGenerate(async () => {
-      const result = await generateScenes(projectId, mode);
+      const result = await generateScenes(projectId, mode, quality);
       if (result.error) setError(result.error);
       router.refresh();
     });
@@ -238,8 +245,33 @@ export function SceneStep({
               </p>
             ) : (
               <>
-                <p className="text-ink-2">
-                  {quote.count} סצנות. המחיר <b>{formatShekels(quote.priceIls)}</b>. סצנה שנכשלת — הכסף חוזר לארנק.
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="mb-1 text-sm font-semibold text-ink-2">איכות הסצנות</legend>
+                  {(
+                    [
+                      ["720p", "רגילה (720p)", "חדה לגמרי בסרטון הסופי"],
+                      ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה — טובה לטיוטה"],
+                    ] as const
+                  ).map(([value, title, hint]) => (
+                    <label key={value} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        name="quality"
+                        value={value}
+                        checked={quality === value}
+                        onChange={() => chooseQuality(value)}
+                        disabled={quoting}
+                        className="peer sr-only"
+                      />
+                      <span className="well flex flex-col rounded-2xl px-4 py-2 text-sm peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                        <span className="font-semibold">{title}</span>
+                        <span className="opacity-80">{hint}</span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+                <p className="text-ink-2" aria-live="polite">
+                  {quote.count} סצנות. המחיר <b>{quoting ? "מחשב…" : formatShekels(quote.priceIls)}</b>. סצנה שנכשלת — הכסף חוזר לארנק.
                 </p>
                 <WalletLine balanceIls={quote.balanceIls} priceIls={quote.priceIls} />
               </>
@@ -248,7 +280,7 @@ export function SceneStep({
               <button
                 type="button"
                 className="btn btn-primary"
-                disabled={!quote.demo && !canAfford(quote.balanceIls, quote.priceIls)}
+                disabled={quoting || (!quote.demo && !canAfford(quote.balanceIls, quote.priceIls))}
                 onClick={() => generate(quote.demo ? "demo" : "real")}
               >
                 {quote.demo ? "צרו סצנות לדוגמה" : "צרו"}

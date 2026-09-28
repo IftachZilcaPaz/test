@@ -7,7 +7,7 @@ import { db } from "@/db/client";
 import { project, scene, type Scene } from "@/db/schema";
 import { getOwnedProject, listScenes } from "@/lib/projects.server";
 import { DEMO_CLIPS_PER_POLL, demoSceneClip } from "@/lib/scenes/demo.server";
-import { estimateScene, isSceneDemoMode, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
+import { estimateScene, isSceneDemoMode, RESOLUTIONS, type Resolution, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
@@ -31,6 +31,11 @@ const pending = (list: Scene[], mode: SceneMode) =>
   list.filter(
     (item) => item.status === "draft" || item.status === "failed" || (mode === "real" && item.status === "ready" && item.demo),
   );
+
+const resolutionOf = (requested: unknown): Resolution => {
+  const parsed = z.enum(RESOLUTIONS).safeParse(requested);
+  return parsed.success ? parsed.data : "720p";
+};
 
 /** Demo whenever asked for, or when no Higgsfield key is configured. */
 const effectiveMode = (requested: unknown): SceneMode => {
@@ -59,7 +64,7 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
 
 export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | { error: string };
 
-export async function quoteScenes(projectId: string, requested: SceneMode = "real"): Promise<SceneQuote> {
+export async function quoteScenes(projectId: string, requested: SceneMode = "real", quality: Resolution = "720p"): Promise<SceneQuote> {
   const user = await requireUser();
   const list = await ownedScenes(user.id, projectId);
   if (!list) return { error: "הפרויקט לא נמצא." };
@@ -69,7 +74,8 @@ export async function quoteScenes(projectId: string, requested: SceneMode = "rea
   const balanceIls = await balance(user.id);
   if (mode === "demo") return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
-    const prices = await Promise.all(todo.map((item) => estimateScene(`${item.prompt}. ${NO_TEXT}`, item.seconds)));
+    const resolution = resolutionOf(quality);
+    const prices = await Promise.all(todo.map((item) => estimateScene(`${item.prompt}. ${NO_TEXT}`, item.seconds, resolution)));
     const priceIls = prices.reduce((sum, value) => sum + customerPriceIls(value), 0);
     return { demo: false, usd: prices.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
   } catch (error) {
@@ -77,7 +83,11 @@ export async function quoteScenes(projectId: string, requested: SceneMode = "rea
   }
 }
 
-export async function generateScenes(projectId: string, requested: SceneMode = "real"): Promise<{ error?: string }> {
+export async function generateScenes(
+  projectId: string,
+  requested: SceneMode = "real",
+  quality: Resolution = "720p",
+): Promise<{ error?: string }> {
   const user = await requireUser();
   const list = await ownedScenes(user.id, projectId);
   if (!list) return { error: "הפרויקט לא נמצא." };
@@ -94,10 +104,11 @@ export async function generateScenes(projectId: string, requested: SceneMode = "
         .where(inArray(scene.id, todo.map((item) => item.id)));
     } else {
       const prompts = todo.map((item) => `${item.prompt}. ${NO_TEXT}`);
-      const prices = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds)));
+      const resolution = resolutionOf(quality);
+      const prices = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution)));
       await assertCanPay(user.id, prices.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
       for (const [index, item] of todo.entries()) {
-        const requestId = await submitScene(prompts[index]!, item.seconds);
+        const requestId = await submitScene(prompts[index]!, item.seconds, resolution);
         const usd = prices[index]!;
         await db
           .update(scene)

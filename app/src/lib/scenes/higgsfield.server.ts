@@ -20,10 +20,17 @@ function credential(): string | null {
 
 export const isSceneDemoMode = () => !credential();
 
-export const sceneRequest = (prompt: string, seconds: number) => ({
+/**
+ * Clip quality the customer can choose. The final video is 720×1280, so 720p is the
+ * full-quality choice; 480p is cheaper and a little softer once scaled up.
+ */
+export const RESOLUTIONS = ["480p", "720p"] as const;
+export type Resolution = (typeof RESOLUTIONS)[number];
+
+export const sceneRequest = (prompt: string, seconds: number, resolution: Resolution = "720p") => ({
   prompt,
   duration: Math.min(15, Math.max(4, Math.round(seconds))),
-  resolution: "720p",
+  resolution,
   aspect_ratio: "9:16",
   // Our Hebrew narration is the soundtrack; generated audio would clash with it.
   generate_audio: false,
@@ -63,8 +70,8 @@ function usdFrom(result: unknown): number | null {
 }
 
 /** Free price check before generating. */
-export async function estimateScene(prompt: string, seconds: number): Promise<number> {
-  const request = sceneRequest(prompt, seconds);
+export async function estimateScene(prompt: string, seconds: number, resolution: Resolution = "720p"): Promise<number> {
+  const request = sceneRequest(prompt, seconds, resolution);
   const result = await call(`/estimate/${MODEL_PATH}`, { method: "POST", body: JSON.stringify(request) });
   const usd = usdFrom(result);
   if (usd !== null) return usd;
@@ -72,10 +79,10 @@ export async function estimateScene(prompt: string, seconds: number): Promise<nu
   return Math.round(request.duration * FALLBACK_USD_PER_SECOND * 10_000) / 10_000;
 }
 
-export async function submitScene(prompt: string, seconds: number): Promise<string> {
+export async function submitScene(prompt: string, seconds: number, resolution: Resolution = "720p"): Promise<string> {
   const result = (await call(`/${MODEL_PATH}`, {
     method: "POST",
-    body: JSON.stringify(sceneRequest(prompt, seconds)),
+    body: JSON.stringify(sceneRequest(prompt, seconds, resolution)),
   })) as { request_id?: string };
   if (!result?.request_id) {
     console.error("[scenes] submit without request_id", { response: JSON.stringify(result).slice(0, 400) });
