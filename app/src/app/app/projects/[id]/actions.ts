@@ -88,7 +88,8 @@ export async function generateScripts(projectId: string): Promise<{ error?: stri
     await assertCanPay(user.id, customerPriceIls(quote.maxUsd));
     const { options, usage } = await writeScripts(brief.data);
     const [draft] = await db.insert(scriptDraft).values({ projectId, options, ...usage }).returning({ id: scriptDraft.id });
-    await charge(user.id, customerPriceIls(usage.costUsd), "כתיבת 3 תסריטים", projectId, `script:${draft.id}`);
+    const label = options.length === 1 ? "כתיבת תסריט" : `כתיבת ${options.length} תסריטים`;
+    await charge(user.id, customerPriceIls(usage.costUsd), label, projectId, `script:${draft.id}`);
   } catch (error) {
     if (error instanceof ScriptWriterError || error instanceof InsufficientFunds) return { error: error.message };
     console.error("[scripts] write failed", error instanceof Error ? error.message : error);

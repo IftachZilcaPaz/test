@@ -13,17 +13,11 @@ export const briefSchema = z.object({
 });
 export type Brief = z.infer<typeof briefSchema>;
 
-/** Shape Claude must return (enforced with structured outputs). */
-export const scriptOptionsSchema = z.object({
-  options: z
-    .array(
-      z.object({
-        title: z.string(),
-        script: z.string(),
-        scenes: z.array(z.object({ caption: z.string(), visual: z.string() })),
-      }),
-    )
-    .min(1),
+/** Shape of one script Claude returns (enforced with structured outputs). */
+export const scriptOptionSchema = z.object({
+  title: z.string(),
+  script: z.string(),
+  scenes: z.array(z.object({ caption: z.string(), visual: z.string() })),
 });
 
 export type ScriptScene = { caption: string; visual: string };

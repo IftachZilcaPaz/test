@@ -22,6 +22,11 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
+  advanced: {
+    // Rate limiting needs the real client IP. Each host sets its own header that
+    // clients cannot forge; only trust the one belonging to where we run.
+    ipAddress: { ipAddressHeaders: process.env.VERCEL ? ["x-real-ip"] : ["x-nf-client-connection-ip"] },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

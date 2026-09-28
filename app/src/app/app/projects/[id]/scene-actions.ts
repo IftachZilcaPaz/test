@@ -85,7 +85,8 @@ export async function generateScenes(projectId: string): Promise<{ error?: strin
         const requestId = await submitScene(prompts[index]!, item.seconds);
         const usd = prices[index]!;
         await db.update(scene).set({ status: "generating", demo: false, requestId, costUsd: usd, error: null }).where(eq(scene.id, item.id));
-        await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${requestId}`);
+        // Keyed by our scene id too: a charge must never be skipped because a provider id repeated.
+        await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${item.id}:${requestId}`);
       }
     }
   } catch (error) {
@@ -115,7 +116,7 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
       } else if (status.state === "failed") {
         // Failed and moderated requests are not billed by Higgsfield, so the customer is refunded too.
         await db.update(scene).set({ status: "failed", error: status.reason, costUsd: 0 }).where(eq(scene.id, item.id));
-        await refund(user.id, customerPriceIls(item.costUsd), `החזר: סצנה ${item.position + 1} לא נוצרה`, projectId, `refund:scene:${item.requestId}`);
+        await refund(user.id, customerPriceIls(item.costUsd), `החזר: סצנה ${item.position + 1} לא נוצרה`, projectId, `refund:scene:${item.id}:${item.requestId}`);
       }
     } catch (error) {
       console.error("[scenes] poll failed", error instanceof Error ? error.message : error);
