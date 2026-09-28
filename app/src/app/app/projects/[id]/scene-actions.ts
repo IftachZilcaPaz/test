@@ -11,7 +11,7 @@ import { estimateScene, isSceneDemoMode, SceneError, sceneStatus, submitScene } 
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
-import { putMedia } from "@/lib/storage.server";
+import { deleteMedia, putMedia } from "@/lib/storage.server";
 
 const NO_TEXT = "Vertical 9:16 cinematic shot. No text, letters, captions, logos, signs or readable screens.";
 
@@ -23,7 +23,20 @@ async function ownedScenes(userId: string, projectId: string) {
   return listScenes(projectId);
 }
 
-const pending = (list: Scene[]) => list.filter((item) => item.status === "draft" || item.status === "failed");
+/** "demo": free placeholder backgrounds; "real": Higgsfield clips, which also replace ready placeholders. */
+const sceneMode = z.enum(["demo", "real"]);
+export type SceneMode = z.infer<typeof sceneMode>;
+
+const pending = (list: Scene[], mode: SceneMode) =>
+  list.filter(
+    (item) => item.status === "draft" || item.status === "failed" || (mode === "real" && item.status === "ready" && item.demo),
+  );
+
+/** Demo whenever asked for, or when no Higgsfield key is configured. */
+const effectiveMode = (requested: unknown): SceneMode => {
+  const mode = sceneMode.safeParse(requested);
+  return isSceneDemoMode() || !mode.success ? "demo" : mode.data;
+};
 
 export async function updateScenePrompt(sceneId: string, prompt: string): Promise<{ error?: string }> {
   const user = await requireUser();
@@ -46,14 +59,15 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
 
 export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | { error: string };
 
-export async function quoteScenes(projectId: string): Promise<SceneQuote> {
+export async function quoteScenes(projectId: string, requested: SceneMode = "real"): Promise<SceneQuote> {
   const user = await requireUser();
   const list = await ownedScenes(user.id, projectId);
   if (!list) return { error: "הפרויקט לא נמצא." };
-  const todo = pending(list);
+  const mode = effectiveMode(requested);
+  const todo = pending(list, mode);
   if (todo.length === 0) return { error: "כל הסצנות כבר מוכנות." };
   const balanceIls = await balance(user.id);
-  if (isSceneDemoMode()) return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
+  if (mode === "demo") return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
     const prices = await Promise.all(todo.map((item) => estimateScene(`${item.prompt}. ${NO_TEXT}`, item.seconds)));
     const priceIls = prices.reduce((sum, value) => sum + customerPriceIls(value), 0);
@@ -63,15 +77,16 @@ export async function quoteScenes(projectId: string): Promise<SceneQuote> {
   }
 }
 
-export async function generateScenes(projectId: string): Promise<{ error?: string }> {
+export async function generateScenes(projectId: string, requested: SceneMode = "real"): Promise<{ error?: string }> {
   const user = await requireUser();
   const list = await ownedScenes(user.id, projectId);
   if (!list) return { error: "הפרויקט לא נמצא." };
-  const todo = pending(list);
+  const mode = effectiveMode(requested);
+  const todo = pending(list, mode);
   if (todo.length === 0) return {};
 
   try {
-    if (isSceneDemoMode()) {
+    if (mode === "demo") {
       // Queued like real scenes: refreshScenes renders them a couple at a time.
       await db
         .update(scene)
@@ -84,7 +99,12 @@ export async function generateScenes(projectId: string): Promise<{ error?: strin
       for (const [index, item] of todo.entries()) {
         const requestId = await submitScene(prompts[index]!, item.seconds);
         const usd = prices[index]!;
-        await db.update(scene).set({ status: "generating", demo: false, requestId, costUsd: usd, error: null }).where(eq(scene.id, item.id));
+        await db
+          .update(scene)
+          .set({ status: "generating", demo: false, requestId, mediaKey: null, costUsd: usd, error: null })
+          .where(eq(scene.id, item.id));
+        // A placeholder being replaced: its clip is no longer needed.
+        if (item.demo && item.mediaKey) await deleteMedia(item.mediaKey).catch(() => undefined);
         // Keyed by our scene id too: a charge must never be skipped because a provider id repeated.
         await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${item.id}:${requestId}`);
       }

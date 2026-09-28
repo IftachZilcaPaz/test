@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   approveScenes,
+  type SceneMode,
   generateScenes,
   quoteScenes,
   refreshScenes,
@@ -93,7 +94,20 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
   );
 }
 
-export function SceneStep({ projectId, ready, scenes, approved }: { projectId: string; ready: boolean; scenes: SceneView[]; approved: boolean }) {
+export function SceneStep({
+  projectId,
+  ready,
+  scenes,
+  approved,
+  realAvailable,
+}: {
+  projectId: string;
+  ready: boolean;
+  scenes: SceneView[];
+  approved: boolean;
+  /** A Higgsfield key is configured, so real clips can be ordered besides the free placeholders. */
+  realAvailable: boolean;
+}) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | null>(null);
@@ -102,7 +116,9 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
   const [generating, startGenerate] = useTransition();
   const [approving, startApprove] = useTransition();
   const waiting = scenes.some((item) => item.status === "generating");
-  const todo = scenes.filter((item) => item.status === "draft" || item.status === "failed").length;
+  const demoTodo = scenes.filter((item) => item.status === "draft" || item.status === "failed").length;
+  // Real clips also replace placeholders that are already there.
+  const realTodo = demoTodo + scenes.filter((item) => item.status === "ready" && item.demo).length;
   const allReady = scenes.length > 0 && scenes.every((item) => item.status === "ready");
   const spent = scenes.reduce((sum, item) => sum + (item.status === "ready" ? item.costUsd : 0), 0);
 
@@ -124,19 +140,19 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
     return () => clearInterval(timer);
   }, [waiting, demoWaiting, projectId, router]);
 
-  const askPrice = () =>
+  const askPrice = (mode: SceneMode) =>
     startQuote(async () => {
       setError(null);
-      const result = await quoteScenes(projectId);
+      const result = await quoteScenes(projectId, mode);
       if ("error" in result) return setError(result.error);
       setQuote(result);
       dialogRef.current?.showModal();
     });
 
-  const generate = () => {
+  const generate = (mode: SceneMode) => {
     dialogRef.current?.close();
     startGenerate(async () => {
-      const result = await generateScenes(projectId);
+      const result = await generateScenes(projectId, mode);
       if (result.error) setError(result.error);
       router.refresh();
     });
@@ -155,10 +171,25 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
         </p>
         {ready && (
           <div className="flex flex-wrap items-center gap-3">
-            {todo > 0 && (
-              <button type="button" className="btn btn-primary" disabled={quoting || generating || waiting} onClick={askPrice}>
-                {generating ? "שולח…" : quoting ? "מחשב מחיר…" : `יצירת ${todo} סצנות`}
-              </button>
+            {realAvailable ? (
+              <>
+                {realTodo > 0 && (
+                  <button type="button" className="btn btn-primary" disabled={quoting || generating || waiting} onClick={() => askPrice("real")}>
+                    {generating ? "שולח…" : quoting ? "מחשב מחיר…" : `סצנות אמיתיות (${realTodo})`}
+                  </button>
+                )}
+                {demoTodo > 0 && (
+                  <button type="button" className="btn btn-ghost" disabled={quoting || generating || waiting} onClick={() => generate("demo")}>
+                    סצנות לדוגמה (חינם)
+                  </button>
+                )}
+              </>
+            ) : (
+              demoTodo > 0 && (
+                <button type="button" className="btn btn-primary" disabled={quoting || generating || waiting} onClick={() => askPrice("demo")}>
+                  {generating ? "שולח…" : quoting ? "מחשב מחיר…" : `יצירת ${demoTodo} סצנות`}
+                </button>
+              )
             )}
             {allReady && !approved && (
               <button
@@ -176,7 +207,14 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
                 {approving ? "שומר…" : "אישור הסצנות — לסרטון"}
               </button>
             )}
-            {waiting && <span className="text-sm text-ink-2">הסצנות נוצרות ב-Higgsfield (בדרך כלל דקה-שתיים). אפשר להישאר בעמוד.</span>}
+            {waiting && (
+              <span className="text-sm text-ink-2">
+                {demoWaiting ? "יוצרים סצנות לדוגמה…" : "הסצנות נוצרות ב-Higgsfield (בדרך כלל דקה-שתיים). אפשר להישאר בעמוד."}
+              </span>
+            )}
+            {realAvailable && !waiting && demoTodo === 0 && realTodo > 0 && (
+              <span className="text-sm text-ink-3">הסצנות הנוכחיות הן לדוגמה. כשהסרטון נראה לכם טוב — מחליפים לאמיתיות.</span>
+            )}
             {spent > 0 && <span className="text-sm text-ink-3">שילמתם על הסצנות: {formatCustomerPrice(spent)}</span>}
           </div>
         )}
@@ -195,8 +233,8 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
             </h3>
             {quote.demo ? (
               <p className="text-ink-2">
-                <b>מצב דמו — בחינם.</b> עוד לא חובר מפתח Higgsfield, אז כל סצנה תהיה רקע צבעוני לדוגמה, כדי לראות את כל התהליך עד
-                הסרטון.
+                <b>סצנות לדוגמה — בחינם.</b> כל סצנה תהיה רקע צבעוני, כדי לראות את כל הסרטון — קריינות, כיתובים ותזמון — לפני
+                שמשלמים על סצנות אמיתיות.
               </p>
             ) : (
               <>
@@ -207,7 +245,12 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
               </>
             )}
             <div className="flex gap-2">
-              <button type="button" className="btn btn-primary" disabled={!quote.demo && !canAfford(quote.balanceIls, quote.priceIls)} onClick={generate}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!quote.demo && !canAfford(quote.balanceIls, quote.priceIls)}
+                onClick={() => generate(quote.demo ? "demo" : "real")}
+              >
                 {quote.demo ? "צרו סצנות לדוגמה" : "צרו"}
               </button>
               <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>

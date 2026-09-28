@@ -10,6 +10,7 @@ import { STEPS } from "@/lib/brand";
 import { isVoiceId, VOICES } from "@/lib/voice/voices";
 import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
+import { isSceneDemoMode } from "@/lib/scenes/higgsfield.server";
 import { requireUser } from "@/lib/session";
 import { saveBrief } from "./actions";
 
@@ -111,6 +112,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
 
       <SceneStep
         projectId={item.id}
+        realAvailable={!isSceneDemoMode()}
         ready={takeApproved}
         approved={item.status === "render" || item.status === "done"}
         scenes={scenes.map((entry) => ({
