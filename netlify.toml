@@ -1,4 +1,4 @@
-# Netlify: the Next.js app lives in app/. The Next.js runtime is detected automatically.
+# Netlify: the Next.js app lives in app/. The Next.js runtime is declared below.
 [build]
   base = "app"
   command = "npm run build"
@@ -22,10 +22,3 @@
     Content-Type = "application/javascript; charset=utf-8"
     Cache-Control = "no-cache, no-store, must-revalidate"
     Content-Security-Policy = "default-src 'self'; script-src 'self'"
-
-
-
-# Declared explicitly: with the app in a subfolder, auto-detection can skip it and
-# Netlify then publishes .next as plain static files (404 on every page).
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
