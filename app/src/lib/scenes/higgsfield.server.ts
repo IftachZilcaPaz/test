@@ -47,15 +47,29 @@ async function call(path: string, init?: RequestInit): Promise<unknown> {
   return response.status === 202 ? null : response.json();
 }
 
+// Highest published Seedance 2.0 rate. Used only when the estimate endpoint returns no
+// price, so a quote can never be below what Higgsfield will actually charge.
+const FALLBACK_USD_PER_SECOND = 0.1408;
+
+/** Reads the dollar price from an estimate, tolerating shapes beyond the documented `{ credits, usd }`. */
+function usdFrom(result: unknown): number | null {
+  const record = (result ?? {}) as Record<string, unknown>;
+  const nested = (key: string) => (record[key] as Record<string, unknown> | undefined)?.usd;
+  for (const candidate of [record.usd, record.cost_usd, record.price_usd, nested("price"), nested("cost"), nested("estimate")]) {
+    const usd = Number(candidate);
+    if (candidate !== null && candidate !== undefined && candidate !== "" && Number.isFinite(usd) && usd >= 0) return usd;
+  }
+  return null;
+}
+
 /** Free price check before generating. */
 export async function estimateScene(prompt: string, seconds: number): Promise<number> {
-  const result = (await call(`/estimate/${MODEL_PATH}`, {
-    method: "POST",
-    body: JSON.stringify(sceneRequest(prompt, seconds)),
-  })) as { usd?: string | number };
-  const usd = Number(result.usd);
-  if (!Number.isFinite(usd)) throw new SceneError("לא התקבל מחיר מ-Higgsfield.");
-  return usd;
+  const request = sceneRequest(prompt, seconds);
+  const result = await call(`/estimate/${MODEL_PATH}`, { method: "POST", body: JSON.stringify(request) });
+  const usd = usdFrom(result);
+  if (usd !== null) return usd;
+  console.error("[scenes] estimate without a price", { response: JSON.stringify(result).slice(0, 400) });
+  return Math.round(request.duration * FALLBACK_USD_PER_SECOND * 10_000) / 10_000;
 }
 
 export async function submitScene(prompt: string, seconds: number): Promise<string> {
@@ -63,7 +77,10 @@ export async function submitScene(prompt: string, seconds: number): Promise<stri
     method: "POST",
     body: JSON.stringify(sceneRequest(prompt, seconds)),
   })) as { request_id?: string };
-  if (!result.request_id) throw new SceneError("Higgsfield לא החזיר מזהה בקשה.");
+  if (!result?.request_id) {
+    console.error("[scenes] submit without request_id", { response: JSON.stringify(result).slice(0, 400) });
+    throw new SceneError("Higgsfield לא החזיר מזהה בקשה.");
+  }
   return result.request_id;
 }
 
