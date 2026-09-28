@@ -50,6 +50,10 @@ async function explain(response: Response): Promise<VoiceError> {
   if (reason === "detected_unusual_activity") {
     return new VoiceError("ElevenLabs חסמו את החשבון החינמי לשימוש משרת. צריך מנוי בתשלום (Starter ומעלה) ב-elevenlabs.io.");
   }
+  if (reason === "quota_exceeded" && /API key/i.test(body)) {
+    // A credit cap set on the key itself; the account may still have credits.
+    return new VoiceError("המפתח של ElevenLabs הגיע למגבלת הקרדיטים שהוגדרה לו. הגדילו אותה ב-elevenlabs.io תחת API Keys.");
+  }
   if (reason === "quota_exceeded" || /quota|credits|insufficient/i.test(body)) {
     return new VoiceError("נגמרו הקרדיטים בחשבון ElevenLabs.");
   }
