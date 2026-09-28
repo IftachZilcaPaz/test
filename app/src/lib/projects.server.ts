@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { project, render, scene, scriptDraft, upload, voiceTake } from "@/db/schema";
+import { narrationLexicon } from "@/lib/pronunciation/shared.server";
 import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
 
 /** Every project read goes through the owner filter, so ids from the URL can't leak other users' data. */
@@ -33,12 +34,12 @@ export async function approvedScript(projectId: string) {
 }
 
 /**
- * The exact text the narrator reads now: the approved script with the lexicon applied.
+ * The exact text the narrator reads now: the approved script with the shared and the project's lexicon applied.
  * A take whose text differs was recorded from an earlier version (or an older lexicon).
  */
 export async function currentNarration(projectId: string, lexicon: string) {
   const script = await approvedScript(projectId);
-  return script === null ? null : applyLexicon(script, parseLexicon(lexicon));
+  return script === null ? null : applyLexicon(script, parseLexicon(await narrationLexicon(lexicon)));
 }
 
 export async function getProjectStyle(projectId: string) {

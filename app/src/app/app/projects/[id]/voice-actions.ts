@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, voiceTake } from "@/db/schema";
+import { vouch } from "@/lib/pronunciation/shared.server";
 import { currentNarration, getOwnedProject } from "@/lib/projects.server";
 import { rewindProject } from "@/lib/projects/rewind.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
@@ -149,6 +150,8 @@ export async function approveTake(takeId: string): Promise<{ error?: string }> {
       .set({ status: row.status === "voice" ? "scenes" : row.status })
       .where(eq(project.id, row.projectId)),
   ]);
+  // The customer heard this narration and approved it: its spellings are vouched for.
+  await vouch(user.id, row.lexicon);
   await ensureScenes(row.projectId);
   revalidatePath(`/app/projects/${row.projectId}`);
   return {};

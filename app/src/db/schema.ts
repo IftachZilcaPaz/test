@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 const createdAt = () =>
   integer("created_at", { mode: "timestamp_ms" })
@@ -278,3 +278,24 @@ export const walletEntry = sqliteTable(
 );
 
 export type WalletEntry = typeof walletEntry.$inferSelect;
+
+/**
+ * One customer vouching for one pointed spelling, by saving it in their lexicon or by
+ * approving a narration read with it. Spellings enough different customers vouch for
+ * become part of every narration (lib/pronunciation/shared.server.ts).
+ */
+export const pronunciationVote = sqliteTable(
+  "pronunciation_vote",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    word: text("word").notNull(),
+    pointed: text("pointed").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [uniqueIndex("pronunciation_vote_word_pointed_user_idx").on(table.word, table.pointed, table.userId)],
+);

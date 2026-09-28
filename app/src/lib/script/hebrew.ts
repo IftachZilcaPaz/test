@@ -47,14 +47,20 @@ const NIQQUD = /[֑-ׇ]/gu;
 export const stripNiqqud = (text: string) => text.replace(NIQQUD, "");
 
 /**
- * Words the Hebrew voices keep stressing on the wrong syllable, however they are pointed,
- * with phrasings that avoid them. Heard by ear; extend it as new ones turn up
- * (docs/HEBREW_PRONUNCIATION.md, rule 3).
+ * Pointed spellings confirmed by ear, applied to every narration under the customer's own
+ * lexicon (which wins). Pointing only the stressed syllable moved the stress where full
+ * niqqud did not (docs/HEBREW_PRONUNCIATION.md, rule 3).
  */
-export const RISKY_WORDS = [
-  { word: "נסו", heard: "NA-su instead of na-SU", instead: ["התחילו", "היכנסו"] },
-  { word: "אחת", heard: "A-khat instead of a-KHAT", instead: ["בודדת", "רק …", "יחידה"] },
-] as const;
+export const BUILT_IN_LEXICON: Record<string, string> = {
+  אחת: "אחַת",
+  נסו: "נסוּ",
+};
+
+/**
+ * Words no spelling has fixed yet, with phrasings that avoid them. A word moves to
+ * BUILT_IN_LEXICON once a spelling is confirmed by ear.
+ */
+export const RISKY_WORDS: readonly { word: string; heard: string; instead: readonly string[] }[] = [];
 
 export type Lexicon = Record<string, string>;
 

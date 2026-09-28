@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, scene, scriptDraft, upload, VIDEO_STYLES } from "@/db/schema";
+import { narrationLexicon, vouch } from "@/lib/pronunciation/shared.server";
 import { approvedScript, getOwnedProject, scriptScreens } from "@/lib/projects.server";
 import { deleteMedia } from "@/lib/storage.server";
 import { rewindProject } from "@/lib/projects/rewind.server";
@@ -36,6 +37,12 @@ function briefFromProject(item: NonNullable<Awaited<ReturnType<typeof getOwnedPr
   });
 }
 
+/** The brief as Claude receives it: the lexicon includes the shared pronunciations the narrator will use. */
+async function writerBrief(item: NonNullable<Awaited<ReturnType<typeof getOwnedProject>>>): Promise<Brief | null> {
+  const brief = briefFromProject(item);
+  return brief.success ? { ...brief.data, lexicon: await narrationLexicon(brief.data.lexicon) } : null;
+}
+
 export async function saveBrief(projectId: string, _previous: BriefState, formData: FormData): Promise<BriefState> {
   const user = await requireUser();
   const item = await getOwnedProject(user.id, projectId);
@@ -58,6 +65,7 @@ export async function saveBrief(projectId: string, _previous: BriefState, formDa
     .update(project)
     .set({ ...parsed.data, style, status: item.status === "brief" ? "script" : item.status })
     .where(eq(project.id, projectId));
+  await vouch(user.id, parsed.data.lexicon);
   revalidatePath(`/app/projects/${projectId}`);
   return { ok: true };
 }
@@ -67,10 +75,10 @@ export type EstimateResult = { demo: boolean; maxUsd: number; balanceIls: number
 export async function estimateScriptCost(projectId: string): Promise<EstimateResult> {
   const user = await requireUser();
   const item = await getOwnedProject(user.id, projectId);
-  const brief = item && briefFromProject(item);
-  if (!brief?.success) return { error: "קודם שומרים את הפרטים על העסק." };
+  const brief = item && (await writerBrief(item));
+  if (!brief) return { error: "קודם שומרים את הפרטים על העסק." };
   try {
-    return { ...(await estimateScripts(brief.data, await scriptScreens(item), item.style)), balanceIls: await balance(user.id) };
+    return { ...(await estimateScripts(brief, await scriptScreens(item), item.style)), balanceIls: await balance(user.id) };
   } catch (error) {
     console.error("[scripts] estimate failed", error instanceof Error ? error.message : error);
     return { error: "לא הצלחנו לחשב מחיר כרגע. נסו שוב." };
@@ -80,17 +88,17 @@ export async function estimateScriptCost(projectId: string): Promise<EstimateRes
 export async function generateScripts(projectId: string): Promise<{ error?: string }> {
   const user = await requireUser();
   const item = await getOwnedProject(user.id, projectId);
-  const brief = item && briefFromProject(item);
-  if (!brief?.success) return { error: "קודם שומרים את הפרטים על העסק." };
+  const brief = item && (await writerBrief(item));
+  if (!brief) return { error: "קודם שומרים את הפרטים על העסק." };
 
   const [{ drafts }] = await db.select({ drafts: count() }).from(scriptDraft).where(eq(scriptDraft.projectId, projectId));
   if (drafts >= MAX_DRAFTS_PER_PROJECT) return { error: "הגעתם למספר הגרסאות המרבי בפרויקט הזה." };
 
   try {
     const screens = await scriptScreens(item);
-    const quote = await estimateScripts(brief.data, screens, item.style);
+    const quote = await estimateScripts(brief, screens, item.style);
     await assertCanPay(user.id, customerPriceIls(quote.maxUsd));
-    const { options, usage } = await writeScripts(brief.data, screens, item.style);
+    const { options, usage } = await writeScripts(brief, screens, item.style);
     const [draft] = await db.insert(scriptDraft).values({ projectId, options, ...usage }).returning({ id: scriptDraft.id });
     const label = options.length === 1 ? "כתיבת תסריט" : `כתיבת ${options.length} תסריטים`;
     await charge(user.id, customerPriceIls(usage.costUsd), label, projectId, `script:${draft.id}`);

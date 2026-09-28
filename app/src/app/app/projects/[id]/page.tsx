@@ -9,6 +9,7 @@ import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
 import { isVoiceId, VOICES } from "@/lib/voice/voices";
 import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes, listUploads } from "@/lib/projects.server";
+import { narrationLexicon } from "@/lib/pronunciation/shared.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { isSceneDemoMode } from "@/lib/scenes/higgsfield.server";
 import { isStale } from "@/lib/scenes/stale";
@@ -25,11 +26,12 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const { id } = await params;
   const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
-  const [drafts, takes, narration, uploads] = await Promise.all([
+  const [drafts, takes, narration, uploads, spokenLexicon] = await Promise.all([
     listDrafts(item.id),
     listTakes(item.id),
     currentNarration(item.id, item.lexicon),
     listUploads(item.id),
+    narrationLexicon(item.lexicon),
   ]);
   const takeApproved = takes.some((take) => take.approved);
   const approvedTakeId = takes.find((take) => take.approved)?.id;
@@ -90,7 +92,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
         projectId={item.id}
         ready={item.status !== "brief"}
         seconds={item.seconds}
-        lexicon={item.lexicon}
+        lexicon={spokenLexicon}
         narrated={takes.length > 0}
         drafts={drafts.map((draft) => ({
           id: draft.id,
