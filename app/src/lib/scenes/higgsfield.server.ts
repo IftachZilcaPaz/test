@@ -39,7 +39,7 @@ async function call(path: string, init?: RequestInit): Promise<unknown> {
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     console.error("[scenes] Higgsfield error", { path, status: response.status, body: body.slice(0, 300) });
-    if (response.status === 401) throw new SceneError("מפתח Higgsfield לא תקין. בדקו את HF_API_KEY ב-.env.local.");
+    if (response.status === 401) throw new SceneError("מפתח Higgsfield לא תקין. בדקו את HF_API_KEY.");
     if (response.status === 402 || /balance|credit|insufficient/i.test(body)) throw new SceneError("אין מספיק יתרה בחשבון Higgsfield API.");
     if (response.status === 429) throw new SceneError("יותר מדי בקשות ברגע זה. נסו שוב בעוד דקה.");
     throw new SceneError("יצירת הסצנות לא זמינה כרגע. נסו שוב בעוד רגע.");

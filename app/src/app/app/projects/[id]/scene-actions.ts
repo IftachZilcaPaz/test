@@ -98,6 +98,8 @@ export async function generateScenes(projectId: string): Promise<{ error?: strin
   return {};
 }
 
+const MAX_DOWNLOADS_PER_POLL = 2;
+
 /** Polls Higgsfield for scenes in progress and stores finished clips. Safe to call repeatedly. */
 export async function refreshScenes(projectId: string): Promise<{ generating: number }> {
   const user = await requireUser();
@@ -115,10 +117,14 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
       await db.update(scene).set({ status: "failed", error: "הסצנה לדוגמה לא נוצרה. נסו שוב." }).where(eq(scene.id, item.id));
     }
   }
+  // Finished clips are a few MB each; download a couple per poll so a request stays short.
+  let downloads = 0;
   for (const item of running.filter((entry) => !entry.demo && entry.requestId)) {
     try {
       const status = await sceneStatus(item.requestId!);
       if (status.state === "completed") {
+        if (downloads >= MAX_DOWNLOADS_PER_POLL) continue;
+        downloads++;
         const response = await fetch(status.videoUrl);
         if (!response.ok) continue;
         const key = `projects/${projectId}/scenes/${item.id}.mp4`;
