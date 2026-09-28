@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import type { BriefState } from "@/app/app/projects/[id]/actions";
 import { PronunciationLab } from "@/components/pronunciation-lab";
 import { UploadsManager, type UploadView } from "@/components/uploads-manager";
+import type { VideoStyle } from "@/db/schema";
 import { DURATIONS, TONES, wordTarget } from "@/lib/script/hebrew";
 
 export type BriefValues = {
@@ -43,7 +44,7 @@ export function BriefForm({
   action: (state: BriefState, formData: FormData) => Promise<BriefState>;
   values: BriefValues;
   projectId: string;
-  style: "character" | "screens";
+  style: VideoStyle;
   uploads: UploadView[];
   /** The voice pronunciation checks are read in: the project's chosen voice, or the default. */
   voice: { id: string; name: string };
@@ -112,11 +113,12 @@ export function BriefForm({
       <fieldset className="well flex flex-col gap-3 rounded-3xl p-4">
         <legend className="sr-only">סגנון הסרטון</legend>
         <span className="font-semibold text-ink">סגנון הסרטון</span>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-3">
           {(
             [
               ["character", "סצנות עם דמות אחת", "אותו אדם ואותו מקום לאורך כל הסרטון, כמו סרט קצר"],
               ["screens", "סצנות + התמונות שלכם", "הדמות, ובין לבין צילומי המסך או התמונות מהעסק שלכם"],
+              ["presenter", "קריינית מול המצלמה", "אישה אחת אומרת את הקריינות שלכם כמו סרטון של יוצרת תוכן, ואפשר לשלב את התמונות שלכם"],
             ] as const
           ).map(([value, title, hint]) => (
             <label key={value} className="cursor-pointer">
@@ -128,7 +130,10 @@ export function BriefForm({
             </label>
           ))}
         </div>
-        {style === "screens" && <UploadsManager projectId={projectId} uploads={uploads} />}
+        {style === "presenter" && (
+          <p className="text-sm text-ink-3">צילומי מסך או תמונות — לא חובה. אם תעלו, הסרטון יקפוץ אליהם בזמן שהקריינית מדברת עליהם.</p>
+        )}
+        {style !== "character" && <UploadsManager projectId={projectId} uploads={uploads} />}
       </fieldset>
 
       <details open className="well rounded-3xl p-4">

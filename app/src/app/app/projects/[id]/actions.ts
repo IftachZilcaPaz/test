@@ -70,7 +70,7 @@ export async function estimateScriptCost(projectId: string): Promise<EstimateRes
   const brief = item && briefFromProject(item);
   if (!brief?.success) return { error: "קודם שומרים את הפרטים על העסק." };
   try {
-    return { ...(await estimateScripts(brief.data, await scriptScreens(item))), balanceIls: await balance(user.id) };
+    return { ...(await estimateScripts(brief.data, await scriptScreens(item), item.style)), balanceIls: await balance(user.id) };
   } catch (error) {
     console.error("[scripts] estimate failed", error instanceof Error ? error.message : error);
     return { error: "לא הצלחנו לחשב מחיר כרגע. נסו שוב." };
@@ -88,9 +88,9 @@ export async function generateScripts(projectId: string): Promise<{ error?: stri
 
   try {
     const screens = await scriptScreens(item);
-    const quote = await estimateScripts(brief.data, screens);
+    const quote = await estimateScripts(brief.data, screens, item.style);
     await assertCanPay(user.id, customerPriceIls(quote.maxUsd));
-    const { options, usage } = await writeScripts(brief.data, screens);
+    const { options, usage } = await writeScripts(brief.data, screens, item.style);
     const [draft] = await db.insert(scriptDraft).values({ projectId, options, ...usage }).returning({ id: scriptDraft.id });
     const label = options.length === 1 ? "כתיבת תסריט" : `כתיבת ${options.length} תסריטים`;
     await charge(user.id, customerPriceIls(usage.costUsd), label, projectId, `script:${draft.id}`);

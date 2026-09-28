@@ -4,11 +4,23 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { project, scene, type Scene } from "@/db/schema";
+import { project, scene, type Project, type Scene } from "@/db/schema";
 import { approvedMaterial, getOwnedProject, listScenes } from "@/lib/projects.server";
 import { publicMediaUrl } from "@/lib/public-media.server";
 import { DEMO_CLIPS_PER_POLL, demoSceneClip } from "@/lib/scenes/demo.server";
-import { estimateScene, isSceneDemoMode, RESOLUTIONS, type Resolution, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
+import {
+  estimateScene,
+  estimateTalk,
+  isSceneDemoMode,
+  RESOLUTIONS,
+  type Resolution,
+  SceneError,
+  sceneStatus,
+  submitScene,
+  submitTalk,
+} from "@/lib/scenes/higgsfield.server";
+import { isStale, STALE_MESSAGE } from "@/lib/scenes/stale";
+import { publishSlices, talkPrompt, talkSlices, voiceSliceKey } from "@/lib/scenes/presenter.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
@@ -18,28 +30,61 @@ const NO_TEXT = "Vertical 9:16 cinematic shot. No text, letters, captions, logos
 
 const refresh = (projectId: string) => revalidatePath(`/app/projects/${projectId}`);
 
+const NEEDS_LOOK = "קודם יוצרים את הדמות של הסרטון (בכרטיס למעלה), כדי שכל הסצנות יראו את אותו אדם ואותו מקום.";
+const NEEDS_PRESENTER = "קודם יוצרים את הקריינית (בכרטיס למעלה): כל הסצנות מצולמות ממנה.";
+
+class PlanError extends Error {}
+
 /**
- * How real clips are made for a project: anchored to its character image when there is one,
- * so every scene shows the same person and place. A script written with a look must have
- * that image before real scenes are ordered (older scripts without a look are exempt).
+ * How the real clips of the given scenes are made, priced before anything is spent:
+ * - presenter: the presenter image talking, lip-synced to that beat's slice of the narration;
+ * - otherwise: generated shots, anchored to the character image when there is one, so every
+ *   scene shows the same person and place. A script written with a look must have that image
+ *   first (older scripts without a look are exempt).
  */
-async function realSceneSetup(projectId: string, lookImageKey: string | null) {
-  const { option } = await approvedMaterial(projectId);
+async function planReal(owner: Project, todo: Scene[], resolution: Resolution) {
+  const { option, take } = await approvedMaterial(owner.id);
+  const lookUrl = owner.lookImageKey ? publicMediaUrl(owner.lookImageKey) : undefined;
+
+  if (owner.style === "presenter") {
+    if (!lookUrl) throw new PlanError(NEEDS_PRESENTER);
+    if (!take) throw new PlanError("קודם מאשרים הקראה.");
+    const slices = talkSlices(take, await listScenes(owner.id));
+    const sliceOf = (item: Scene) => slices[item.position] ?? { start: 0, end: take.durationSeconds };
+    const prompts = todo.map((item) => talkPrompt(item.prompt));
+    // The price depends on the clip length only; the whole narration stands in for the slice.
+    const narrationUrl = publicMediaUrl(take.audioKey);
+    const usd = await Promise.all(
+      todo.map((item, index) => estimateTalk(prompts[index]!, lookUrl, narrationUrl, sliceOf(item).end - sliceOf(item).start)),
+    );
+    return {
+      usd,
+      async submitAll(onSubmitted: (item: Scene, requestId: string, patch: Partial<Scene>) => Promise<void>) {
+        const audioUrls = await publishSlices(owner.id, take, todo.map((item) => ({ sceneId: item.id, slice: sliceOf(item) })));
+        for (const [index, item] of todo.entries()) {
+          const slice = sliceOf(item);
+          const requestId = await submitTalk(prompts[index]!, lookUrl, audioUrls[index]!, slice.end - slice.start);
+          await onSubmitted(item, requestId, { takeId: take.id, audioStart: slice.start });
+        }
+      },
+    };
+  }
+
   const look = option?.look;
-  const referenceUrl = lookImageKey ? publicMediaUrl(lookImageKey) : undefined;
-  const lead = look
-    ? referenceUrl
-      ? `The same person and place as in the reference image. Setting: ${look.setting}.`
-      : `${look.character}, in ${look.setting}.`
-    : "";
+  if (look && !lookUrl) throw new PlanError(NEEDS_LOOK);
+  const lead = look ? (lookUrl ? `The same person and place as in the reference image. Setting: ${look.setting}.` : `${look.character}, in ${look.setting}.`) : "";
+  const prompts = todo.map((item) => [lead, item.prompt, NO_TEXT].filter(Boolean).join(" "));
+  const usd = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, lookUrl)));
   return {
-    referenceUrl,
-    needsLook: Boolean(look) && !referenceUrl,
-    prompt: (item: Scene) => [lead, item.prompt, NO_TEXT].filter(Boolean).join(" "),
+    usd,
+    async submitAll(onSubmitted: (item: Scene, requestId: string, patch: Partial<Scene>) => Promise<void>) {
+      for (const [index, item] of todo.entries()) {
+        const requestId = await submitScene(prompts[index]!, item.seconds, resolution, lookUrl);
+        await onSubmitted(item, requestId, { takeId: null, audioStart: null });
+      }
+    },
   };
 }
-
-const NEEDS_LOOK = "קודם יוצרים את הדמות של הסרטון (בכרטיס למעלה), כדי שכל הסצנות יראו את אותו אדם ואותו מקום.";
 
 async function ownedScenes(userId: string, projectId: string) {
   const item = await getOwnedProject(userId, projectId);
@@ -51,10 +96,21 @@ async function ownedScenes(userId: string, projectId: string) {
 const sceneMode = z.enum(["demo", "real"]);
 export type SceneMode = z.infer<typeof sceneMode>;
 
-const pending = (list: Scene[], mode: SceneMode) =>
+const pending = (list: Scene[], mode: SceneMode, takeId: string | undefined) =>
   list.filter(
-    (item) => item.status === "draft" || item.status === "failed" || (mode === "real" && item.status === "ready" && item.demo),
+    (item) =>
+      item.status === "draft" ||
+      item.status === "failed" ||
+      (mode === "real" && item.status === "ready" && (item.demo || isStale(item, takeId))),
   );
+
+/** The scenes still to make, and the project they belong to (null when not the user's). */
+async function workFor(userId: string, projectId: string, mode: SceneMode) {
+  const owner = await getOwnedProject(userId, projectId);
+  if (!owner) return null;
+  const [list, { take }] = await Promise.all([listScenes(projectId), approvedMaterial(projectId)]);
+  return { owner, todo: pending(list, mode, take?.id) };
+}
 
 const resolutionOf = (requested: unknown): Resolution => {
   const parsed = z.enum(RESOLUTIONS).safeParse(requested);
@@ -91,23 +147,21 @@ export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: 
 
 export async function quoteScenes(projectId: string, requested: SceneMode = "real", quality: Resolution = "720p"): Promise<SceneQuote> {
   const user = await requireUser();
-  const list = await ownedScenes(user.id, projectId);
-  if (!list) return { error: "הפרויקט לא נמצא." };
   const mode = effectiveMode(requested);
-  const todo = pending(list, mode);
+  const work = await workFor(user.id, projectId, mode);
+  if (!work) return { error: "הפרויקט לא נמצא." };
+  const { owner, todo } = work;
   if (todo.length === 0) return { error: "כל הסצנות כבר מוכנות." };
   const balanceIls = await balance(user.id);
   if (mode === "demo") return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
-    const owner = await getOwnedProject(user.id, projectId);
-    const setup = await realSceneSetup(projectId, owner?.lookImageKey ?? null);
-    if (setup.needsLook) return { error: NEEDS_LOOK };
-    const resolution = resolutionOf(quality);
-    const prices = await Promise.all(todo.map((item) => estimateScene(setup.prompt(item), item.seconds, resolution, setup.referenceUrl)));
-    const priceIls = prices.reduce((sum, value) => sum + customerPriceIls(value), 0);
-    return { demo: false, usd: prices.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
+    const { usd } = await planReal(owner, todo, resolutionOf(quality));
+    const priceIls = usd.reduce((sum, value) => sum + customerPriceIls(value), 0);
+    return { demo: false, usd: usd.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
   } catch (error) {
-    return { error: error instanceof SceneError ? error.message : "לא הצלחנו לחשב מחיר כרגע." };
+    if (error instanceof PlanError || error instanceof SceneError) return { error: error.message };
+    console.error("[scenes] quote failed", error instanceof Error ? error.message : error);
+    return { error: "לא הצלחנו לחשב מחיר כרגע." };
   }
 }
 
@@ -117,10 +171,10 @@ export async function generateScenes(
   quality: Resolution = "720p",
 ): Promise<{ error?: string }> {
   const user = await requireUser();
-  const list = await ownedScenes(user.id, projectId);
-  if (!list) return { error: "הפרויקט לא נמצא." };
   const mode = effectiveMode(requested);
-  const todo = pending(list, mode);
+  const work = await workFor(user.id, projectId, mode);
+  if (!work) return { error: "הפרויקט לא נמצא." };
+  const { owner, todo } = work;
   if (todo.length === 0) return {};
 
   try {
@@ -128,34 +182,27 @@ export async function generateScenes(
       // Queued like real scenes: refreshScenes renders them a couple at a time.
       await db
         .update(scene)
-        .set({ status: "generating", demo: true, requestId: null, mediaKey: null, costUsd: 0, error: null })
+        .set({ status: "generating", demo: true, requestId: null, mediaKey: null, costUsd: 0, error: null, takeId: null, audioStart: null })
         .where(inArray(scene.id, todo.map((item) => item.id)));
     } else {
-      const owner = await getOwnedProject(user.id, projectId);
-      const setup = await realSceneSetup(projectId, owner?.lookImageKey ?? null);
-      if (setup.needsLook) return { error: NEEDS_LOOK };
-      const prompts = todo.map((item) => setup.prompt(item));
-      const resolution = resolutionOf(quality);
-      const prices = await Promise.all(
-        todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, setup.referenceUrl)),
-      );
-      await assertCanPay(user.id, prices.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
-      for (const [index, item] of todo.entries()) {
-        const requestId = await submitScene(prompts[index]!, item.seconds, resolution, setup.referenceUrl);
-        const usd = prices[index]!;
+      const plan = await planReal(owner, todo, resolutionOf(quality));
+      await assertCanPay(user.id, plan.usd.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
+      await plan.submitAll(async (item, requestId, patch) => {
+        const usd = plan.usd[todo.indexOf(item)]!;
         await db
           .update(scene)
-          .set({ status: "generating", demo: false, requestId, mediaKey: null, costUsd: usd, error: null })
+          .set({ status: "generating", demo: false, requestId, mediaKey: null, costUsd: usd, error: null, ...patch })
           .where(eq(scene.id, item.id));
-        // A placeholder being replaced: its clip is no longer needed.
-        if (item.demo && item.mediaKey) await deleteMedia(item.mediaKey).catch(() => undefined);
+        // A placeholder or outdated clip being replaced is no longer needed.
+        if (item.mediaKey && !item.uploadId) await deleteMedia(item.mediaKey).catch(() => undefined);
         // Keyed by our scene id too: a charge must never be skipped because a provider id repeated.
         await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${item.id}:${requestId}`);
-      }
+      });
     }
   } catch (error) {
     refresh(projectId);
-    if (error instanceof SceneError || error instanceof InsufficientFunds) return { error: error.message };
+    if (error instanceof PlanError || error instanceof SceneError || error instanceof InsufficientFunds) return { error: error.message };
+    console.error("[scenes] generate failed", error instanceof Error ? error.message : error);
     return { error: "משהו השתבש ביצירת הסצנות." };
   }
   refresh(projectId);
@@ -194,6 +241,7 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
         const key = `projects/${projectId}/scenes/${item.id}.mp4`;
         await putMedia(key, new Uint8Array(await response.arrayBuffer()));
         await db.update(scene).set({ status: "ready", mediaKey: key }).where(eq(scene.id, item.id));
+        if (item.takeId) await deleteMedia(voiceSliceKey(projectId, item.id)).catch(() => undefined);
       } else if (status.state === "failed") {
         // Failed and moderated requests are not billed by Higgsfield, so the customer is refunded too.
         await db.update(scene).set({ status: "failed", error: status.reason, costUsd: 0 }).where(eq(scene.id, item.id));
@@ -215,6 +263,8 @@ export async function approveScenes(projectId: string): Promise<{ error?: string
   const list = item && (await listScenes(projectId));
   if (!item || !list) return { error: "הפרויקט לא נמצא." };
   if (list.length === 0 || list.some((entry) => entry.status !== "ready")) return { error: "קודם כל הסצנות צריכות להיות מוכנות." };
+  const { take } = await approvedMaterial(projectId);
+  if (list.some((entry) => isStale(entry, take?.id))) return { error: STALE_MESSAGE };
   if (item.status === "scenes") await db.update(project).set({ status: "render" }).where(eq(project.id, projectId));
   refresh(projectId);
   return {};

@@ -50,9 +50,12 @@ export async function listUploads(projectId: string) {
   return db.select().from(upload).where(eq(upload.projectId, projectId)).orderBy(asc(upload.position));
 }
 
+/** Styles that may cut to the customer's own screenshots (optional for the presenter). */
+export const usesUploads = (style: string) => style === "screens" || style === "presenter";
+
 /** Screenshot labels the script may refer to, in order; empty unless the project uses its own screens. */
 export async function scriptScreens(item: { id: string; style: string }): Promise<string[]> {
-  if (item.style !== "screens") return [];
+  if (!usesUploads(item.style)) return [];
   return (await listUploads(item.id)).map((entry) => entry.label);
 }
 

@@ -28,6 +28,8 @@ export type SceneView = {
   error: string | null;
   /** Shows one of the customer's own images instead of a generated clip. */
   uploadId: string | null;
+  /** A presenter clip lip-synced to an earlier narration take: it must be made again. */
+  stale: boolean;
 };
 
 const STATUS = {
@@ -37,7 +39,7 @@ const STATUS = {
   failed: { label: "נכשלה", className: "bg-bad-soft text-bad" },
 } as const;
 
-function SceneCard({ item, onError }: { item: SceneView; onError: (message: string) => void }) {
+function SceneCard({ item, presenter, onError }: { item: SceneView; presenter: boolean; onError: (message: string) => void }) {
   const router = useRouter();
   const [prompt, setPrompt] = useState(item.prompt);
   const [pending, startTransition] = useTransition();
@@ -56,7 +58,7 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
       <div className="flex items-center justify-between gap-2">
         <span className="font-round text-lg">סצנה {item.position + 1}</span>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
-          {item.uploadId ? "התמונה שלכם" : item.demo && item.status === "ready" ? "דוגמה" : status.label}
+          {item.uploadId ? "התמונה שלכם" : item.stale ? "צריך לצלם מחדש" : item.demo && item.status === "ready" ? "דוגמה" : status.label}
         </span>
       </div>
       <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-well">
@@ -78,7 +80,7 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
       ) : (
       <>
       <label className="flex flex-col gap-1.5 text-xs font-medium text-ink-2">
-        מה רואים (באנגלית, בלי טקסט על המסך)
+        {presenter ? "הבעה ותנועה של הקריינית (באנגלית)" : "מה רואים (באנגלית, בלי טקסט על המסך)"}
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
@@ -114,6 +116,7 @@ export function SceneStep({
   approved,
   realAvailable,
   look,
+  presenter,
 }: {
   projectId: string;
   ready: boolean;
@@ -123,6 +126,8 @@ export function SceneStep({
   look: LookView | null;
   /** A Higgsfield key is configured, so real clips can be ordered besides the free placeholders. */
   realAvailable: boolean;
+  /** Presenter style: every clip is the presenter saying that line, lip-synced (always 720p). */
+  presenter: boolean;
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -135,7 +140,7 @@ export function SceneStep({
   const waiting = scenes.some((item) => item.status === "generating");
   const demoTodo = scenes.filter((item) => item.status === "draft" || item.status === "failed").length;
   // Real clips also replace placeholders that are already there.
-  const realTodo = demoTodo + scenes.filter((item) => item.status === "ready" && item.demo).length;
+  const realTodo = demoTodo + scenes.filter((item) => item.status === "ready" && (item.demo || item.stale)).length;
   const allReady = scenes.length > 0 && scenes.every((item) => item.status === "ready");
   const spent = scenes.reduce((sum, item) => sum + (item.status === "ready" ? item.costUsd : 0), 0);
 
@@ -191,7 +196,7 @@ export function SceneStep({
             ? "סצנה לכל חלק בקריינות. הכיתוב מצוטט מהקריינות מילה במילה, והסצנות עצמן בלי שום טקסט — את הכיתוב בעברית אנחנו מוסיפים."
             : "קודם מאשרים הקראה, ואז יוצרים סצנות."}
         </p>
-        {ready && realAvailable && look && <LookCard projectId={projectId} look={look} />}
+        {ready && realAvailable && look && <LookCard projectId={projectId} look={look} presenter={presenter} />}
         {ready && (
           <div className="flex flex-wrap items-center gap-3">
             {realAvailable ? (
@@ -261,31 +266,35 @@ export function SceneStep({
               </p>
             ) : (
               <>
-                <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-1 text-sm font-semibold text-ink-2">איכות הסצנות</legend>
-                  {(
-                    [
-                      ["720p", "רגילה (720p)", "חדה לגמרי בסרטון הסופי"],
-                      ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה — טובה לטיוטה"],
-                    ] as const
-                  ).map(([value, title, hint]) => (
-                    <label key={value} className="cursor-pointer">
-                      <input
-                        type="radio"
-                        name="quality"
-                        value={value}
-                        checked={quality === value}
-                        onChange={() => chooseQuality(value)}
-                        disabled={quoting}
-                        className="peer sr-only"
-                      />
-                      <span className="well flex flex-col rounded-2xl px-4 py-2 text-sm peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
-                        <span className="font-semibold">{title}</span>
-                        <span className="opacity-80">{hint}</span>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
+                {presenter ? (
+                  <p className="text-sm text-ink-2">כל סצנה: הקריינית אומרת את החלק שלה בקריינות שאישרתם, מול המצלמה, עם שפתיים מסונכרנות (720p).</p>
+                ) : (
+                  <fieldset className="flex flex-col gap-2">
+                    <legend className="mb-1 text-sm font-semibold text-ink-2">איכות הסצנות</legend>
+                    {(
+                      [
+                        ["720p", "רגילה (720p)", "חדה לגמרי בסרטון הסופי"],
+                        ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה — טובה לטיוטה"],
+                      ] as const
+                    ).map(([value, title, hint]) => (
+                      <label key={value} className="cursor-pointer">
+                        <input
+                          type="radio"
+                          name="quality"
+                          value={value}
+                          checked={quality === value}
+                          onChange={() => chooseQuality(value)}
+                          disabled={quoting}
+                          className="peer sr-only"
+                        />
+                        <span className="well flex flex-col rounded-2xl px-4 py-2 text-sm peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                          <span className="font-semibold">{title}</span>
+                          <span className="opacity-80">{hint}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
                 <p className="text-ink-2" aria-live="polite">
                   {quote.count} סצנות. המחיר <b>{quoting ? "מחשב…" : formatShekels(quote.priceIls)}</b>. סצנה שנכשלת — הכסף חוזר לארנק.
                 </p>
@@ -313,7 +322,7 @@ export function SceneStep({
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="סצנות">
           {scenes.map((item) => (
             // Keyed by prompt so a saved description resets the local draft.
-            <SceneCard key={`${item.id}:${item.prompt}`} item={item} onError={setError} />
+            <SceneCard key={`${item.id}:${item.prompt}`} item={item} presenter={presenter} onError={setError} />
           ))}
         </ol>
       )}

@@ -14,8 +14,12 @@ export type RenderInput = {
   callToAction: string;
   narrationKey: string;
   words: TimedWord[];
-  /** "image" beats are the customer's own screenshots: shown crisp over a blurred copy, gently zooming. */
-  scenes: { mediaKey: string; caption: string; kind: "video" | "image" }[];
+  /**
+   * "image" beats are the customer's own screenshots: shown crisp over a blurred copy, gently zooming.
+   * "talking" beats are presenter clips lip-synced to the narration from `audioStart` (seconds at 1×):
+   * they are cut to the matching moment and sped up with the voice, so the lips stay in sync.
+   */
+  scenes: ({ mediaKey: string; caption: string } & ({ kind: "video" | "image" } | { kind: "talking"; audioStart: number }))[];
   /** Narration speed-up; the scene cuts and captions follow it. */
   speed: Speed;
 };
@@ -69,6 +73,9 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
       if (input.scenes[index]!.kind === "image") {
         const slot = timeline.scenes[index]!;
         args.push("-loop", "1", "-framerate", String(FPS), "-t", (Math.max(slot.end - slot.start, 0.2) + 0.5).toFixed(3), "-i", clip);
+      } else if (input.scenes[index]!.kind === "talking") {
+        // Never looped: a restarted clip would show lips from another sentence.
+        args.push("-i", clip);
       } else {
         args.push("-stream_loop", "-1", "-i", clip);
       }
@@ -88,7 +95,14 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
     timeline.scenes.forEach((slot, index) => {
       const seconds = Math.max(slot.end - slot.start, 0.2);
       const duration = seconds.toFixed(3);
-      if (input.scenes[index]!.kind === "image") {
+      const beat = input.scenes[index]!;
+      if (beat.kind === "talking") {
+        // Clip time c shows the lips of narration second audioStart + c; this slot plays narration from start × speed.
+        const offset = Math.max(0, slot.start * input.speed - beat.audioStart).toFixed(3);
+        filters.push(
+          `[${index}:v]trim=start=${offset},setpts=(PTS-STARTPTS)/${input.speed},${fit},tpad=stop_mode=clone:stop_duration=2,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
+        );
+      } else if (beat.kind === "image") {
         // Blurred, darkened fill behind the whole image, which grows ~4% over its beat.
         const grow = `scale=w='trunc(iw*(1+0.04*t/${duration})/2)*2':h=-2:eval=frame`;
         filters.push(

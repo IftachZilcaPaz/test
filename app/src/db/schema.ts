@@ -80,7 +80,7 @@ export const SCENE_STATUSES = ["draft", "generating", "ready", "failed"] as cons
 export const RENDER_STATUSES = ["rendering", "done", "failed"] as const;
 export const WALLET_KINDS = ["gift", "topup", "charge", "refund"] as const;
 /** How the video is told: one recurring character and place, or that plus the customer's own screenshots. */
-export const VIDEO_STYLES = ["character", "screens"] as const;
+export const VIDEO_STYLES = ["character", "screens", "presenter"] as const;
 export type VideoStyle = (typeof VIDEO_STYLES)[number];
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
@@ -196,6 +196,12 @@ export const scene = sqliteTable(
     mediaKey: text("media_key"),
     /** Set when this beat shows one of the customer's own images instead of a generated clip. */
     uploadId: text("upload_id"),
+    /**
+     * Presenter clips are lip-synced to a slice of one narration take: the take, and the
+     * second in it where the clip's audio starts. A clip from another take no longer matches.
+     */
+    takeId: text("take_id"),
+    audioStart: real("audio_start"),
     costUsd: real("cost_usd").notNull().default(0),
     error: text("error"),
     createdAt: createdAt(),

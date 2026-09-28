@@ -4,6 +4,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { demoOptions } from "./demo";
 import { applyLexicon, captionQuotes, parseLexicon } from "./hebrew";
 import { ANGLES, systemPrompt, userPrompt, type Angle } from "./prompt";
+import type { VideoStyle } from "@/db/schema";
 import { scriptOptionSchema, type Brief, type ScriptOption, type ScriptUsage } from "./types";
 
 export const SCRIPT_MODEL = "claude-opus-5";
@@ -21,20 +22,20 @@ export class ScriptWriterError extends Error {}
 const client = () => (process.env.ANTHROPIC_API_KEY ? new Anthropic() : null);
 export const isDemoMode = () => !process.env.ANTHROPIC_API_KEY;
 
-const request = (brief: Brief, angle: Angle, screens: string[]) => {
+const request = (brief: Brief, angle: Angle, screens: string[], style: VideoStyle) => {
   const lexicon = parseLexicon(brief.lexicon);
   return {
     lexicon,
-    system: systemPrompt(brief, lexicon),
+    system: systemPrompt(brief, lexicon, style),
     messages: [{ role: "user" as const, content: userPrompt(brief, angle, screens) }],
   };
 };
 
 /** Upper-bound price quote shown before the user confirms. Counting tokens is free. */
-export async function estimateScripts(brief: Brief, screens: string[] = []): Promise<{ demo: boolean; maxUsd: number }> {
+export async function estimateScripts(brief: Brief, screens: string[] = [], style: VideoStyle = "character"): Promise<{ demo: boolean; maxUsd: number }> {
   const anthropic = client();
   if (!anthropic) return { demo: true, maxUsd: 0 };
-  const { system, messages } = request(brief, ANGLES[0], screens);
+  const { system, messages } = request(brief, ANGLES[0], screens, style);
   const { input_tokens } = await anthropic.messages.countTokens({ model: SCRIPT_MODEL, system, messages });
   // +400 tokens covers the structured-output schema the real request adds; angles differ by a few tokens.
   const perScript = (input_tokens + 400) * INPUT_USD + MAX_OUTPUT_TOKENS * OUTPUT_USD;
@@ -83,8 +84,8 @@ function writerError(error: unknown): ScriptWriterError {
 
 type Written = { option: ScriptOption; model: string; inputTokens: number; outputTokens: number };
 
-async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle, screens: string[]): Promise<Written> {
-  const { system, messages } = request(brief, angle, screens);
+async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle, screens: string[], style: VideoStyle): Promise<Written> {
+  const { system, messages } = request(brief, angle, screens, style);
   const response = await anthropic.beta.messages.parse(
     {
       model: SCRIPT_MODEL,
@@ -122,6 +123,7 @@ async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle, screen
 export async function writeScripts(
   brief: Brief,
   screens: string[] = [],
+  style: VideoStyle = "character",
 ): Promise<{ options: ScriptOption[]; usage: ScriptUsage }> {
   const lexicon = parseLexicon(brief.lexicon);
   const anthropic = client();
@@ -133,7 +135,7 @@ export async function writeScripts(
   }
 
   const started = Date.now();
-  const results = await Promise.allSettled(ANGLES.map((angle) => writeOne(anthropic, brief, angle, screens)));
+  const results = await Promise.allSettled(ANGLES.map((angle) => writeOne(anthropic, brief, angle, screens, style)));
   const written = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
   const failures = results.flatMap((result) => (result.status === "rejected" ? [writerError(result.reason)] : []));
   console.info("[scripts] written", { ok: written.length, failed: failures.length, ms: Date.now() - started });

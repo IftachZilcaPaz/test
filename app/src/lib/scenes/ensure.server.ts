@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/db/client";
 import { scene } from "@/db/schema";
-import { approvedMaterial, getProjectStyle, listScenes, listUploads } from "@/lib/projects.server";
+import { approvedMaterial, getProjectStyle, listScenes, listUploads, usesUploads } from "@/lib/projects.server";
 import { captionQuotes } from "@/lib/script/hebrew";
 import { buildTimeline, clipSecondsFor } from "@/lib/video/timeline";
 import { isSceneDemoMode } from "./higgsfield.server";
@@ -28,7 +28,7 @@ export async function ensureScenes(projectId: string): Promise<void> {
   suggestions = suggestions.slice(0, MAX_SCENES);
   const timeline = buildTimeline(take.words, suggestions.map((item) => item.caption));
   // A beat the script tied to one of the customer's screenshots shows it as-is: ready, and free.
-  const uploads = (await getProjectStyle(projectId)) === "screens" ? await listUploads(projectId) : [];
+  const uploads = usesUploads(await getProjectStyle(projectId)) ? await listUploads(projectId) : [];
   await db.insert(scene).values(
     suggestions.map((item, position) => {
       const shown = item.screen ? uploads[item.screen - 1] : undefined;

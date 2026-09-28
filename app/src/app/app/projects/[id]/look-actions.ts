@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db/client";
-import { project } from "@/db/schema";
+import { project, type VideoStyle } from "@/db/schema";
 import { customerPriceIls } from "@/lib/pricing";
 import { approvedMaterial, getOwnedProject } from "@/lib/projects.server";
 import { estimateLook, isSceneDemoMode, SceneError, sceneStatus, submitLook } from "@/lib/scenes/higgsfield.server";
@@ -11,11 +11,18 @@ import { requireUser } from "@/lib/session";
 import { deleteMedia, putMedia } from "@/lib/storage.server";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
 
-/** The character image prompt: one photoreal vertical frame of the script's person in its place. */
-async function lookPrompt(projectId: string): Promise<string | null> {
+/**
+ * The character image prompt: one photoreal vertical frame of the script's person in its place.
+ * A presenter is framed as the first frame of a selfie video: facing the lens, face in the upper
+ * half (clear of the captions), mouth closed so the lip-sync starts from rest.
+ */
+async function lookPrompt(projectId: string, style: VideoStyle): Promise<string | null> {
   const { option } = await approvedMaterial(projectId);
   const look = option?.look;
   if (!look) return null;
+  if (style === "presenter") {
+    return `Photorealistic vertical selfie video frame, shot on an iPhone front camera held at arm's length, natural light. ${look.character}, in ${look.setting}. Looking straight into the lens with a relaxed, friendly expression, mouth gently closed, face and shoulders in the upper half of the frame. No text, letters, logos or signs.`;
+  }
   return `Photorealistic vertical photo shot on an iPhone, natural light. ${look.character}, in ${look.setting}. The person is clearly visible, relaxed and friendly. No text, letters, logos or signs.`;
 }
 
@@ -26,7 +33,7 @@ export async function quoteLook(projectId: string): Promise<LookQuote> {
   const item = await getOwnedProject(user.id, projectId);
   if (!item) return { error: "הפרויקט לא נמצא." };
   if (isSceneDemoMode()) return { error: "הדמות נוצרת רק כשמחובר Higgsfield." };
-  const prompt = await lookPrompt(projectId);
+  const prompt = await lookPrompt(projectId, item.style);
   if (!prompt) return { error: "קודם מאשרים תסריט." };
   try {
     return { priceIls: customerPriceIls(await estimateLook(prompt)), balanceIls: await balance(user.id) };
@@ -41,7 +48,7 @@ export async function createLook(projectId: string): Promise<{ error?: string }>
   const item = await getOwnedProject(user.id, projectId);
   if (!item) return { error: "הפרויקט לא נמצא." };
   if (item.lookRequestId) return { error: "הדמות כבר בהכנה." };
-  const prompt = await lookPrompt(projectId);
+  const prompt = await lookPrompt(projectId, item.style);
   if (!prompt) return { error: "קודם מאשרים תסריט." };
   try {
     const usd = await estimateLook(prompt);

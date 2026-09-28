@@ -11,6 +11,7 @@ import { isVoiceId, VOICES } from "@/lib/voice/voices";
 import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes, listUploads } from "@/lib/projects.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { isSceneDemoMode } from "@/lib/scenes/higgsfield.server";
+import { isStale } from "@/lib/scenes/stale";
 import { requireUser } from "@/lib/session";
 import { saveBrief } from "./actions";
 
@@ -31,6 +32,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
     listUploads(item.id),
   ]);
   const takeApproved = takes.some((take) => take.approved);
+  const approvedTakeId = takes.find((take) => take.approved)?.id;
   // Ownership was verified above; idempotent for projects that reached this step earlier.
   if (takeApproved) await ensureScenes(item.id);
   const [scenes, lastRender] = await Promise.all([listScenes(item.id), latestRender(item.id)]);
@@ -119,6 +121,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
       <SceneStep
         projectId={item.id}
         realAvailable={!isSceneDemoMode()}
+        presenter={item.style === "presenter"}
         look={
           chosenLook
             ? { summary: chosenLook.summary, imageVersion: item.lookImageKey, generating: Boolean(item.lookRequestId) }
@@ -137,6 +140,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           costUsd: entry.costUsd,
           error: entry.error,
           uploadId: entry.uploadId,
+          stale: isStale(entry, approvedTakeId),
         }))}
       />
 

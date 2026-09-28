@@ -4,13 +4,22 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/db/client";
-import { project, render } from "@/db/schema";
+import { project, render, type Scene } from "@/db/schema";
 import { approvedMaterial, getOwnedProject, latestRender, listScenes } from "@/lib/projects.server";
 import { requireUser } from "@/lib/session";
 import { putMedia } from "@/lib/storage.server";
 import { renderChecks } from "@/lib/video/checks";
-import { renderVideo } from "@/lib/video/render.server";
+import { type RenderInput, renderVideo } from "@/lib/video/render.server";
 import { isSpeed, PLAYBACK_SPEED } from "@/lib/script/hebrew";
+import { isStale, STALE_MESSAGE } from "@/lib/scenes/stale";
+
+/** How a ready scene is shown: the customer's image, a lip-synced presenter clip, or a plain clip. */
+const beatOf = (entry: Scene): RenderInput["scenes"][number] => {
+  const base = { mediaKey: entry.mediaKey!, caption: entry.caption };
+  if (entry.uploadId) return { ...base, kind: "image" };
+  if (entry.takeId && entry.audioStart !== null && !entry.demo) return { ...base, kind: "talking", audioStart: entry.audioStart };
+  return { ...base, kind: "video" };
+};
 
 export async function startRender(projectId: string, speed: number = PLAYBACK_SPEED): Promise<{ error?: string }> {
   const user = await requireUser();
@@ -22,6 +31,7 @@ export async function startRender(projectId: string, speed: number = PLAYBACK_SP
   if (scenes.length === 0 || scenes.some((entry) => entry.status !== "ready" || !entry.mediaKey)) {
     return { error: "קודם כל הסצנות צריכות להיות מוכנות." };
   }
+  if (scenes.some((entry) => isStale(entry, take.id))) return { error: STALE_MESSAGE };
   if (previous?.status === "rendering") return { error: "הסרטון כבר בהרכבה." };
 
   const [job] = await db.insert(render).values({ projectId }).returning({ id: render.id });
@@ -30,7 +40,7 @@ export async function startRender(projectId: string, speed: number = PLAYBACK_SP
     callToAction: item.callToAction || "דברו איתנו עוד היום",
     narrationKey: take.audioKey,
     words: take.words,
-    scenes: scenes.map((entry) => ({ mediaKey: entry.mediaKey!, caption: entry.caption, kind: entry.uploadId ? ("image" as const) : ("video" as const) })),
+    scenes: scenes.map(beatOf),
     speed,
   };
 

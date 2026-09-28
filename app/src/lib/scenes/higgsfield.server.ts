@@ -10,6 +10,9 @@ const MODEL_PATH = "bytedance/seedance-2.0/text-to-video";
 const REFERENCE_PATH = "bytedance/seedance-2.0/reference-to-video";
 // Photoreal portrait model used for the video's recurring character (docs: soul-2/generate).
 const LOOK_PATH = "higgsfield-ai/soul/v2/standard";
+// Talking presenter, lip-synced to our own narration slice (docs: wan-2-7/image-to-video:
+// image_url, audio_url, duration 2-15, resolution 720p|1080p; the frame follows the image).
+const TALK_PATH = "wan/v2.7/image-to-video";
 const base = () => process.env.HF_API_URL ?? "https://api.higgsfield.ai";
 
 export class SceneError extends Error {}
@@ -114,6 +117,31 @@ export async function estimateLook(prompt: string): Promise<number> {
 }
 
 export const submitLook = (prompt: string) => submit(LOOK_PATH, lookRequest(prompt));
+
+/** The presenter clip: always 720p (Wan has no 480p), as long as its audio slice. */
+export const talkRequest = (prompt: string, imageUrl: string, audioUrl: string, seconds: number) => ({
+  prompt,
+  image_url: imageUrl,
+  audio_url: audioUrl,
+  duration: Math.min(15, Math.max(2, Math.ceil(seconds))),
+  resolution: "720p",
+  negative_prompt: "text, captions, subtitles, watermark, logo, extra people, distorted face, blurry mouth",
+});
+
+// Used only when the estimate carries no price; above Wan 2.7's 720p list rates so a quote never undercuts.
+const FALLBACK_TALK_USD_PER_SECOND = 0.15;
+
+export async function estimateTalk(prompt: string, imageUrl: string, audioUrl: string, seconds: number): Promise<number> {
+  const request = talkRequest(prompt, imageUrl, audioUrl, seconds);
+  const result = await call(`/estimate/${TALK_PATH}`, { method: "POST", body: JSON.stringify(request) });
+  const usd = usdFrom(result);
+  if (usd !== null) return usd;
+  console.error("[scenes] talk estimate without a price", { response: JSON.stringify(result).slice(0, 400) });
+  return Math.round(request.duration * FALLBACK_TALK_USD_PER_SECOND * 10_000) / 10_000;
+}
+
+export const submitTalk = (prompt: string, imageUrl: string, audioUrl: string, seconds: number) =>
+  submit(TALK_PATH, talkRequest(prompt, imageUrl, audioUrl, seconds));
 
 export type SceneStatus =
   | { state: "pending" }
