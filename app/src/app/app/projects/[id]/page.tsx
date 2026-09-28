@@ -7,7 +7,7 @@ import { RenderStep } from "@/components/render-step";
 import { SceneStep } from "@/components/scene-step";
 import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
-import { getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
+import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { requireUser } from "@/lib/session";
 import { saveBrief } from "./actions";
@@ -22,7 +22,11 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const { id } = await params;
   const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
-  const [drafts, takes] = await Promise.all([listDrafts(item.id), listTakes(item.id)]);
+  const [drafts, takes, narration] = await Promise.all([
+    listDrafts(item.id),
+    listTakes(item.id),
+    currentNarration(item.id, item.lexicon),
+  ]);
   const takeApproved = takes.some((take) => take.approved);
   // Ownership was verified above; idempotent for projects that reached this step earlier.
   if (takeApproved) await ensureScenes(item.id);
@@ -75,6 +79,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
         ready={item.status !== "brief"}
         seconds={item.seconds}
         lexicon={item.lexicon}
+        narrated={takes.length > 0}
         drafts={drafts.map((draft) => ({
           id: draft.id,
           options: draft.options,
@@ -97,6 +102,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           words: take.words,
           costUsd: take.costUsd,
           approved: take.approved,
+          stale: take.spokenText !== narration,
         }))}
       />
 

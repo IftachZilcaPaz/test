@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, voiceTake } from "@/db/schema";
-import { approvedScript, getOwnedProject } from "@/lib/projects.server";
-import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
+import { currentNarration, getOwnedProject } from "@/lib/projects.server";
+import { rewindProject } from "@/lib/projects/rewind.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
@@ -33,10 +33,10 @@ async function narrationFor(userId: string, projectId: string): Promise<Narratio
   const item = await getOwnedProject(userId, projectId);
   if (!item) return { error: "הפרויקט לא נמצא." };
   if (!item.voiceId || !isVoiceId(item.voiceId)) return { error: "קודם בוחרים קול." };
-  const script = await approvedScript(projectId);
-  if (!script) return { error: "קודם מאשרים תסריט." };
-  // Re-apply the lexicon: the customer may have edited the approved text by hand.
-  return { voiceId: item.voiceId, text: applyLexicon(script, parseLexicon(item.lexicon)) };
+  // Re-applies the lexicon: the customer may have edited the approved text by hand.
+  const text = await currentNarration(projectId, item.lexicon);
+  if (text === null) return { error: "קודם מאשרים תסריט." };
+  return { voiceId: item.voiceId, text };
 }
 
 export type VoiceQuote =
@@ -132,12 +132,15 @@ export async function approveTake(takeId: string): Promise<{ error?: string }> {
   const id = z.string().uuid().safeParse(takeId);
   if (!id.success) return { error: "ההקלטה לא נמצאה." };
   const [row] = await db
-    .select({ projectId: project.id, status: project.status })
+    .select({ projectId: project.id, status: project.status, lexicon: project.lexicon, spokenText: voiceTake.spokenText })
     .from(voiceTake)
     .innerJoin(project, eq(voiceTake.projectId, project.id))
     .where(and(eq(voiceTake.id, id.data), eq(project.userId, user.id)))
     .limit(1);
   if (!row) return { error: "ההקלטה לא נמצאה." };
+  if (row.spokenText !== (await currentNarration(row.projectId, row.lexicon))) {
+    return { error: "ההקראה הזו הוקלטה מנוסח קודם של התסריט או של המילון. הקריאו שוב." };
+  }
   await db.batch([
     db.update(voiceTake).set({ approved: false }).where(eq(voiceTake.projectId, row.projectId)),
     db.update(voiceTake).set({ approved: true }).where(eq(voiceTake.id, id.data)),
@@ -147,6 +150,23 @@ export async function approveTake(takeId: string): Promise<{ error?: string }> {
       .where(eq(project.id, row.projectId)),
   ]);
   await ensureScenes(row.projectId);
+  revalidatePath(`/app/projects/${row.projectId}`);
+  return {};
+}
+
+/** Takes back the narration approval so the customer can record it again. */
+export async function unapproveTake(takeId: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const id = z.string().uuid().safeParse(takeId);
+  if (!id.success) return { error: "ההקראה לא נמצאה." };
+  const [row] = await db
+    .select({ projectId: project.id })
+    .from(voiceTake)
+    .innerJoin(project, eq(voiceTake.projectId, project.id))
+    .where(and(eq(voiceTake.id, id.data), eq(project.userId, user.id)))
+    .limit(1);
+  if (!row) return { error: "ההקראה לא נמצאה." };
+  await rewindProject(row.projectId, "voice");
   revalidatePath(`/app/projects/${row.projectId}`);
   return {};
 }

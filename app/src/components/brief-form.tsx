@@ -76,7 +76,7 @@ export function BriefForm({
   };
 
   return (
-    <form action={formAction} className="clay flex flex-col gap-5 p-6 md:p-8">
+    <form id="brief" action={formAction} className="clay flex scroll-mt-6 flex-col gap-5 p-6 md:p-8">
       <div>
         <h2 className="text-2xl">1 · העסק שלי</h2>
         <p className="text-ink-2">בעברית פשוטה, כמו שהייתם מספרים לחבר. מזה נכתוב את התסריט.</p>

@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, scriptDraft } from "@/db/schema";
-import { getOwnedProject } from "@/lib/projects.server";
+import { approvedScript, getOwnedProject } from "@/lib/projects.server";
+import { rewindProject } from "@/lib/projects/rewind.server";
 import { briefSchema, type Brief } from "@/lib/script/types";
 import { estimateScripts, ScriptWriterError, writeScripts } from "@/lib/script/writer.server";
 import { customerPriceIls } from "@/lib/pricing";
@@ -118,6 +119,10 @@ export async function approveScript(input: z.input<typeof approveInput>): Promis
     .limit(1);
   if (!row || !row.draft.options[parsed.data.index]) return { error: "התסריט לא נמצא." };
 
+  // Changing an already-approved script invalidates the narration recorded from it.
+  const previous = await approvedScript(row.projectId);
+  const changed = previous !== null && previous !== parsed.data.script;
+
   await db.batch([
     // Only one approved script per project.
     db.update(scriptDraft).set({ chosenIndex: null, chosenScript: null }).where(eq(scriptDraft.projectId, row.projectId)),
@@ -130,6 +135,18 @@ export async function approveScript(input: z.input<typeof approveInput>): Promis
       .set({ status: row.status === "brief" || row.status === "script" ? "voice" : row.status })
       .where(eq(project.id, row.projectId)),
   ]);
+  if (changed) await rewindProject(row.projectId, "voice");
   revalidatePath(`/app/projects/${row.projectId}`);
+  return {};
+}
+
+/** Takes back the script approval so the customer can edit it or pick another version. */
+export async function unapproveScript(projectId: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const item = await getOwnedProject(user.id, projectId);
+  if (!item) return { error: "הפרויקט לא נמצא." };
+  await db.update(scriptDraft).set({ chosenIndex: null, chosenScript: null }).where(eq(scriptDraft.projectId, projectId));
+  await rewindProject(projectId, "script");
+  revalidatePath(`/app/projects/${projectId}`);
   return {};
 }

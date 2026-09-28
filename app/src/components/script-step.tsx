@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { approveScript, estimateScriptCost, generateScripts } from "@/app/app/projects/[id]/actions";
+import { approveScript, estimateScriptCost, generateScripts, unapproveScript } from "@/app/app/projects/[id]/actions";
 import { canAfford, WalletLine } from "@/components/wallet-line";
 import { customerPriceIls, formatCustomerPrice } from "@/lib/pricing";
 import { applyLexicon, countWords, estimateSeconds, lengthVerdict, parseLexicon, wordTarget } from "@/lib/script/hebrew";
@@ -30,12 +30,17 @@ function OptionCard({
   option,
   seconds,
   lexicon,
+  projectId,
+  narrated,
 }: {
   draft: DraftView;
   index: number;
   option: ScriptOption;
   seconds: number;
   lexicon: string;
+  projectId: string;
+  /** A narration was already recorded, so changing the approved text means recording again. */
+  narrated: boolean;
 }) {
   const router = useRouter();
   const chosen = draft.chosenIndex === index;
@@ -89,21 +94,42 @@ function OptionCard({
           {error}
         </p>
       )}
-      <button
-        type="button"
-        disabled={pending || !text.trim()}
-        className={`btn mt-auto ${chosen ? "" : "btn-primary"}`}
-        onClick={() =>
-          startTransition(async () => {
-            setError(null);
-            const result = await approveScript({ draftId: draft.id, index, script: text });
-            if (result.error) setError(result.error);
-            else router.refresh();
-          })
-        }
-      >
-        {pending ? "שומר…" : chosen ? "שמירת השינויים" : "אישור התסריט הזה"}
-      </button>
+      <div className="mt-auto flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending || !text.trim() || (chosen && text === draft.chosenScript)}
+          className={`btn ${chosen ? "" : "btn-primary"}`}
+          onClick={() => {
+            if (chosen && narrated && !window.confirm("שינוי בתסריט המאושר מבטל את אישור ההקראה, וצריך יהיה להקריא שוב. להמשיך?")) return;
+            startTransition(async () => {
+              setError(null);
+              const result = await approveScript({ draftId: draft.id, index, script: text });
+              if (result.error) setError(result.error);
+              else router.refresh();
+            });
+          }}
+        >
+          {pending ? "שומר…" : chosen ? "שמירת השינויים" : "אישור התסריט הזה"}
+        </button>
+        {chosen && (
+          <button
+            type="button"
+            disabled={pending}
+            className="btn btn-ghost"
+            onClick={() => {
+              if (narrated && !window.confirm("ביטול האישור מחזיר את הפרויקט לשלב התסריט. ההקראות שכבר נוצרו יישמרו, אבל צריך יהיה להקריא שוב. להמשיך?")) return;
+              startTransition(async () => {
+                setError(null);
+                const result = await unapproveScript(projectId);
+                if (result.error) setError(result.error);
+                else router.refresh();
+              });
+            }}
+          >
+            ביטול האישור
+          </button>
+        )}
+      </div>
     </article>
   );
 }
@@ -114,12 +140,14 @@ export function ScriptStep({
   seconds,
   lexicon,
   drafts,
+  narrated,
 }: {
   projectId: string;
   ready: boolean;
   seconds: number;
   lexicon: string;
   drafts: DraftView[];
+  narrated: boolean;
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -235,7 +263,16 @@ export function ScriptStep({
           </p>
           <div className="grid gap-4 md:grid-cols-3">
             {shown.options.map((option, index) => (
-              <OptionCard key={`${shown.id}-${index}`} draft={shown} index={index} option={option} seconds={seconds} lexicon={lexicon} />
+              <OptionCard
+                key={`${shown.id}-${index}`}
+                draft={shown}
+                index={index}
+                option={option}
+                seconds={seconds}
+                lexicon={lexicon}
+                projectId={projectId}
+                narrated={narrated}
+              />
             ))}
           </div>
           {drafts.length > 1 && (

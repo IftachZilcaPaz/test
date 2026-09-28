@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { approveTake, deleteTake, quoteNarration, recordNarration, selectVoice } from "@/app/app/projects/[id]/voice-actions";
+import { approveTake, deleteTake, quoteNarration, recordNarration, selectVoice, unapproveTake } from "@/app/app/projects/[id]/voice-actions";
 import { canAfford, WalletLine } from "@/components/wallet-line";
 import { customerPriceIls, formatCustomerPrice } from "@/lib/pricing";
 import { END_CARD_SECONDS, PLAYBACK_SPEED } from "@/lib/script/hebrew";
@@ -15,6 +15,8 @@ export type TakeView = {
   words: TimedWord[];
   costUsd: number;
   approved: boolean;
+  /** Recorded from an earlier script text or lexicon; can be heard but not approved. */
+  stale: boolean;
 };
 
 const voiceName = (id: string) => VOICES.find((voice) => voice.id === id)?.name ?? "קול";
@@ -91,11 +93,13 @@ function SamplePlayer({ voiceId }: { voiceId: string }) {
 function TakePlayer({
   take,
   onApprove,
+  onUnapprove,
   onDelete,
   busy,
 }: {
   take: TakeView;
   onApprove: () => void;
+  onUnapprove: () => void;
   onDelete: () => void;
   busy: boolean;
 }) {
@@ -106,6 +110,7 @@ function TakePlayer({
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg">ההקראה בקול של {voiceName(take.voiceId)}</h3>
         {take.approved && <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">מאושר</span>}
+        {take.stale && <span className="rounded-full bg-tint-3 px-3 py-1 text-xs font-semibold text-ink-2">מנוסח קודם</span>}
       </header>
       <audio
         controls
@@ -131,11 +136,19 @@ function TakePlayer({
         {take.durationSeconds.toFixed(1)} שניות קריינות · בסרטון (×{PLAYBACK_SPEED} + כרטיס סיום) כ־{finalSeconds.toFixed(1)} שניות · מחיר{" "}
         {formatCustomerPrice(take.costUsd)}
       </p>
-      {!take.approved && (
+      {take.approved ? (
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
-            {busy ? "שומר…" : "אישור ההקראה"}
+          <button type="button" className="btn btn-ghost" disabled={busy} onClick={onUnapprove}>
+            {busy ? "שומר…" : "ביטול האישור"}
           </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {!take.stale && (
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={onApprove}>
+              {busy ? "שומר…" : "אישור ההקראה"}
+            </button>
+          )}
           <button type="button" className="btn btn-ghost" disabled={busy} onClick={onDelete}>
             מחיקה
           </button>
@@ -258,6 +271,15 @@ export function VoiceStep({
             {error}
           </p>
         )}
+        {ready && latest && (
+          <p className="well rounded-2xl p-4 text-sm leading-6 text-ink-2">
+            <b className="text-ink">מילה נשמעת לא נכון?</b> למשל הדגש יוצא על ההברה הלא נכונה. הוסיפו אותה ל„המילון שלכם” ב
+            <a href="#brief" className="font-semibold text-accent underline underline-offset-4">
+              שלב 1
+            </a>{" "}
+            עם ניקוד מלא, כמו <bdi>תסריט = תַּסְרִיט</bdi>, שמרו, והקריאו שוב. אפשר גם לתקן ישירות את הטקסט בתסריט.
+          </p>
+        )}
       </div>
 
       <dialog ref={dialogRef} className="clay m-auto w-[min(28rem,calc(100vw-2rem))] p-6 backdrop:bg-ink/30" aria-labelledby="voice-price-title">
@@ -318,6 +340,14 @@ export function VoiceStep({
                 else router.refresh();
               })
             }
+            onUnapprove={() => {
+              if (!window.confirm("לבטל את אישור ההקראה? אפשר יהיה להקריא שוב או לאשר הקראה אחרת.")) return;
+              startApprove(async () => {
+                const result = await unapproveTake(take.id);
+                if (result.error) setError(result.error);
+                else router.refresh();
+              });
+            }}
           />
           </div>
         ))}
