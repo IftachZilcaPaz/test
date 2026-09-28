@@ -14,3 +14,10 @@
     Content-Type = "application/javascript; charset=utf-8"
     Cache-Control = "no-cache, no-store, must-revalidate"
     Content-Security-Policy = "default-src 'self'; script-src 'self'"
+
+
+
+# Declared explicitly: with the app in a subfolder, auto-detection can skip it and
+# Netlify then publishes .next as plain static files (404 on every page).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
