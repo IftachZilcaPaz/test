@@ -9,8 +9,7 @@ export function WalletLine({ balanceIls, priceIls }: { balanceIls: number; price
       יתרה בארנק: <b className="tabular-nums">{formatShekels(balanceIls)}</b>
       {short && (
         <>
-          {" "}
-          — לא מספיק.{" "}
+          . לא מספיק.{" "}
           <Link href="/app/wallet" className="font-semibold underline underline-offset-4">
             טעינת הארנק
           </Link>

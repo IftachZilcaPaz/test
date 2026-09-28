@@ -131,7 +131,7 @@ export function BriefForm({
           ))}
         </div>
         {style === "presenter" && (
-          <p className="text-sm text-ink-3">צילומי מסך או תמונות — לא חובה. אם תעלו, הסרטון יקפוץ אליהם בזמן שהקריינית מדברת עליהם.</p>
+          <p className="text-sm text-ink-3">צילומי מסך או תמונות: לא חובה. אם תעלו, הסרטון יקפוץ אליהם בזמן שהקריינית מדברת עליהם.</p>
         )}
         {style !== "character" && <UploadsManager projectId={projectId} uploads={uploads} />}
       </fieldset>

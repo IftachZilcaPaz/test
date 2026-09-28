@@ -23,14 +23,14 @@ export default async function WalletPage() {
         <h1 className="text-3xl">הארנק שלי</h1>
         <p className="font-round text-5xl tabular-nums text-accent">{formatShekels(available)}</p>
         <p className="max-w-[60ch] text-ink-2">
-          לפני כל שלב שעולה כסף תראו את המחיר המדויק ותאשרו. תשלום רק על מה שנוצר בפועל — סצנה שנכשלת מוחזרת לארנק אוטומטית.
+          לפני כל שלב שעולה כסף תראו את המחיר המדויק ותאשרו. תשלום רק על מה שנוצר בפועל: סצנה שנכשלת מוחזרת לארנק אוטומטית.
         </p>
         {demoTopupAllowed() && (
           <form action={demoTopUp} className="flex flex-wrap items-center gap-3">
             <button type="submit" className="btn btn-primary">
               טעינה של {formatShekels(DEMO_TOPUP_ILS)}
             </button>
-            <span className="rounded-full bg-tint-3 px-3 py-1 text-xs font-semibold text-ink">מצב פיתוח — בלי תשלום אמיתי</span>
+            <span className="rounded-full bg-tint-3 px-3 py-1 text-xs font-semibold text-ink">מצב פיתוח, בלי תשלום אמיתי</span>
           </form>
         )}
         <p className="text-xs text-ink-3">המחירים = עלות הספקים × {PRICE_MULTIPLIER}, מעוגלים ל-10 אגורות.</p>

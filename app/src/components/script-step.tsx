@@ -187,7 +187,7 @@ export function ScriptStep({
         </h2>
         <p className="text-ink-2">
           {ready
-            ? `שלוש גרסאות קריינות של ${wordTarget(seconds)} מילים בערך — מתאים לסרטון של ${seconds} שניות.`
+            ? `שלוש גרסאות קריינות של ${wordTarget(seconds)} מילים בערך, מתאים לסרטון של ${seconds} שניות.`
             : "קודם שומרים את הפרטים על העסק, ואז כותבים."}
         </p>
         <div className="flex flex-wrap items-center gap-3">
@@ -214,12 +214,12 @@ export function ScriptStep({
             </h3>
             {quote.demo ? (
               <p className="text-ink-2">
-                <b>מצב דמו — בחינם.</b> עוד לא חובר מפתח Claude, אז תקבלו תסריטים לדוגמה כדי לראות איך המסך עובד.
+                <b>מצב דמו, בחינם.</b> עוד לא חובר מפתח Claude, אז תקבלו תסריטים לדוגמה כדי לראות איך המסך עובד.
               </p>
             ) : (
               <>
                 <p className="text-ink-2">
-                  שלושה תסריטים. המחיר <b>לכל היותר {formatCustomerPrice(quote.maxUsd)}</b>, ובדרך כלל פחות — תחויבו רק על מה
+                  שלושה תסריטים. המחיר <b>לכל היותר {formatCustomerPrice(quote.maxUsd)}</b>, ובדרך כלל פחות. תחויבו רק על מה
                   שנכתב בפועל.
                 </p>
                 <WalletLine balanceIls={quote.balanceIls} priceIls={customerPriceIls(quote.maxUsd)} />

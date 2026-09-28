@@ -8,7 +8,7 @@ const varela = Varela_Round({ variable: "--font-varela", weight: "400", subsets:
 
 export const metadata: Metadata = {
   title: "reynovation · סרטוני פרומו בעברית",
-  description: "מספרים על העסק בעברית, ומקבלים סרטון פרומו עם קריינות מדויקת — בלי לדעת עריכה.",
+  description: "מספרים על העסק בעברית, ומקבלים סרטון פרומו עם קריינות מדויקת, בלי לדעת עריכה.",
   applicationName: "reynovation",
   appleWebApp: { capable: true, title: "reynovation", statusBarStyle: "default" },
 };

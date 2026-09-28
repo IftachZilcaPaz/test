@@ -97,7 +97,7 @@ export async function recordNarration(projectId: string): Promise<{ error?: stri
     last.spokenText === narration.text &&
     Date.now() - last.createdAt.getTime() < DUPLICATE_WINDOW_MS
   ) {
-    return { error: "ההקראה הזו בדיוק נוצרה עכשיו — היא מופיעה למטה." };
+    return { error: "ההקראה הזו בדיוק נוצרה עכשיו, והיא מופיעה למטה." };
   }
 
   const price = customerPriceIls(voiceCostUsd(narration.text));

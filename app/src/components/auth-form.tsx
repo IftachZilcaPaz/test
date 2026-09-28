@@ -17,7 +17,7 @@ const ERRORS: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "האימייל או הסיסמה לא נכונים.",
   USER_ALREADY_EXISTS: "כבר יש חשבון עם האימייל הזה. נסו להתחבר.",
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "כבר יש חשבון עם האימייל הזה. נסו להתחבר.",
-  PASSWORD_TOO_SHORT: "הסיסמה קצרה מדי — לפחות 8 תווים.",
+  PASSWORD_TOO_SHORT: "הסיסמה קצרה מדי. צריך לפחות 8 תווים.",
   INVALID_EMAIL: "כתובת האימייל לא תקינה.",
 };
 

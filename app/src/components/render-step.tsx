@@ -34,12 +34,23 @@ export function RenderStep({
   const [starting, startTransition] = useTransition();
   const rendering = latest?.status === "rendering";
 
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // Each poll also moves the render forward a step, so polls never overlap.
   useEffect(() => {
     if (!rendering) return;
+    let inFlight = false;
     const timer = setInterval(async () => {
-      const { status } = await renderState(projectId);
-      if (status !== "rendering") router.refresh();
-    }, 2000);
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const state = await renderState(projectId);
+        if (state.total) setProgress({ done: state.done ?? 0, total: state.total });
+        if (state.status !== "rendering") router.refresh();
+      } finally {
+        inFlight = false;
+      }
+    }, 1500);
     return () => clearInterval(timer);
   }, [rendering, projectId, router]);
 
@@ -93,7 +104,7 @@ export function RenderStep({
         {ready && (
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" className="btn btn-primary" disabled={starting || rendering} onClick={start}>
-              {rendering ? "מרכיב… (עד דקה)" : starting ? "מתחיל…" : latest?.status === "done" ? "הרכבה מחדש" : "הרכיבו לי את הסרטון"}
+              {rendering ? (progress ? `מרכיב… ${progress.done}/${progress.total}` : "מרכיב…") : starting ? "מתחיל…" : latest?.status === "done" ? "הרכבה מחדש" : "הרכיבו לי את הסרטון"}
             </button>
           </div>
         )}

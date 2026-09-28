@@ -13,7 +13,7 @@ export type CreateProjectState = { error?: string };
 const projectName = z
   .string()
   .trim()
-  .min(1, "צריך לתת לפרויקט שם — למשל שם העסק")
+  .min(1, "צריך לתת לפרויקט שם, למשל שם העסק")
   .max(80, "השם ארוך מדי (עד 80 תווים)");
 
 export async function createProject(

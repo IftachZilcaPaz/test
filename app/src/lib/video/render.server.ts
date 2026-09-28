@@ -24,7 +24,14 @@ export type RenderInput = {
   speed: Speed;
 };
 
-export type RenderResult = { video: Uint8Array; timeline: Timeline };
+/**
+ * The video is assembled in parts so no single step runs long (a serverless request
+ * has ~30 s): one part per scene plus the end card, each encoded on its own with its
+ * captions burned in, then joined without re-encoding and given the narration.
+ * Part boundaries sit on whole frames, so the joined parts keep the timeline exact.
+ */
+export type RenderPart = { index: number; startFrame: number; frames: number };
+export type RenderPlan = { timeline: Timeline; parts: RenderPart[] };
 
 const FPS = 30;
 const CAPTION_BOTTOM = 230; // px from the bottom edge, above platform UI on Reels/TikTok
@@ -33,6 +40,20 @@ const SCREEN_TOP = 130;
 const SCREEN_MAX_HEIGHT = 800;
 // Share of a presenter clip's height cut from the bottom, where invented subtitles appear.
 const TALK_BOTTOM_CROP = 0.12;
+// Every part is encoded identically, so the parts join without re-encoding.
+const VIDEO_CODEC = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", String(FPS)];
+
+const frameOf = (seconds: number) => Math.round(seconds * FPS);
+
+export function planRender(input: RenderInput): RenderPlan {
+  const timeline = buildTimeline(input.words, input.scenes.map((scene) => scene.caption), input.speed);
+  const bounds = [...timeline.scenes.map((slot) => frameOf(slot.start)), frameOf(timeline.endCard.start), frameOf(timeline.endCard.end)];
+  const parts = bounds.slice(0, -1).map((startFrame, index) => ({ index, startFrame, frames: Math.max(1, bounds[index + 1]! - startFrame) }));
+  return { timeline, parts };
+}
+
+/** The end card is always the last part. */
+export const isEndCard = (plan: RenderPlan, part: RenderPart) => part.index === plan.parts.length - 1;
 
 async function load(key: string, path: string) {
   const bytes = await getMedia(key);
@@ -40,115 +61,111 @@ async function load(key: string, path: string) {
   await writeFile(path, bytes);
 }
 
-/**
- * Assembles the final 9:16 video: scenes cut to the narration timeline, Hebrew
- * captions burned in while their words are spoken, narration at ×1.25, and the
- * branded end card.
- */
-export async function renderVideo(input: RenderInput): Promise<RenderResult> {
-  const timeline = buildTimeline(input.words, input.scenes.map((scene) => scene.caption), input.speed);
-  const dir = await mkdtemp(join(tmpdir(), "reyn-render-"));
+const fit = `scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},setsar=1,fps=${FPS},format=yuv420p`;
+
+/** Encodes one part (video only), with the captions shown during it. */
+export async function renderPart(input: RenderInput, plan: RenderPlan, part: RenderPart): Promise<Uint8Array> {
+  const dir = await mkdtemp(join(tmpdir(), "reyn-part-"));
   try {
-    const narration = join(dir, "narration.mp3");
-    await load(input.narrationKey, narration);
-    const clips = await Promise.all(
-      input.scenes.map(async (scene, index) => {
-        const path = join(dir, `scene-${index}${scene.kind === "image" ? ".img" : ".mp4"}`);
-        await load(scene.mediaKey, path);
-        return path;
-      }),
-    );
-    const endCard = join(dir, "endcard.png");
-    await writeFile(endCard, await endCardPng(input.business, input.callToAction));
-    const captions = await Promise.all(
-      timeline.scenes.map(async (slot, index) => {
-        if (!slot.caption) return null;
-        const path = join(dir, `caption-${index}.png`);
-        const plate = await captionPng(slot.caption.text);
-        await writeFile(path, plate.png);
-        return { path, ...slot.caption };
-      }),
-    );
-
+    const start = part.startFrame / FPS;
+    const duration = (part.frames / FPS).toFixed(3);
     const args: string[] = [];
-    clips.forEach((clip, index) => {
-      if (input.scenes[index]!.kind === "image") {
-        const slot = timeline.scenes[index]!;
-        args.push("-loop", "1", "-framerate", String(FPS), "-t", (Math.max(slot.end - slot.start, 0.2) + 0.5).toFixed(3), "-i", clip);
-      } else if (input.scenes[index]!.kind === "talking") {
-        // Never looped: a restarted clip would show lips from another sentence.
-        args.push("-i", clip);
-      } else {
-        args.push("-stream_loop", "-1", "-i", clip);
-      }
-    });
-    const endIndex = clips.length;
-    args.push("-loop", "1", "-framerate", String(FPS), "-t", (timeline.endCard.end - timeline.endCard.start).toFixed(3), "-i", endCard);
-    const audioIndex = endIndex + 1;
-    args.push("-i", narration);
-    const captionInputs = captions.map((caption) => {
-      if (!caption) return null;
-      args.push("-loop", "1", "-framerate", String(FPS), "-t", timeline.total.toFixed(3), "-i", caption.path);
-      return { ...caption, input: audioIndex + 1 + captions.filter(Boolean).indexOf(caption) };
-    });
-
-    const fit = `scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},setsar=1,fps=${FPS},format=yuv420p`;
     const filters: string[] = [];
-    timeline.scenes.forEach((slot, index) => {
-      const seconds = Math.max(slot.end - slot.start, 0.2);
-      const duration = seconds.toFixed(3);
-      const beat = input.scenes[index]!;
-      if (beat.kind === "talking") {
-        // Clip time c shows the lips of narration second audioStart + c; this slot plays narration from start × speed.
-        const offset = Math.max(0, slot.start * input.speed - beat.audioStart).toFixed(3);
-        // Talking-head models sometimes draw fake subtitles along the bottom edge (they learned
-        // from captioned social videos); that band is cropped away, keeping the face in frame.
-        filters.push(
-          `[${index}:v]trim=start=${offset},setpts=(PTS-STARTPTS)/${input.speed},crop=iw:trunc(ih*${1 - TALK_BOTTOM_CROP}/2)*2:0:0,${fit},tpad=stop_mode=clone:stop_duration=2,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
-        );
-      } else if (beat.kind === "image") {
+
+    if (isEndCard(plan, part)) {
+      const card = join(dir, "endcard.png");
+      await writeFile(card, await endCardPng(input.business, input.callToAction));
+      args.push("-loop", "1", "-framerate", String(FPS), "-t", duration, "-i", card);
+      filters.push(`[0:v]${fit},fade=t=in:st=0:d=0.35,setpts=PTS-STARTPTS[base]`);
+    } else {
+      const beat = input.scenes[part.index]!;
+      const clip = join(dir, beat.kind === "image" ? "scene.img" : "scene.mp4");
+      await load(beat.mediaKey, clip);
+      if (beat.kind === "image") {
+        args.push("-loop", "1", "-framerate", String(FPS), "-t", (part.frames / FPS + 0.5).toFixed(3), "-i", clip);
         // Blurred, darkened fill behind the whole image, which grows ~4% over its beat.
         const grow = `scale=w='trunc(iw*(1+0.04*t/${duration})/2)*2':h=-2:eval=frame`;
         filters.push(
-          `[${index}:v]split=2[bg${index}][fg${index}]`,
-          `[bg${index}]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},gblur=sigma=28,eq=brightness=-0.06[bb${index}]`,
+          "[0:v]split=2[bg][fg]",
+          `[bg]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},gblur=sigma=28,eq=brightness=-0.06[bb]`,
           // Kept above the caption band (captions sit CAPTION_BOTTOM px from the bottom), so neither hides the other.
-          `[fg${index}]scale=${VIDEO_WIDTH - 100}:${SCREEN_MAX_HEIGHT}:force_original_aspect_ratio=decrease,${grow}[ff${index}]`,
-          `[bb${index}][ff${index}]overlay=x=(W-w)/2:y=${SCREEN_TOP}:eval=frame,setsar=1,fps=${FPS},format=yuv420p,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
+          `[fg]scale=${VIDEO_WIDTH - 100}:${SCREEN_MAX_HEIGHT}:force_original_aspect_ratio=decrease,${grow}[ff]`,
+          `[bb][ff]overlay=x=(W-w)/2:y=${SCREEN_TOP}:eval=frame,setsar=1,fps=${FPS},format=yuv420p,trim=duration=${duration},setpts=PTS-STARTPTS[base]`,
+        );
+      } else if (beat.kind === "talking") {
+        // Never looped: a restarted clip would show lips from another sentence.
+        args.push("-i", clip);
+        // Clip time c shows the lips of narration second audioStart + c; this part plays narration from start × speed.
+        const offset = Math.max(0, start * input.speed - beat.audioStart).toFixed(3);
+        // Talking-head models sometimes draw fake subtitles along the bottom edge (they learned
+        // from captioned social videos); that band is cropped away, keeping the face in frame.
+        filters.push(
+          `[0:v]trim=start=${offset},setpts=(PTS-STARTPTS)/${input.speed},crop=iw:trunc(ih*${1 - TALK_BOTTOM_CROP}/2)*2:0:0,${fit},tpad=stop_mode=clone:stop_duration=2,trim=duration=${duration},setpts=PTS-STARTPTS[base]`,
         );
       } else {
-        filters.push(`[${index}:v]${fit},trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`);
+        args.push("-stream_loop", "-1", "-i", clip);
+        filters.push(`[0:v]${fit},trim=duration=${duration},setpts=PTS-STARTPTS[base]`);
       }
-    });
-    filters.push(`[${endIndex}:v]${fit},fade=t=in:st=0:d=0.35,setpts=PTS-STARTPTS[end]`);
-    filters.push(`${timeline.scenes.map((_, index) => `[s${index}]`).join("")}[end]concat=n=${timeline.scenes.length + 1}:v=1:a=0[base]`);
+    }
 
+    // Captions are timed on the whole video; burn in the ones that overlap this part.
+    const end = (part.startFrame + part.frames) / FPS;
+    const captions = plan.timeline.scenes.flatMap((slot) => (slot.caption && slot.caption.end > start && slot.caption.start < end ? [slot.caption] : []));
     let current = "base";
-    captionInputs.forEach((caption, index) => {
-      if (!caption) return;
-      const next = `c${index}`;
-      filters.push(
-        `[${current}][${caption.input}:v]overlay=x=(W-w)/2:y=H-h-${CAPTION_BOTTOM}:enable='between(t,${caption.start.toFixed(3)},${caption.end.toFixed(3)})'[${next}]`,
-      );
-      current = next;
-    });
-    filters.push(`[${audioIndex}:a]atempo=${input.speed},apad[a]`);
+    for (const [index, caption] of captions.entries()) {
+      const path = join(dir, `caption-${index}.png`);
+      await writeFile(path, (await captionPng(caption.text)).png);
+      args.push("-loop", "1", "-framerate", String(FPS), "-t", duration, "-i", path);
+      const from = Math.max(0, caption.start - start).toFixed(3);
+      const to = (caption.end - start).toFixed(3);
+      filters.push(`[${current}][${index + 1}:v]overlay=x=(W-w)/2:y=H-h-${CAPTION_BOTTOM}:enable='between(t,${from},${to})'[c${index}]`);
+      current = `c${index}`;
+    }
 
+    const output = join(dir, "part.mp4");
+    await ffmpeg([...args, "-filter_complex", filters.join(";"), "-map", `[${current}]`, "-frames:v", String(part.frames), ...VIDEO_CODEC, "-an", output]);
+    return await readFile(output);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/** Joins the encoded parts in order (no re-encoding) and lays the narration under them. */
+export async function assembleParts(input: RenderInput, plan: RenderPlan, parts: Uint8Array[]): Promise<Uint8Array> {
+  const dir = await mkdtemp(join(tmpdir(), "reyn-join-"));
+  try {
+    const list = await Promise.all(
+      parts.map(async (bytes, index) => {
+        const path = join(dir, `part-${index}.mp4`);
+        await writeFile(path, bytes);
+        return `file '${path}'`;
+      }),
+    );
+    await writeFile(join(dir, "parts.txt"), list.join("\n"));
+    const narration = join(dir, "narration.mp3");
+    await load(input.narrationKey, narration);
     const output = join(dir, "video.mp4");
     await ffmpeg([
-      ...args,
-      "-filter_complex", filters.join(";"),
-      "-map", `[${current}]`,
-      "-map", "[a]",
-      "-t", timeline.total.toFixed(3),
-      "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
-      "-r", String(FPS),
+      "-f", "concat", "-safe", "0", "-i", join(dir, "parts.txt"),
+      "-i", narration,
+      "-filter_complex", `[1:a]atempo=${input.speed},apad[a]`,
+      "-map", "0:v", "-map", "[a]",
+      "-t", plan.timeline.total.toFixed(3),
+      "-c:v", "copy",
       "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2",
       "-movflags", "+faststart",
       output,
     ]);
-    return { video: await readFile(output), timeline };
+    return await readFile(output);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+/** The whole video in one go (scripts and tests); the app renders part by part instead. */
+export async function renderVideo(input: RenderInput): Promise<{ video: Uint8Array; timeline: Timeline }> {
+  const plan = planRender(input);
+  const parts: Uint8Array[] = [];
+  for (const part of plan.parts) parts.push(await renderPart(input, plan, part));
+  return { video: await assembleParts(input, plan, parts), timeline: plan.timeline };
 }

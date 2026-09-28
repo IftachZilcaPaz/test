@@ -32,7 +32,7 @@ export default function Error({ error, retry }: { error: Error & { digest?: stri
         <p className="text-ink-2">
           {staleDeploy
             ? "טוענים אותה עכשיו. העבודה שלכם שמורה."
-            : "לא איבדתם כלום — הפרויקטים והתשלומים שמורים. נסו שוב, ואם זה חוזר, רעננו את הדף."}
+            : "לא איבדתם כלום. הפרויקטים והתשלומים שמורים. נסו שוב, ואם זה חוזר, רעננו את הדף."}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>

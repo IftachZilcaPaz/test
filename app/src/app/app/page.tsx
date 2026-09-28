@@ -26,7 +26,7 @@ export default async function ProjectsPage() {
       <section className="clay flex flex-col gap-4 p-6 md:p-8">
         <div>
           <h1 className="text-3xl">הפרויקטים שלי</h1>
-          <p className="text-ink-2">כל פרויקט הוא סרטון אחד. מתחילים משם — אפשר לשנות אחר כך.</p>
+          <p className="text-ink-2">כל פרויקט הוא סרטון אחד. מתחילים משם, ואפשר לשנות אחר כך.</p>
         </div>
         <CreateProjectForm />
       </section>
@@ -35,7 +35,7 @@ export default async function ProjectsPage() {
         <section className="clay flex flex-col items-center gap-2 p-10 text-center">
           <h2 className="text-2xl">עוד אין פרויקטים</h2>
           <p className="max-w-[40ch] text-ink-2">
-            כתבו למעלה שם לפרויקט הראשון — למשל שם העסק — ונתחיל לספר עליו.
+            כתבו למעלה שם לפרויקט הראשון (למשל שם העסק), ונתחיל לספר עליו.
           </p>
         </section>
       ) : (

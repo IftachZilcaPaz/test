@@ -42,20 +42,26 @@ export async function estimateScripts(brief: Brief, screens: string[] = [], styl
   return { demo: false, maxUsd: perScript * ANGLES.length };
 }
 
+// Long dashes read as foreign in Hebrew copy; a comma does the same job. Applied to the
+// script and its captions alike, so captions still quote the narration exactly.
+const noDashes = (text: string) => text.replace(/\s*[—–]\s*/gu, ", ").replace(/^, |, $/gu, "").trim();
+
 function clean(options: ScriptOption[], lexicon: ReturnType<typeof parseLexicon>, screenCount: number): ScriptOption[] {
   return options.slice(0, ANGLES.length).map((option) => {
     // Enforce the lexicon even if the model forgot it; keep only captions that truly quote the narration.
-    const script = applyLexicon(option.script.trim(), lexicon);
+    const script = applyLexicon(noDashes(option.script), lexicon);
     const used = new Set<number>();
     const scenes = option.scenes
-      .filter((scene) => scene.caption.trim() && captionQuotes(scene.caption, script))
+      .map((scene) => ({ ...scene, caption: noDashes(scene.caption) }))
+      .filter((scene) => scene.caption && captionQuotes(scene.caption, script))
       .map((scene) => {
         // A screenshot number must exist and appear once; anything else becomes a generated shot.
         const screen = scene.screen && scene.screen >= 1 && scene.screen <= screenCount && !used.has(scene.screen) ? scene.screen : 0;
         if (screen) used.add(screen);
         return { caption: scene.caption, visual: scene.visual, screen };
       });
-    return { title: option.title.trim(), script, look: option.look, scenes };
+    const look = option.look && { ...option.look, summary: noDashes(option.look.summary) };
+    return { title: noDashes(option.title), script, look, scenes };
   });
 }
 
@@ -63,7 +69,7 @@ function clean(options: ScriptOption[], lexicon: ReturnType<typeof parseLexicon>
 function writerError(error: unknown): ScriptWriterError {
   if (error instanceof ScriptWriterError) return error;
   if (error instanceof Anthropic.APIConnectionTimeoutError) {
-    return new ScriptWriterError("הכתיבה לקחה יותר מדי זמן. נסו שוב — לא חויבתם.");
+    return new ScriptWriterError("הכתיבה לקחה יותר מדי זמן. נסו שוב, לא חויבתם.");
   }
   if (error instanceof Anthropic.AuthenticationError) {
     return new ScriptWriterError("מפתח Claude לא תקין. בדקו את ANTHROPIC_API_KEY.");

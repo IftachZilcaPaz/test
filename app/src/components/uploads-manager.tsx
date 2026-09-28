@@ -68,7 +68,7 @@ export function UploadsManager({ projectId, uploads }: { projectId: string; uplo
     setError(null);
     const room = MAX_UPLOADS - uploads.length;
     const chosen = [...files].slice(0, room);
-    if (files.length > room) setError(`אפשר עד ${MAX_UPLOADS} תמונות — העלינו את ${room} הראשונות.`);
+    if (files.length > room) setError(`אפשר עד ${MAX_UPLOADS} תמונות, אז העלינו את ${room} הראשונות.`);
     setUploading(chosen.length);
     for (const file of chosen) {
       try {

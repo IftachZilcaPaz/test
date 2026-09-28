@@ -193,7 +193,7 @@ export function SceneStep({
         </h2>
         <p className="text-ink-2">
           {ready
-            ? "סצנה לכל חלק בקריינות. הכיתוב מצוטט מהקריינות מילה במילה, והסצנות עצמן בלי שום טקסט — את הכיתוב בעברית אנחנו מוסיפים."
+            ? "סצנה לכל חלק בקריינות. הכיתוב מצוטט מהקריינות מילה במילה, והסצנות עצמן בלי שום טקסט. את הכיתוב בעברית אנחנו מוסיפים."
             : "קודם מאשרים הקראה, ואז יוצרים סצנות."}
         </p>
         {ready && realAvailable && look && <LookCard projectId={projectId} look={look} presenter={presenter} />}
@@ -232,7 +232,7 @@ export function SceneStep({
                   })
                 }
               >
-                {approving ? "שומר…" : "אישור הסצנות — לסרטון"}
+                {approving ? "שומר…" : "אישור הסצנות והמשך לסרטון"}
               </button>
             )}
             {waiting && (
@@ -241,7 +241,7 @@ export function SceneStep({
               </span>
             )}
             {realAvailable && !waiting && demoTodo === 0 && realTodo > 0 && (
-              <span className="text-sm text-ink-3">הסצנות הנוכחיות הן לדוגמה. כשהסרטון נראה לכם טוב — מחליפים לאמיתיות.</span>
+              <span className="text-sm text-ink-3">הסצנות הנוכחיות הן לדוגמה. כשהסרטון נראה לכם טוב, מחליפים לאמיתיות.</span>
             )}
             {spent > 0 && <span className="text-sm text-ink-3">שילמתם על הסצנות: {formatCustomerPrice(spent)}</span>}
           </div>
@@ -261,7 +261,7 @@ export function SceneStep({
             </h3>
             {quote.demo ? (
               <p className="text-ink-2">
-                <b>סצנות לדוגמה — בחינם.</b> כל סצנה תהיה רקע צבעוני, כדי לראות את כל הסרטון — קריינות, כיתובים ותזמון — לפני
+                <b>סצנות לדוגמה, בחינם.</b> כל סצנה תהיה רקע צבעוני, כדי לראות את כל הסרטון (קריינות, כיתובים ותזמון) לפני
                 שמשלמים על סצנות אמיתיות.
               </p>
             ) : (
@@ -274,7 +274,7 @@ export function SceneStep({
                     {(
                       [
                         ["720p", "רגילה (720p)", "חדה לגמרי בסרטון הסופי"],
-                        ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה — טובה לטיוטה"],
+                        ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה, טובה לטיוטה"],
                       ] as const
                     ).map(([value, title, hint]) => (
                       <label key={value} className="cursor-pointer">
@@ -296,7 +296,7 @@ export function SceneStep({
                   </fieldset>
                 )}
                 <p className="text-ink-2" aria-live="polite">
-                  {quote.count} סצנות. המחיר <b>{quoting ? "מחשב…" : formatShekels(quote.priceIls)}</b>. סצנה שנכשלת — הכסף חוזר לארנק.
+                  {quote.count} סצנות. המחיר <b>{quoting ? "מחשב…" : formatShekels(quote.priceIls)}</b>. סצנה שנכשלת? הכסף חוזר לארנק.
                 </p>
                 <WalletLine balanceIls={quote.balanceIls} priceIls={quote.priceIls} />
               </>

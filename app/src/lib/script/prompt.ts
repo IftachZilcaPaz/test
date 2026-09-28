@@ -37,7 +37,7 @@ ${style === "presenter" ? PRESENTER_INTRO : ""}Write ONE voice-over script in na
 
 Hard rules:
 1. The script has ${words} words (±10%), counting whitespace-separated words. The narration must fit a ${brief.seconds}-second video.
-2. Address the audience in plural ("אתם"). Short sentences that are easy to say out loud. No English words except the brand name.
+2. Address the audience in plural ("אתם"). Short sentences that are easy to say out loud. No English words except the brand name. Never use a long dash (— or –) anywhere (script, captions, title, summary): use a comma or a period instead.
 3. The first sentence is a hook that makes a specific person stop scrolling. Do not open with a chain of rhetorical questions, and never use list gimmicks such as "four questions".
 4. The last sentence says the business name and the call to action.
 5. Write numbers as Hebrew words, never digits.
