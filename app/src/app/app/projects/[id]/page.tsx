@@ -7,6 +7,7 @@ import { RenderStep } from "@/components/render-step";
 import { SceneStep } from "@/components/scene-step";
 import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
+import { isVoiceId, VOICES } from "@/lib/voice/voices";
 import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { requireUser } from "@/lib/session";
@@ -33,6 +34,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const [scenes, lastRender] = await Promise.all([listScenes(item.id), latestRender(item.id)]);
   const scriptApproved = drafts.some((draft) => draft.chosenScript);
   const current = STEPS.findIndex((step) => step.key === item.status);
+  const voice = VOICES.find((entry) => item.voiceId && isVoiceId(item.voiceId) && entry.id === item.voiceId) ?? VOICES[0];
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,6 +65,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
 
       <BriefForm
         action={saveBrief.bind(null, item.id)}
+        voice={{ id: voice.id, name: voice.name }}
         values={{
           business: item.business ?? "",
           about: item.about ?? "",

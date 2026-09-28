@@ -1,22 +1,9 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState } from "react";
 import type { BriefState } from "@/app/app/projects/[id]/actions";
+import { PronunciationLab } from "@/components/pronunciation-lab";
 import { DURATIONS, TONES, wordTarget } from "@/lib/script/hebrew";
-
-const NIQQUD_MARKS = [
-  ["ָ", "קָמָץ"],
-  ["ַ", "פַּתָח"],
-  ["ֵ", "צֵירֵה"],
-  ["ֶ", "סֶגוֹל"],
-  ["ִ", "חִירִיק"],
-  ["ֹ", "חוֹלָם"],
-  ["ֻ", "קֻבּוּץ"],
-  ["ְ", "שְׁוָא"],
-  ["ּ", "דָּגֵשׁ"],
-  ["ׁ", "שִׁין"],
-  ["ׂ", "שׂין"],
-] as const;
 
 export type BriefValues = {
   business: string;
@@ -47,12 +34,14 @@ function Field({ label, error, hint, children }: { label: string; error?: string
 export function BriefForm({
   action,
   values,
+  voice,
 }: {
   action: (state: BriefState, formData: FormData) => Promise<BriefState>;
   values: BriefValues;
+  /** The voice pronunciation checks are read in: the project's chosen voice, or the default. */
+  voice: { id: string; name: string };
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const lexiconRef = useRef<HTMLTextAreaElement>(null);
   const errors = state.errors ?? {};
   // After a failed save show what was typed; after a successful one the server props are fresh.
   const echo = state.values;
@@ -64,15 +53,6 @@ export function BriefForm({
     tone: echo?.tone ?? values.tone,
     seconds: Number(echo?.seconds ?? values.seconds),
     lexicon: echo?.lexicon ?? values.lexicon,
-  };
-
-  const insertMark = (mark: string) => {
-    const field = lexiconRef.current;
-    if (!field) return;
-    const { selectionStart, selectionEnd, value } = field;
-    field.value = value.slice(0, selectionStart) + mark + value.slice(selectionEnd);
-    field.focus();
-    field.setSelectionRange(selectionStart + mark.length, selectionStart + mark.length);
   };
 
   return (
@@ -121,23 +101,10 @@ export function BriefForm({
         </fieldset>
       </div>
 
-      <details className="well rounded-3xl p-4">
-        <summary className="cursor-pointer font-semibold text-ink">מילון הגייה (ניקוד) — משפר את הדיוק של הקריין</summary>
-        <div className="mt-3 flex flex-col gap-3">
-          <p className="text-sm text-ink-2">
-            שורה לכל מילה: המילה בלי ניקוד, סימן שווה, והמילה המנוקדת. למשל: מנטור = מֶנְטוֹר. לא בטוחים? השאירו ריק —
-            נדאג לניקוד בעצמנו.
-          </p>
-          <Field label="המילון שלכם" error={errors.lexicon}>
-            <textarea ref={lexiconRef} name="lexicon" defaultValue={v.lexicon} rows={3} className="field leading-7" />
-          </Field>
-          <div className="flex flex-wrap gap-2" aria-label="הוספת סימן ניקוד">
-            {NIQQUD_MARKS.map(([mark, name]) => (
-              <button key={name} type="button" onClick={() => insertMark(mark)} className="btn btn-ghost px-3 py-1.5 text-sm">
-                {name}
-              </button>
-            ))}
-          </div>
+      <details open className="well rounded-3xl p-4">
+        <summary className="cursor-pointer font-semibold text-ink">איך הקריין יגיד מילים מיוחדות (המילון שלכם)</summary>
+        <div className="mt-3">
+          <PronunciationLab initialLexicon={v.lexicon} voiceId={voice.id} voiceName={voice.name} error={errors.lexicon} />
         </div>
       </details>
 
