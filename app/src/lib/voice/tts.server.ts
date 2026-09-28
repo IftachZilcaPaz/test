@@ -40,8 +40,23 @@ export function wordsFromAlignment(alignment: Alignment | null | undefined): Tim
 async function explain(response: Response): Promise<VoiceError> {
   const body = await response.text().catch(() => "");
   console.error("[voice] ElevenLabs error", { status: response.status, body: body.slice(0, 300) });
-  if (response.status === 401) return new VoiceError("מפתח ElevenLabs לא תקין. בדקו את ELEVENLABS_API_KEY ב-.env.local.");
-  if (/quota|credits|insufficient/i.test(body)) return new VoiceError("נגמרו הקרדיטים בחשבון ElevenLabs.");
+  // ElevenLabs answers 401 for several different problems; the reason is in detail.status.
+  let reason = "";
+  try {
+    reason = String((JSON.parse(body) as { detail?: { status?: string } }).detail?.status ?? "");
+  } catch {
+    // Not JSON: fall back to the HTTP status below.
+  }
+  if (reason === "detected_unusual_activity") {
+    return new VoiceError("ElevenLabs חסמו את החשבון החינמי לשימוש משרת. צריך מנוי בתשלום (Starter ומעלה) ב-elevenlabs.io.");
+  }
+  if (reason === "quota_exceeded" || /quota|credits|insufficient/i.test(body)) {
+    return new VoiceError("נגמרו הקרדיטים בחשבון ElevenLabs.");
+  }
+  if (reason === "missing_permissions") {
+    return new VoiceError("למפתח ElevenLabs חסרות הרשאות (Text to Speech ו-Voices). צרו מפתח עם ההרשאות האלה.");
+  }
+  if (response.status === 401) return new VoiceError("מפתח ElevenLabs לא תקין. בדקו את ELEVENLABS_API_KEY.");
   if (response.status === 429) return new VoiceError("יותר מדי בקשות ברגע זה. נסו שוב בעוד דקה.");
   return new VoiceError("הקריין לא זמין כרגע. נסו שוב בעוד רגע.");
 }
