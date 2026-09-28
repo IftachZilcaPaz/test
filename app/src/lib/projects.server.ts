@@ -51,7 +51,15 @@ export async function approvedMaterial(projectId: string) {
   return { draft: draft ?? null, option: option ?? null, take: take ?? null };
 }
 
+/** A render still "rendering" after this long was cut off by the host (serverless time limit or restart). */
+const RENDER_STALE_MS = 3 * 60 * 1000;
+
 export async function latestRender(projectId: string) {
   const [row] = await db.select().from(render).where(eq(render.projectId, projectId)).orderBy(desc(render.createdAt)).limit(1);
+  if (row?.status === "rendering" && Date.now() - row.createdAt.getTime() > RENDER_STALE_MS) {
+    const error = "ההרכבה נקטעה באמצע. נסו שוב — זה בחינם.";
+    await db.update(render).set({ status: "failed", error }).where(and(eq(render.id, row.id), eq(render.status, "rendering")));
+    return { ...row, status: "failed" as const, error };
+  }
   return row ?? null;
 }

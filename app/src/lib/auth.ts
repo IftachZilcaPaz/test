@@ -7,8 +7,12 @@ import * as schema from "@/db/schema";
 
 export const auth = betterAuth({
   appName: "reynovation",
-  // Vercel preview deployments get their own URL; accept it alongside BETTER_AUTH_URL.
-  trustedOrigins: process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [],
+  // Preview deployments get their own URL; accept it alongside BETTER_AUTH_URL.
+  trustedOrigins: [
+    process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+    process.env.DEPLOY_PRIME_URL, // Netlify branch/preview deploys
+    process.env.URL, // Netlify primary site URL
+  ].filter((origin): origin is string => Boolean(origin)),
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: {

@@ -15,6 +15,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
     "@libsql/client": "^0.18.0",
+    "@netlify/blobs": "^11.1.1",
     "@vercel/blob": "^2.8.0",
     "better-auth": "^1.7.6",
     "drizzle-orm": "^0.45.3",

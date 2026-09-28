@@ -1,0 +1,16 @@
+# Netlify: the Next.js app lives in app/. The Next.js runtime is detected automatically.
+[build]
+  base = "app"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The service worker must never be cached, or installed apps keep stale code.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'"

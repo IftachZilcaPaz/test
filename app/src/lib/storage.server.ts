@@ -2,12 +2,16 @@ import "server-only";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, normalize, sep } from "node:path";
 
+import { getStore } from "@netlify/blobs";
 import { BlobNotFoundError, del, get, head, put } from "@vercel/blob";
 
 /**
- * Media storage behind opaque keys. Locally files live under data/media; when
- * BLOB_READ_WRITE_TOKEN is set (Vercel Blob) they are stored as private blobs,
- * so the only way to read them is through the owner-checked API routes.
+ * Media storage behind opaque keys. Callers never see where bytes live:
+ * - Netlify: Netlify Blobs (site-private), picked when the Netlify runtime provides a blobs context.
+ * - Vercel: private Vercel Blob, when BLOB_READ_WRITE_TOKEN is set.
+ * - Otherwise (the Mac): files under data/media.
+ * MEDIA_STORE=netlify|vercel|local forces a driver. Either way media is only
+ * readable through the owner-checked API routes.
  */
 type MediaStore = {
   put(key: string, bytes: Uint8Array): Promise<void>;
@@ -54,6 +58,25 @@ function blobPath(key: string): string {
   return `media/${key}`;
 }
 
+// Strong consistency: a render reads clips right after they were written.
+const netlifyMedia = () => getStore({ name: "media", consistency: "strong" });
+
+const netlifyStore: MediaStore = {
+  async put(key, bytes) {
+    await netlifyMedia().set(blobPath(key), new Blob([bytes as BlobPart]));
+  },
+  async get(key) {
+    const data = await netlifyMedia().get(blobPath(key), { type: "arrayBuffer" });
+    return data ? new Uint8Array(data) : null;
+  },
+  async delete(key) {
+    await netlifyMedia().delete(blobPath(key));
+  },
+  async has(key) {
+    return (await netlifyMedia().getMetadata(blobPath(key))) !== null;
+  },
+};
+
 const blobStore: MediaStore = {
   async put(key, bytes) {
     await put(blobPath(key), Buffer.from(bytes), { access: "private", addRandomSuffix: false, allowOverwrite: true });
@@ -77,12 +100,22 @@ const blobStore: MediaStore = {
   },
 };
 
-const store = process.env.BLOB_READ_WRITE_TOKEN ? blobStore : localStore;
+const STORES = { netlify: netlifyStore, vercel: blobStore, local: localStore } as const;
 
-export const putMedia = (key: string, bytes: Uint8Array) => store.put(key, bytes);
-export const getMedia = (key: string) => store.get(key);
-export const deleteMedia = (key: string) => store.delete(key);
-export const hasMedia = (key: string) => store.has(key);
+/** Resolved per call: Netlify injects its blobs context per request, not at boot. */
+function store(): MediaStore {
+  const forced = process.env.MEDIA_STORE as keyof typeof STORES | undefined;
+  if (forced && forced in STORES) return STORES[forced];
+  const netlifyContext = (globalThis as { netlifyBlobsContext?: string }).netlifyBlobsContext || process.env.NETLIFY_BLOBS_CONTEXT;
+  if (netlifyContext) return netlifyStore;
+  if (process.env.BLOB_READ_WRITE_TOKEN) return blobStore;
+  return localStore;
+}
+
+export const putMedia = (key: string, bytes: Uint8Array) => store().put(key, bytes);
+export const getMedia = (key: string) => store().get(key);
+export const deleteMedia = (key: string) => store().delete(key);
+export const hasMedia = (key: string) => store().has(key);
 
 /** Serves stored media with HTTP Range support, so <video>/<audio> can seek. */
 export function mediaResponse(bytes: Uint8Array, contentType: string, request?: Request): Response {

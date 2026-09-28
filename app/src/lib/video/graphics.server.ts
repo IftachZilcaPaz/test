@@ -1,4 +1,5 @@
 import "server-only";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/media/ffmpeg.server";
@@ -12,6 +13,8 @@ const FONT_FILE = join(process.cwd(), "assets", "fonts", "Rubik-Hebrew-Bold.ttf"
 const escapeMarkup = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 async function textImage(text: string, { size, color, width }: { size: number; color: string; width: number }) {
+  // Without the file Pango silently falls back to a font with no Hebrew glyphs; fail loudly instead.
+  if (!existsSync(FONT_FILE)) throw new Error(`Hebrew font missing at ${FONT_FILE}`);
   return sharp({
     text: {
       text: `<span foreground="${color}">${escapeMarkup(text)}</span>`,

@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/app/projects/*": ["./node_modules/ffmpeg-static/ffmpeg", "./assets/fonts/**"],
   },
+  // Local database and media must never ship inside a deploy bundle.
+  outputFileTracingExcludes: { "*": ["./data/**"] },
   async headers() {
     return [
       {
