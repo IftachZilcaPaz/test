@@ -14,6 +14,9 @@ import { saveBrief } from "./actions";
 
 export const metadata: Metadata = { title: "פרויקט · reynovation" };
 
+// Rendering runs in after() inside this page's server actions; give it room on serverless hosts.
+export const maxDuration = 300;
+
 export default async function ProjectPage({ params }: PageProps<"/app/projects/[id]">) {
   const user = await requireUser();
   const { id } = await params;

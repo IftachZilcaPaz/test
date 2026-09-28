@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e6defb" />
+    <title>אין חיבור · reynovation</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: linear-gradient(160deg, #e6defb, #fce2ee);
+        color: #2c2548;
+        font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      }
+      main {
+        max-width: 360px;
+        padding: 32px 24px;
+        border-radius: 32px;
+        background: #fffdff;
+        box-shadow: 0 18px 40px rgba(122, 92, 200, 0.22);
+        text-align: center;
+      }
+      img { width: 72px; height: 72px; border-radius: 18px; }
+      h1 { font-size: 1.4rem; margin: 16px 0 8px; }
+      p { color: #655e83; line-height: 1.6; margin: 0 0 20px; }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 28px;
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(90deg, #f49bb7, #8b6fe8);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icons/icon-192.png" alt="" />
+      <h1>אין כרגע חיבור לאינטרנט</h1>
+      <p>הפרויקטים שלכם שמורים אצלנו. ברגע שהחיבור יחזור, אפשר להמשיך בדיוק מאיפה שעצרתם.</p>
+      <button type="button" onclick="location.reload()">לנסות שוב</button>
+    </main>
+  </body>
+</html>

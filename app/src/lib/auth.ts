@@ -7,6 +7,8 @@ import * as schema from "@/db/schema";
 
 export const auth = betterAuth({
   appName: "reynovation",
+  // Vercel preview deployments get their own URL; accept it alongside BETTER_AUTH_URL.
+  trustedOrigins: process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : [],
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: {
