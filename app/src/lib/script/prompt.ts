@@ -1,4 +1,4 @@
-import { formatLexicon, TONES, wordTarget, type Lexicon } from "./hebrew";
+import { formatLexicon, RISKY_WORDS, TONES, wordTarget, type Lexicon } from "./hebrew";
 import type { VideoStyle } from "@/db/schema";
 import type { Brief } from "./types";
 
@@ -42,6 +42,8 @@ Hard rules:
 4. The last sentence says the business name and the call to action.
 5. Write numbers as Hebrew words, never digits.
 6. Niqqud only where it prevents a misreading: the business name, foreign/brand names, and words with more than one plausible reading. Leave every other word unpointed. Dagesh ONLY in ב/כ/פ and only when the word needs the hard sound (בְּחִינָם, קִיבַּלְתִי); never a dagesh in any other letter (תַסְרִיט not תַּסְרִיט, נַסוּ not נַסּוּ) — it shifts the stress. Shuruk (וּ) is a vowel and stays. When a word is in the pronunciation lexicon, use exactly its pointed form. (Rules: docs/HEBREW_PRONUNCIATION.md)
+   Never use these words — the voice stresses them wrongly whatever the niqqud; use a listed alternative instead:
+${RISKY_WORDS.map((risky) => `   - ${risky.word} (sounds ${risky.heard}) → ${risky.instead.join(" / ")}`).join("\n")}
 7. Tone: ${tone}.
 ${continuityRule(style)}
 9. Give 4-6 scenes in narration order. "caption" is an EXACT contiguous quote of 3-7 words from the script — the on-screen caption quotes the narration word for word. "visual" is an English prompt for a cinematic vertical shot for that moment: natural light, and absolutely no text, letters, logos, signs or readable screens (video models garble Hebrew; we add captions ourselves).

@@ -46,6 +46,16 @@ export function lengthVerdict(words: number, target: number): LengthVerdict {
 const NIQQUD = /[֑-ׇ]/gu;
 export const stripNiqqud = (text: string) => text.replace(NIQQUD, "");
 
+/**
+ * Words the Hebrew voices keep stressing on the wrong syllable, however they are pointed,
+ * with phrasings that avoid them. Heard by ear; extend it as new ones turn up
+ * (docs/HEBREW_PRONUNCIATION.md, rule 3).
+ */
+export const RISKY_WORDS = [
+  { word: "נסו", heard: "NA-su instead of na-SU", instead: ["התחילו", "היכנסו"] },
+  { word: "אחת", heard: "A-khat instead of a-KHAT", instead: ["בודדת", "רק …", "יחידה"] },
+] as const;
+
 export type Lexicon = Record<string, string>;
 
 /** Parses "word = pointed" lines. A line is kept only when the pointed form spells the same word. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { parseLexicon, stripNiqqud } from "@/lib/script/hebrew";
+import { parseLexicon, RISKY_WORDS, stripNiqqud } from "@/lib/script/hebrew";
 
 const NIQQUD_MARKS = [
   ["ָ", "קָמָץ"],
@@ -25,6 +25,7 @@ const TIPS = [
   "נקדו רק את המילה הבעייתית, לא את כל המשפט. וּ (שורוק) היא תנועה — משאירים אותה.",
   "ניקוד לא קובע איפה הטעם. המילה עדיין נשמעת מלעיל (NA-su במקום na-SU)? שמעו כמה גרסאות כאן לפני שמוסיפים.",
   "לפעמים מספיק לנקד רק את ההברה שצריכה להישמע חזק: תסרִיט.",
+  `אם שום ניקוד לא עוזר — מנסחים אחרת. מילים שהקריין נוטה להטעים לא נכון: ${RISKY_WORDS.map((risky) => `${risky.word} (במקום: ${risky.instead.join(" / ")})`).join(", ")}.`,
   "שם באנגלית או מותג? כתבו אותו באותיות עבריות כמו שהוא נשמע: ריינוביישן.",
   "מילה אחת מספיקה: המילון תופס גם את ה׳, ו׳, ל׳ או ב׳ בתחילתה (התסריט, לתסריט).",
 ];
