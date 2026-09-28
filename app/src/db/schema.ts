@@ -79,6 +79,9 @@ export const PROJECT_STATUSES = ["brief", "script", "voice", "scenes", "render",
 export const SCENE_STATUSES = ["draft", "generating", "ready", "failed"] as const;
 export const RENDER_STATUSES = ["rendering", "done", "failed"] as const;
 export const WALLET_KINDS = ["gift", "topup", "charge", "refund"] as const;
+/** How the video is told: one recurring character and place, or that plus the customer's own screenshots. */
+export const VIDEO_STYLES = ["character", "screens"] as const;
+export type VideoStyle = (typeof VIDEO_STYLES)[number];
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 /** One promo video in the making. Brief fields are filled on the first screen (stage 1). */
@@ -103,6 +106,15 @@ export const project = sqliteTable(
     lexicon: text("lexicon").notNull().default(""),
     /** ElevenLabs voice chosen in the voice step. */
     voiceId: text("voice_id"),
+    style: text("style", { enum: VIDEO_STYLES }).notNull().default("character"),
+    /**
+     * The recurring character and place, as an image every real scene is generated from,
+     * so the video shows one person in one place instead of a stranger per shot.
+     */
+    lookImageKey: text("look_image_key"),
+    /** Higgsfield request while the look image is being made. */
+    lookRequestId: text("look_request_id"),
+    lookCostUsd: real("look_cost_usd").notNull().default(0),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -182,6 +194,8 @@ export const scene = sqliteTable(
     demo: integer("demo", { mode: "boolean" }).notNull().default(false),
     requestId: text("request_id"),
     mediaKey: text("media_key"),
+    /** Set when this beat shows one of the customer's own images instead of a generated clip. */
+    uploadId: text("upload_id"),
     costUsd: real("cost_usd").notNull().default(0),
     error: text("error"),
     createdAt: createdAt(),
@@ -191,6 +205,27 @@ export const scene = sqliteTable(
 );
 
 export type Scene = typeof scene.$inferSelect;
+
+/** A screenshot or photo the customer uploaded, shown as-is (never through a video model). */
+export const upload = sqliteTable(
+  "upload",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => project.id, { onDelete: "cascade" }),
+    mediaKey: text("media_key").notNull(),
+    /** Short Hebrew label ("מסך הבית") so the script can say what the image shows. */
+    label: text("label").notNull().default(""),
+    position: integer("position").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("upload_project_position_idx").on(table.projectId, table.position)],
+);
+
+export type Upload = typeof upload.$inferSelect;
 
 /** A finished-video render and the automatic checks it passed. */
 export const render = sqliteTable(

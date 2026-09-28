@@ -17,11 +17,19 @@ export type Brief = z.infer<typeof briefSchema>;
 export const scriptOptionSchema = z.object({
   title: z.string(),
   script: z.string(),
-  scenes: z.array(z.object({ caption: z.string(), visual: z.string() })),
+  look: z.object({ summary: z.string(), character: z.string(), setting: z.string() }),
+  scenes: z.array(z.object({ caption: z.string(), visual: z.string(), screen: z.number().int() })),
 });
 
-export type ScriptScene = { caption: string; visual: string };
-export type ScriptOption = { title: string; script: string; scenes: ScriptScene[] };
+/** `screen` is the 1-based number of the customer's screenshot shown in this beat; 0 (or absent) = generated shot. */
+export type ScriptScene = { caption: string; visual: string; screen?: number };
+/**
+ * The one character and place the whole video follows. `summary` is Hebrew for the
+ * customer; `character` and `setting` are English prompts. Absent on drafts written
+ * before looks existed.
+ */
+export type ScriptLook = { summary: string; character: string; setting: string };
+export type ScriptOption = { title: string; script: string; look?: ScriptLook; scenes: ScriptScene[] };
 
 export type ScriptUsage = {
   model: string;

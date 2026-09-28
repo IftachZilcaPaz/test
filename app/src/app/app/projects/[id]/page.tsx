@@ -8,7 +8,7 @@ import { SceneStep } from "@/components/scene-step";
 import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
 import { isVoiceId, VOICES } from "@/lib/voice/voices";
-import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes } from "@/lib/projects.server";
+import { currentNarration, getOwnedProject, latestRender, listDrafts, listScenes, listTakes, listUploads } from "@/lib/projects.server";
 import { ensureScenes } from "@/lib/scenes/ensure.server";
 import { isSceneDemoMode } from "@/lib/scenes/higgsfield.server";
 import { requireUser } from "@/lib/session";
@@ -24,10 +24,11 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const { id } = await params;
   const item = await getOwnedProject(user.id, id);
   if (!item) notFound();
-  const [drafts, takes, narration] = await Promise.all([
+  const [drafts, takes, narration, uploads] = await Promise.all([
     listDrafts(item.id),
     listTakes(item.id),
     currentNarration(item.id, item.lexicon),
+    listUploads(item.id),
   ]);
   const takeApproved = takes.some((take) => take.approved);
   // Ownership was verified above; idempotent for projects that reached this step earlier.
@@ -35,6 +36,8 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const [scenes, lastRender] = await Promise.all([listScenes(item.id), latestRender(item.id)]);
   const scriptApproved = drafts.some((draft) => draft.chosenScript);
   const current = STEPS.findIndex((step) => step.key === item.status);
+  const chosenDraft = drafts.find((draft) => draft.chosenIndex !== null && draft.chosenScript);
+  const chosenLook = chosenDraft ? chosenDraft.options[chosenDraft.chosenIndex!]?.look : undefined;
   const voice = VOICES.find((entry) => item.voiceId && isVoiceId(item.voiceId) && entry.id === item.voiceId) ?? VOICES[0];
 
   return (
@@ -67,6 +70,9 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
       <BriefForm
         action={saveBrief.bind(null, item.id)}
         voice={{ id: voice.id, name: voice.name }}
+        projectId={item.id}
+        style={item.style}
+        uploads={uploads.map((entry) => ({ id: entry.id, label: entry.label }))}
         values={{
           business: item.business ?? "",
           about: item.about ?? "",
@@ -113,6 +119,11 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
       <SceneStep
         projectId={item.id}
         realAvailable={!isSceneDemoMode()}
+        look={
+          chosenLook
+            ? { summary: chosenLook.summary, imageVersion: item.lookImageKey, generating: Boolean(item.lookRequestId) }
+            : null
+        }
         ready={takeApproved}
         approved={item.status === "render" || item.status === "done"}
         scenes={scenes.map((entry) => ({
@@ -125,6 +136,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           demo: entry.demo,
           costUsd: entry.costUsd,
           error: entry.error,
+          uploadId: entry.uploadId,
         }))}
       />
 

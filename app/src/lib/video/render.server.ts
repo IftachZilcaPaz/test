@@ -14,7 +14,8 @@ export type RenderInput = {
   callToAction: string;
   narrationKey: string;
   words: TimedWord[];
-  scenes: { mediaKey: string; caption: string }[];
+  /** "image" beats are the customer's own screenshots: shown crisp over a blurred copy, gently zooming. */
+  scenes: { mediaKey: string; caption: string; kind: "video" | "image" }[];
   /** Narration speed-up; the scene cuts and captions follow it. */
   speed: Speed;
 };
@@ -23,6 +24,9 @@ export type RenderResult = { video: Uint8Array; timeline: Timeline };
 
 const FPS = 30;
 const CAPTION_BOTTOM = 230; // px from the bottom edge, above platform UI on Reels/TikTok
+// Customer screenshots: top edge and max height, leaving room for the caption and the 4% zoom.
+const SCREEN_TOP = 130;
+const SCREEN_MAX_HEIGHT = 800;
 
 async function load(key: string, path: string) {
   const bytes = await getMedia(key);
@@ -43,7 +47,7 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
     await load(input.narrationKey, narration);
     const clips = await Promise.all(
       input.scenes.map(async (scene, index) => {
-        const path = join(dir, `scene-${index}.mp4`);
+        const path = join(dir, `scene-${index}${scene.kind === "image" ? ".img" : ".mp4"}`);
         await load(scene.mediaKey, path);
         return path;
       }),
@@ -61,7 +65,14 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
     );
 
     const args: string[] = [];
-    clips.forEach((clip) => args.push("-stream_loop", "-1", "-i", clip));
+    clips.forEach((clip, index) => {
+      if (input.scenes[index]!.kind === "image") {
+        const slot = timeline.scenes[index]!;
+        args.push("-loop", "1", "-framerate", String(FPS), "-t", (Math.max(slot.end - slot.start, 0.2) + 0.5).toFixed(3), "-i", clip);
+      } else {
+        args.push("-stream_loop", "-1", "-i", clip);
+      }
+    });
     const endIndex = clips.length;
     args.push("-loop", "1", "-framerate", String(FPS), "-t", (timeline.endCard.end - timeline.endCard.start).toFixed(3), "-i", endCard);
     const audioIndex = endIndex + 1;
@@ -75,8 +86,21 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
     const fit = `scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},setsar=1,fps=${FPS},format=yuv420p`;
     const filters: string[] = [];
     timeline.scenes.forEach((slot, index) => {
-      const duration = Math.max(slot.end - slot.start, 0.2).toFixed(3);
-      filters.push(`[${index}:v]${fit},trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`);
+      const seconds = Math.max(slot.end - slot.start, 0.2);
+      const duration = seconds.toFixed(3);
+      if (input.scenes[index]!.kind === "image") {
+        // Blurred, darkened fill behind the whole image, which grows ~4% over its beat.
+        const grow = `scale=w='trunc(iw*(1+0.04*t/${duration})/2)*2':h=-2:eval=frame`;
+        filters.push(
+          `[${index}:v]split=2[bg${index}][fg${index}]`,
+          `[bg${index}]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop=${VIDEO_WIDTH}:${VIDEO_HEIGHT},gblur=sigma=28,eq=brightness=-0.06[bb${index}]`,
+          // Kept above the caption band (captions sit CAPTION_BOTTOM px from the bottom), so neither hides the other.
+          `[fg${index}]scale=${VIDEO_WIDTH - 100}:${SCREEN_MAX_HEIGHT}:force_original_aspect_ratio=decrease,${grow}[ff${index}]`,
+          `[bb${index}][ff${index}]overlay=x=(W-w)/2:y=${SCREEN_TOP}:eval=frame,setsar=1,fps=${FPS},format=yuv420p,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
+        );
+      } else {
+        filters.push(`[${index}:v]${fit},trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`);
+      }
     });
     filters.push(`[${endIndex}:v]${fit},fade=t=in:st=0:d=0.35,setpts=PTS-STARTPTS[end]`);
     filters.push(`${timeline.scenes.map((_, index) => `[s${index}]`).join("")}[end]concat=n=${timeline.scenes.length + 1}:v=1:a=0[base]`);

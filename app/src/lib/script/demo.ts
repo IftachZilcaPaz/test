@@ -4,11 +4,17 @@ import type { Brief, ScriptOption } from "./types";
  * Free demo mode (no ANTHROPIC_API_KEY): three sample scripts built from the brief
  * so the whole screen can be tried without spending anything. Clearly labelled in the UI.
  */
-export function demoOptions(brief: Brief): ScriptOption[] {
+const DEMO_LOOK = {
+  summary: "אישה צעירה ושמחה בבית קפה מואר ונעים",
+  character: "a cheerful woman in her early thirties with wavy dark hair, wearing a light linen shirt",
+  setting: "a bright, cozy neighborhood cafe with wooden tables, plants and soft window light",
+};
+
+export function demoOptions(brief: Brief, screenCount = 0): ScriptOption[] {
   const name = brief.business;
   const cta = brief.callToAction || "דברו איתנו עוד היום";
   const who = brief.audience || "מי שמחפש משהו טוב באמת";
-  return [
+  const options: ScriptOption[] = [
     {
       title: "הרגע הקטן",
       script: `יש רגעים קטנים שעושים את כל היום. ב${name} אנחנו דואגים שיהיו לכם יותר מהם: יחס אישי, תשומת לב לכל פרט, ומקום שבא לחזור אליו. ${name}. ${cta}.`,
@@ -37,4 +43,10 @@ export function demoOptions(brief: Brief): ScriptOption[] {
       ],
     },
   ];
+  // In the screenshots style, show the customer's screens on the middle beats.
+  return options.map((option) => ({
+    ...option,
+    look: DEMO_LOOK,
+    scenes: option.scenes.map((scene, index) => ({ ...scene, screen: index > 0 && index <= screenCount ? index : 0 })),
+  }));
 }

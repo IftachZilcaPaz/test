@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { BriefState } from "@/app/app/projects/[id]/actions";
 import { PronunciationLab } from "@/components/pronunciation-lab";
+import { UploadsManager, type UploadView } from "@/components/uploads-manager";
 import { DURATIONS, TONES, wordTarget } from "@/lib/script/hebrew";
 
 export type BriefValues = {
@@ -35,13 +36,20 @@ export function BriefForm({
   action,
   values,
   voice,
+  projectId,
+  style: savedStyle,
+  uploads,
 }: {
   action: (state: BriefState, formData: FormData) => Promise<BriefState>;
   values: BriefValues;
+  projectId: string;
+  style: "character" | "screens";
+  uploads: UploadView[];
   /** The voice pronunciation checks are read in: the project's chosen voice, or the default. */
   voice: { id: string; name: string };
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [style, setStyle] = useState(savedStyle);
   const errors = state.errors ?? {};
   // After a failed save show what was typed; after a successful one the server props are fresh.
   const echo = state.values;
@@ -100,6 +108,28 @@ export function BriefForm({
           </div>
         </fieldset>
       </div>
+
+      <fieldset className="well flex flex-col gap-3 rounded-3xl p-4">
+        <legend className="sr-only">סגנון הסרטון</legend>
+        <span className="font-semibold text-ink">סגנון הסרטון</span>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(
+            [
+              ["character", "סצנות עם דמות אחת", "אותו אדם ואותו מקום לאורך כל הסרטון, כמו סרט קצר"],
+              ["screens", "סצנות + התמונות שלכם", "הדמות, ובין לבין צילומי המסך או התמונות מהעסק שלכם"],
+            ] as const
+          ).map(([value, title, hint]) => (
+            <label key={value} className="cursor-pointer">
+              <input type="radio" name="style" value={value} checked={style === value} onChange={() => setStyle(value)} className="peer sr-only" />
+              <span className="flex h-full flex-col gap-1 rounded-2xl bg-card px-4 py-3 text-sm ring-accent peer-checked:ring-4 peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                <span className="font-semibold">{title}</span>
+                <span className="text-ink-2">{hint}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {style === "screens" && <UploadsManager projectId={projectId} uploads={uploads} />}
+      </fieldset>
 
       <details open className="well rounded-3xl p-4">
         <summary className="cursor-pointer font-semibold text-ink">איך הקריין יגיד מילים מיוחדות (המילון שלכם)</summary>

@@ -11,6 +11,7 @@ import {
   resetScene,
   updateScenePrompt,
 } from "@/app/app/projects/[id]/scene-actions";
+import { LookCard, type LookView } from "@/components/look-card";
 import { canAfford, WalletLine } from "@/components/wallet-line";
 import type { Resolution } from "@/lib/scenes/higgsfield.server";
 import { formatCustomerPrice, formatShekels } from "@/lib/pricing";
@@ -25,6 +26,8 @@ export type SceneView = {
   demo: boolean;
   costUsd: number;
   error: string | null;
+  /** Shows one of the customer's own images instead of a generated clip. */
+  uploadId: string | null;
 };
 
 const STATUS = {
@@ -53,11 +56,14 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
       <div className="flex items-center justify-between gap-2">
         <span className="font-round text-lg">סצנה {item.position + 1}</span>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
-          {item.demo && item.status === "ready" ? "דוגמה" : status.label}
+          {item.uploadId ? "התמונה שלכם" : item.demo && item.status === "ready" ? "דוגמה" : status.label}
         </span>
       </div>
       <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-well">
-        {item.status === "ready" ? (
+        {item.uploadId ? (
+          // eslint-disable-next-line @next/next/no-img-element -- private, owner-checked media route
+          <img src={`/api/uploads/${item.uploadId}`} alt="התמונה שלכם" className="size-full bg-ink/80 object-contain" />
+        ) : item.status === "ready" ? (
           <video src={`/api/scenes/${item.id}/video`} className="size-full object-cover" muted loop playsInline autoPlay preload="metadata" />
         ) : (
           <div className={`grid size-full place-items-center text-sm text-ink-3 ${item.status === "generating" ? "animate-pulse" : ""}`}>
@@ -67,6 +73,10 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
         {/* Caption preview, as it will appear in the video. */}
         <p className="absolute inset-x-3 bottom-4 rounded-2xl bg-ink/75 px-3 py-2 text-center text-sm font-bold text-white">{item.caption}</p>
       </div>
+      {item.uploadId ? (
+        <p className="text-xs text-ink-3">מוצגת כמו שהיא, חדה, בזמן שהקריינות מדברת עליה. בחינם.</p>
+      ) : (
+      <>
       <label className="flex flex-col gap-1.5 text-xs font-medium text-ink-2">
         מה רואים (באנגלית, בלי טקסט על המסך)
         <textarea
@@ -91,6 +101,8 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
           </button>
         )}
       </div>
+      </>
+      )}
     </li>
   );
 }
@@ -101,11 +113,14 @@ export function SceneStep({
   scenes,
   approved,
   realAvailable,
+  look,
 }: {
   projectId: string;
   ready: boolean;
   scenes: SceneView[];
   approved: boolean;
+  /** The recurring character, when the approved script defines one. */
+  look: LookView | null;
   /** A Higgsfield key is configured, so real clips can be ordered besides the free placeholders. */
   realAvailable: boolean;
 }) {
@@ -176,6 +191,7 @@ export function SceneStep({
             ? "סצנה לכל חלק בקריינות. הכיתוב מצוטט מהקריינות מילה במילה, והסצנות עצמן בלי שום טקסט — את הכיתוב בעברית אנחנו מוסיפים."
             : "קודם מאשרים הקראה, ואז יוצרים סצנות."}
         </p>
+        {ready && realAvailable && look && <LookCard projectId={projectId} look={look} />}
         {ready && (
           <div className="flex flex-wrap items-center gap-3">
             {realAvailable ? (

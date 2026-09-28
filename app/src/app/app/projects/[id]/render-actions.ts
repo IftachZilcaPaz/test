@@ -30,7 +30,7 @@ export async function startRender(projectId: string, speed: number = PLAYBACK_SP
     callToAction: item.callToAction || "דברו איתנו עוד היום",
     narrationKey: take.audioKey,
     words: take.words,
-    scenes: scenes.map((entry) => ({ mediaKey: entry.mediaKey!, caption: entry.caption })),
+    scenes: scenes.map((entry) => ({ mediaKey: entry.mediaKey!, caption: entry.caption, kind: entry.uploadId ? ("image" as const) : ("video" as const) })),
     speed,
   };
 

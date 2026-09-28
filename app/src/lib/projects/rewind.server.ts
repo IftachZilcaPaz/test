@@ -23,6 +23,7 @@ export async function rewindProject(projectId: string, to: "script" | "voice"): 
     db.update(project).set({ status: to }).where(eq(project.id, projectId)),
   ]);
   if (!paid) {
-    await Promise.all(scenes.flatMap((item) => (item.mediaKey ? [deleteMedia(item.mediaKey)] : [])));
+    // A beat showing the customer's own image points at their upload: never delete that file.
+    await Promise.all(scenes.flatMap((item) => (item.mediaKey && !item.uploadId ? [deleteMedia(item.mediaKey)] : [])));
   }
 }

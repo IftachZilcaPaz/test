@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, scene, type Scene } from "@/db/schema";
-import { getOwnedProject, listScenes } from "@/lib/projects.server";
+import { approvedMaterial, getOwnedProject, listScenes } from "@/lib/projects.server";
+import { publicMediaUrl } from "@/lib/public-media.server";
 import { DEMO_CLIPS_PER_POLL, demoSceneClip } from "@/lib/scenes/demo.server";
 import { estimateScene, isSceneDemoMode, RESOLUTIONS, type Resolution, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
 import { customerPriceIls } from "@/lib/pricing";
@@ -16,6 +17,29 @@ import { deleteMedia, putMedia } from "@/lib/storage.server";
 const NO_TEXT = "Vertical 9:16 cinematic shot. No text, letters, captions, logos, signs or readable screens.";
 
 const refresh = (projectId: string) => revalidatePath(`/app/projects/${projectId}`);
+
+/**
+ * How real clips are made for a project: anchored to its character image when there is one,
+ * so every scene shows the same person and place. A script written with a look must have
+ * that image before real scenes are ordered (older scripts without a look are exempt).
+ */
+async function realSceneSetup(projectId: string, lookImageKey: string | null) {
+  const { option } = await approvedMaterial(projectId);
+  const look = option?.look;
+  const referenceUrl = lookImageKey ? publicMediaUrl(lookImageKey) : undefined;
+  const lead = look
+    ? referenceUrl
+      ? `The same person and place as in the reference image. Setting: ${look.setting}.`
+      : `${look.character}, in ${look.setting}.`
+    : "";
+  return {
+    referenceUrl,
+    needsLook: Boolean(look) && !referenceUrl,
+    prompt: (item: Scene) => [lead, item.prompt, NO_TEXT].filter(Boolean).join(" "),
+  };
+}
+
+const NEEDS_LOOK = "קודם יוצרים את הדמות של הסרטון (בכרטיס למעלה), כדי שכל הסצנות יראו את אותו אדם ואותו מקום.";
 
 async function ownedScenes(userId: string, projectId: string) {
   const item = await getOwnedProject(userId, projectId);
@@ -48,12 +72,13 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
   const parsed = z.object({ id: z.string().uuid(), prompt: z.string().trim().min(3, "התיאור קצר מדי").max(600, "התיאור ארוך מדי") }).safeParse({ id: sceneId, prompt });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   const [row] = await db
-    .select({ projectId: scene.projectId, prompt: scene.prompt, status: scene.status })
+    .select({ projectId: scene.projectId, prompt: scene.prompt, status: scene.status, uploadId: scene.uploadId })
     .from(scene)
     .innerJoin(project, eq(scene.projectId, project.id))
     .where(and(eq(scene.id, parsed.data.id), eq(project.userId, user.id)))
     .limit(1);
   if (!row) return { error: "הסצנה לא נמצאה." };
+  if (row.uploadId) return { error: "הסצנה הזו מציגה תמונה שלכם." };
   if (row.status === "generating") return { error: "הסצנה בתהליך יצירה. אפשר לשנות אחרי שתסתיים." };
   if (row.prompt === parsed.data.prompt) return {};
   // A new description means the clip must be generated again.
@@ -74,8 +99,11 @@ export async function quoteScenes(projectId: string, requested: SceneMode = "rea
   const balanceIls = await balance(user.id);
   if (mode === "demo") return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
+    const owner = await getOwnedProject(user.id, projectId);
+    const setup = await realSceneSetup(projectId, owner?.lookImageKey ?? null);
+    if (setup.needsLook) return { error: NEEDS_LOOK };
     const resolution = resolutionOf(quality);
-    const prices = await Promise.all(todo.map((item) => estimateScene(`${item.prompt}. ${NO_TEXT}`, item.seconds, resolution)));
+    const prices = await Promise.all(todo.map((item) => estimateScene(setup.prompt(item), item.seconds, resolution, setup.referenceUrl)));
     const priceIls = prices.reduce((sum, value) => sum + customerPriceIls(value), 0);
     return { demo: false, usd: prices.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
   } catch (error) {
@@ -103,12 +131,17 @@ export async function generateScenes(
         .set({ status: "generating", demo: true, requestId: null, mediaKey: null, costUsd: 0, error: null })
         .where(inArray(scene.id, todo.map((item) => item.id)));
     } else {
-      const prompts = todo.map((item) => `${item.prompt}. ${NO_TEXT}`);
+      const owner = await getOwnedProject(user.id, projectId);
+      const setup = await realSceneSetup(projectId, owner?.lookImageKey ?? null);
+      if (setup.needsLook) return { error: NEEDS_LOOK };
+      const prompts = todo.map((item) => setup.prompt(item));
       const resolution = resolutionOf(quality);
-      const prices = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution)));
+      const prices = await Promise.all(
+        todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, setup.referenceUrl)),
+      );
       await assertCanPay(user.id, prices.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
       for (const [index, item] of todo.entries()) {
-        const requestId = await submitScene(prompts[index]!, item.seconds, resolution);
+        const requestId = await submitScene(prompts[index]!, item.seconds, resolution, setup.referenceUrl);
         const usd = prices[index]!;
         await db
           .update(scene)
@@ -190,12 +223,13 @@ export async function approveScenes(projectId: string): Promise<{ error?: string
 export async function resetScene(sceneId: string): Promise<{ error?: string }> {
   const user = await requireUser();
   const [row] = await db
-    .select({ projectId: scene.projectId, status: scene.status })
+    .select({ projectId: scene.projectId, status: scene.status, uploadId: scene.uploadId })
     .from(scene)
     .innerJoin(project, eq(scene.projectId, project.id))
     .where(and(inArray(scene.id, [sceneId]), eq(project.userId, user.id)))
     .limit(1);
   if (!row) return { error: "הסצנה לא נמצאה." };
+  if (row.uploadId) return { error: "הסצנה הזו מציגה תמונה שלכם." };
   if (row.status === "generating") return { error: "הסצנה עדיין בתהליך." };
   await db.update(scene).set({ status: "draft", mediaKey: null, error: null }).where(eq(scene.id, sceneId));
   refresh(row.projectId);

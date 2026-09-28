@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
-import { project, render, scene, scriptDraft, voiceTake } from "@/db/schema";
+import { project, render, scene, scriptDraft, upload, voiceTake } from "@/db/schema";
 import { applyLexicon, parseLexicon } from "@/lib/script/hebrew";
 
 /** Every project read goes through the owner filter, so ids from the URL can't leak other users' data. */
@@ -39,6 +39,21 @@ export async function approvedScript(projectId: string) {
 export async function currentNarration(projectId: string, lexicon: string) {
   const script = await approvedScript(projectId);
   return script === null ? null : applyLexicon(script, parseLexicon(lexicon));
+}
+
+export async function getProjectStyle(projectId: string) {
+  const [row] = await db.select({ style: project.style }).from(project).where(eq(project.id, projectId)).limit(1);
+  return row?.style ?? "character";
+}
+
+export async function listUploads(projectId: string) {
+  return db.select().from(upload).where(eq(upload.projectId, projectId)).orderBy(asc(upload.position));
+}
+
+/** Screenshot labels the script may refer to, in order; empty unless the project uses its own screens. */
+export async function scriptScreens(item: { id: string; style: string }): Promise<string[]> {
+  if (item.style !== "screens") return [];
+  return (await listUploads(item.id)).map((entry) => entry.label);
 }
 
 export async function listScenes(projectId: string) {

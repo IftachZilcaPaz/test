@@ -21,35 +21,40 @@ export class ScriptWriterError extends Error {}
 const client = () => (process.env.ANTHROPIC_API_KEY ? new Anthropic() : null);
 export const isDemoMode = () => !process.env.ANTHROPIC_API_KEY;
 
-const request = (brief: Brief, angle: Angle) => {
+const request = (brief: Brief, angle: Angle, screens: string[]) => {
   const lexicon = parseLexicon(brief.lexicon);
   return {
     lexicon,
     system: systemPrompt(brief, lexicon),
-    messages: [{ role: "user" as const, content: userPrompt(brief, angle) }],
+    messages: [{ role: "user" as const, content: userPrompt(brief, angle, screens) }],
   };
 };
 
 /** Upper-bound price quote shown before the user confirms. Counting tokens is free. */
-export async function estimateScripts(brief: Brief): Promise<{ demo: boolean; maxUsd: number }> {
+export async function estimateScripts(brief: Brief, screens: string[] = []): Promise<{ demo: boolean; maxUsd: number }> {
   const anthropic = client();
   if (!anthropic) return { demo: true, maxUsd: 0 };
-  const { system, messages } = request(brief, ANGLES[0]);
+  const { system, messages } = request(brief, ANGLES[0], screens);
   const { input_tokens } = await anthropic.messages.countTokens({ model: SCRIPT_MODEL, system, messages });
   // +400 tokens covers the structured-output schema the real request adds; angles differ by a few tokens.
   const perScript = (input_tokens + 400) * INPUT_USD + MAX_OUTPUT_TOKENS * OUTPUT_USD;
   return { demo: false, maxUsd: perScript * ANGLES.length };
 }
 
-function clean(options: ScriptOption[], lexicon: ReturnType<typeof parseLexicon>): ScriptOption[] {
+function clean(options: ScriptOption[], lexicon: ReturnType<typeof parseLexicon>, screenCount: number): ScriptOption[] {
   return options.slice(0, ANGLES.length).map((option) => {
     // Enforce the lexicon even if the model forgot it; keep only captions that truly quote the narration.
     const script = applyLexicon(option.script.trim(), lexicon);
-    return {
-      title: option.title.trim(),
-      script,
-      scenes: option.scenes.filter((scene) => scene.caption.trim() && captionQuotes(scene.caption, script)),
-    };
+    const used = new Set<number>();
+    const scenes = option.scenes
+      .filter((scene) => scene.caption.trim() && captionQuotes(scene.caption, script))
+      .map((scene) => {
+        // A screenshot number must exist and appear once; anything else becomes a generated shot.
+        const screen = scene.screen && scene.screen >= 1 && scene.screen <= screenCount && !used.has(scene.screen) ? scene.screen : 0;
+        if (screen) used.add(screen);
+        return { caption: scene.caption, visual: scene.visual, screen };
+      });
+    return { title: option.title.trim(), script, look: option.look, scenes };
   });
 }
 
@@ -78,8 +83,8 @@ function writerError(error: unknown): ScriptWriterError {
 
 type Written = { option: ScriptOption; model: string; inputTokens: number; outputTokens: number };
 
-async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle): Promise<Written> {
-  const { system, messages } = request(brief, angle);
+async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle, screens: string[]): Promise<Written> {
+  const { system, messages } = request(brief, angle, screens);
   const response = await anthropic.beta.messages.parse(
     {
       model: SCRIPT_MODEL,
@@ -114,18 +119,21 @@ async function writeOne(anthropic: Anthropic, brief: Brief, angle: Angle): Promi
  * Writes one script per angle, in parallel. Whatever finishes is kept (one or two
  * versions beat none); the customer is charged only for scripts they receive.
  */
-export async function writeScripts(brief: Brief): Promise<{ options: ScriptOption[]; usage: ScriptUsage }> {
+export async function writeScripts(
+  brief: Brief,
+  screens: string[] = [],
+): Promise<{ options: ScriptOption[]; usage: ScriptUsage }> {
   const lexicon = parseLexicon(brief.lexicon);
   const anthropic = client();
   if (!anthropic) {
     return {
-      options: clean(demoOptions(brief), lexicon),
+      options: clean(demoOptions(brief, screens.length), lexicon, screens.length),
       usage: { model: "demo", inputTokens: 0, outputTokens: 0, costUsd: 0, demo: true },
     };
   }
 
   const started = Date.now();
-  const results = await Promise.allSettled(ANGLES.map((angle) => writeOne(anthropic, brief, angle)));
+  const results = await Promise.allSettled(ANGLES.map((angle) => writeOne(anthropic, brief, angle, screens)));
   const written = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
   const failures = results.flatMap((result) => (result.status === "rejected" ? [writerError(result.reason)] : []));
   console.info("[scripts] written", { ok: written.length, failed: failures.length, ms: Date.now() - started });
@@ -137,6 +145,7 @@ export async function writeScripts(brief: Brief): Promise<{ options: ScriptOptio
     options: clean(
       written.map((entry) => entry.option),
       lexicon,
+      screens.length,
     ),
     usage: {
       model: written[0]!.model,

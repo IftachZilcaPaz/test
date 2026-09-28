@@ -4,8 +4,9 @@ import { and, count, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { project, scriptDraft } from "@/db/schema";
-import { approvedScript, getOwnedProject } from "@/lib/projects.server";
+import { project, scene, scriptDraft, upload, VIDEO_STYLES } from "@/db/schema";
+import { approvedScript, getOwnedProject, scriptScreens } from "@/lib/projects.server";
+import { deleteMedia } from "@/lib/storage.server";
 import { rewindProject } from "@/lib/projects/rewind.server";
 import { briefSchema, type Brief } from "@/lib/script/types";
 import { estimateScripts, ScriptWriterError, writeScripts } from "@/lib/script/writer.server";
@@ -52,9 +53,10 @@ export async function saveBrief(projectId: string, _previous: BriefState, formDa
     }
     return { errors, values: submitted };
   }
+  const style = z.enum(VIDEO_STYLES).catch(item.style).parse(submitted.style);
   await db
     .update(project)
-    .set({ ...parsed.data, status: item.status === "brief" ? "script" : item.status })
+    .set({ ...parsed.data, style, status: item.status === "brief" ? "script" : item.status })
     .where(eq(project.id, projectId));
   revalidatePath(`/app/projects/${projectId}`);
   return { ok: true };
@@ -68,7 +70,7 @@ export async function estimateScriptCost(projectId: string): Promise<EstimateRes
   const brief = item && briefFromProject(item);
   if (!brief?.success) return { error: "קודם שומרים את הפרטים על העסק." };
   try {
-    return { ...(await estimateScripts(brief.data)), balanceIls: await balance(user.id) };
+    return { ...(await estimateScripts(brief.data, await scriptScreens(item))), balanceIls: await balance(user.id) };
   } catch (error) {
     console.error("[scripts] estimate failed", error instanceof Error ? error.message : error);
     return { error: "לא הצלחנו לחשב מחיר כרגע. נסו שוב." };
@@ -85,9 +87,10 @@ export async function generateScripts(projectId: string): Promise<{ error?: stri
   if (drafts >= MAX_DRAFTS_PER_PROJECT) return { error: "הגעתם למספר הגרסאות המרבי בפרויקט הזה." };
 
   try {
-    const quote = await estimateScripts(brief.data);
+    const screens = await scriptScreens(item);
+    const quote = await estimateScripts(brief.data, screens);
     await assertCanPay(user.id, customerPriceIls(quote.maxUsd));
-    const { options, usage } = await writeScripts(brief.data);
+    const { options, usage } = await writeScripts(brief.data, screens);
     const [draft] = await db.insert(scriptDraft).values({ projectId, options, ...usage }).returning({ id: scriptDraft.id });
     const label = options.length === 1 ? "כתיבת תסריט" : `כתיבת ${options.length} תסריטים`;
     await charge(user.id, customerPriceIls(usage.costUsd), label, projectId, `script:${draft.id}`);
@@ -148,5 +151,39 @@ export async function unapproveScript(projectId: string): Promise<{ error?: stri
   await db.update(scriptDraft).set({ chosenIndex: null, chosenScript: null }).where(eq(scriptDraft.projectId, projectId));
   await rewindProject(projectId, "script");
   revalidatePath(`/app/projects/${projectId}`);
+  return {};
+}
+
+async function ownedUpload(userId: string, uploadId: string) {
+  const id = z.string().uuid().safeParse(uploadId);
+  if (!id.success) return null;
+  const [row] = await db
+    .select({ upload, projectId: project.id })
+    .from(upload)
+    .innerJoin(project, eq(upload.projectId, project.id))
+    .where(and(eq(upload.id, id.data), eq(project.userId, userId)))
+    .limit(1);
+  return row ?? null;
+}
+
+/** What the image shows, in a few Hebrew words; the script uses it to talk about the screen. */
+export async function updateUploadLabel(uploadId: string, label: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const row = await ownedUpload(user.id, uploadId);
+  if (!row) return { error: "התמונה לא נמצאה." };
+  await db.update(upload).set({ label: label.trim().slice(0, 60) }).where(eq(upload.id, row.upload.id));
+  revalidatePath(`/app/projects/${row.projectId}`);
+  return {};
+}
+
+export async function deleteUpload(uploadId: string): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const row = await ownedUpload(user.id, uploadId);
+  if (!row) return { error: "התמונה לא נמצאה." };
+  const [used] = await db.select({ id: scene.id }).from(scene).where(eq(scene.uploadId, row.upload.id)).limit(1);
+  if (used) return { error: "התמונה כבר מופיעה בסצנה, ולכן אי אפשר למחוק אותה." };
+  await db.delete(upload).where(eq(upload.id, row.upload.id));
+  await deleteMedia(row.upload.mediaKey).catch(() => undefined);
+  revalidatePath(`/app/projects/${row.projectId}`);
   return {};
 }

@@ -6,6 +6,10 @@ import "server-only";
  * duration 4-15, resolution, aspect_ratio incl. 9:16, generate_audio.
  */
 const MODEL_PATH = "bytedance/seedance-2.0/text-to-video";
+// Same model, anchored to one reference image so every scene shows the same person and place.
+const REFERENCE_PATH = "bytedance/seedance-2.0/reference-to-video";
+// Photoreal portrait model used for the video's recurring character (docs: soul-2/generate).
+const LOOK_PATH = "higgsfield-ai/soul/v2/standard";
 const base = () => process.env.HF_API_URL ?? "https://api.higgsfield.ai";
 
 export class SceneError extends Error {}
@@ -27,8 +31,9 @@ export const isSceneDemoMode = () => !credential();
 export const RESOLUTIONS = ["480p", "720p"] as const;
 export type Resolution = (typeof RESOLUTIONS)[number];
 
-export const sceneRequest = (prompt: string, seconds: number, resolution: Resolution = "720p") => ({
+export const sceneRequest = (prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string) => ({
   prompt,
+  ...(referenceUrl ? { image_urls: [referenceUrl] } : {}),
   duration: Math.min(15, Math.max(4, Math.round(seconds))),
   resolution,
   aspect_ratio: "9:16",
@@ -69,42 +74,64 @@ function usdFrom(result: unknown): number | null {
   return null;
 }
 
+const scenePath = (referenceUrl?: string) => (referenceUrl ? REFERENCE_PATH : MODEL_PATH);
+
 /** Free price check before generating. */
-export async function estimateScene(prompt: string, seconds: number, resolution: Resolution = "720p"): Promise<number> {
-  const request = sceneRequest(prompt, seconds, resolution);
-  const result = await call(`/estimate/${MODEL_PATH}`, { method: "POST", body: JSON.stringify(request) });
+export async function estimateScene(prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string): Promise<number> {
+  const request = sceneRequest(prompt, seconds, resolution, referenceUrl);
+  const result = await call(`/estimate/${scenePath(referenceUrl)}`, { method: "POST", body: JSON.stringify(request) });
   const usd = usdFrom(result);
   if (usd !== null) return usd;
   console.error("[scenes] estimate without a price", { response: JSON.stringify(result).slice(0, 400) });
   return Math.round(request.duration * FALLBACK_USD_PER_SECOND * 10_000) / 10_000;
 }
 
-export async function submitScene(prompt: string, seconds: number, resolution: Resolution = "720p"): Promise<string> {
-  const result = (await call(`/${MODEL_PATH}`, {
-    method: "POST",
-    body: JSON.stringify(sceneRequest(prompt, seconds, resolution)),
-  })) as { request_id?: string };
+async function submit(path: string, body: unknown): Promise<string> {
+  const result = (await call(`/${path}`, { method: "POST", body: JSON.stringify(body) })) as { request_id?: string } | null;
   if (!result?.request_id) {
-    console.error("[scenes] submit without request_id", { response: JSON.stringify(result).slice(0, 400) });
+    console.error("[scenes] submit without request_id", { path, response: JSON.stringify(result).slice(0, 400) });
     throw new SceneError("Higgsfield לא החזיר מזהה בקשה.");
   }
   return result.request_id;
 }
+
+export async function submitScene(prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string): Promise<string> {
+  return submit(scenePath(referenceUrl), sceneRequest(prompt, seconds, resolution, referenceUrl));
+}
+
+/** The recurring character/place as one vertical photo, used as every scene's reference. */
+const lookRequest = (prompt: string) => ({ prompt, aspect_ratio: "9:16", resolution: "720p" });
+
+// Used only if the estimate carries no price; above Soul v2's list price so a quote never undercuts.
+const FALLBACK_LOOK_USD = 0.1;
+
+export async function estimateLook(prompt: string): Promise<number> {
+  const result = await call(`/estimate/${LOOK_PATH}`, { method: "POST", body: JSON.stringify(lookRequest(prompt)) });
+  const usd = usdFrom(result);
+  if (usd !== null) return usd;
+  console.error("[scenes] look estimate without a price", { response: JSON.stringify(result).slice(0, 400) });
+  return FALLBACK_LOOK_USD;
+}
+
+export const submitLook = (prompt: string) => submit(LOOK_PATH, lookRequest(prompt));
 
 export type SceneStatus =
   | { state: "pending" }
   | { state: "completed"; videoUrl: string }
   | { state: "failed"; reason: string };
 
+/** Status of any request; `videoUrl` is the output file (a video, or the first image for image models). */
 export async function sceneStatus(requestId: string): Promise<SceneStatus> {
   const result = (await call(`/requests/${encodeURIComponent(requestId)}/status`)) as {
     status?: string;
     video?: { url?: string };
+    images?: { url?: string }[];
     error?: string;
   };
+  const output = result.video?.url ?? result.images?.[0]?.url;
   switch (result.status) {
     case "completed":
-      return result.video?.url ? { state: "completed", videoUrl: result.video.url } : { state: "failed", reason: "הסצנה הסתיימה בלי קובץ." };
+      return output ? { state: "completed", videoUrl: output } : { state: "failed", reason: "הבקשה הסתיימה בלי קובץ." };
     case "failed":
       return { state: "failed", reason: "יצירת הסצנה נכשלה (לא חויבתם)." };
     case "nsfw":
