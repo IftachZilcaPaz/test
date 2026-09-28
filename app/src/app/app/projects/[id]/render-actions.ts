@@ -10,9 +10,11 @@ import { requireUser } from "@/lib/session";
 import { putMedia } from "@/lib/storage.server";
 import { renderChecks } from "@/lib/video/checks";
 import { renderVideo } from "@/lib/video/render.server";
+import { isSpeed, PLAYBACK_SPEED } from "@/lib/script/hebrew";
 
-export async function startRender(projectId: string): Promise<{ error?: string }> {
+export async function startRender(projectId: string, speed: number = PLAYBACK_SPEED): Promise<{ error?: string }> {
   const user = await requireUser();
+  if (!isSpeed(speed)) return { error: "מהירות לא נתמכת." };
   const item = await getOwnedProject(user.id, projectId);
   if (!item) return { error: "הפרויקט לא נמצא." };
   const [{ draft, take }, scenes, previous] = await Promise.all([approvedMaterial(projectId), listScenes(projectId), latestRender(projectId)]);
@@ -29,6 +31,7 @@ export async function startRender(projectId: string): Promise<{ error?: string }
     narrationKey: take.audioKey,
     words: take.words,
     scenes: scenes.map((entry) => ({ mediaKey: entry.mediaKey!, caption: entry.caption })),
+    speed,
   };
 
   // Assembly takes seconds to a minute; it runs after the response and the page polls.

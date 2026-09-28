@@ -14,8 +14,14 @@ const PALETTES = [
   ["0xDCEBFF", "0xA07CF0"],
 ] as const;
 
-/** Free placeholder clip (demo mode, no Higgsfield key): 9:16, silent, 5 seconds. */
-export async function demoSceneClip(index: number, seconds = 5): Promise<Uint8Array> {
+/** How many placeholder clips one poll renders, so every request stays well under the host's time limit. */
+export const DEMO_CLIPS_PER_POLL = 2;
+
+/**
+ * Free placeholder clip (demo mode, no Higgsfield key): 9:16, silent, short. The
+ * render loops a clip to fill its slot, so a few seconds are enough and keep this fast.
+ */
+export async function demoSceneClip(index: number, seconds = 3): Promise<Uint8Array> {
   const [from, to] = PALETTES[index % PALETTES.length]!;
   const dir = await mkdtemp(join(tmpdir(), "reyn-demo-"));
   const out = join(dir, "scene.mp4");

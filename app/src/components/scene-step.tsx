@@ -59,7 +59,7 @@ function SceneCard({ item, onError }: { item: SceneView; onError: (message: stri
           <video src={`/api/scenes/${item.id}/video`} className="size-full object-cover" muted loop playsInline autoPlay preload="metadata" />
         ) : (
           <div className={`grid size-full place-items-center text-sm text-ink-3 ${item.status === "generating" ? "animate-pulse" : ""}`}>
-            {item.status === "generating" ? "Higgsfield יוצר את הסצנה…" : `${item.seconds} שניות`}
+            {item.status === "generating" ? (item.demo ? "יוצר סצנה לדוגמה…" : "Higgsfield יוצר את הסצנה…") : `${item.seconds} שניות`}
           </div>
         )}
         {/* Caption preview, as it will appear in the video. */}
@@ -106,15 +106,23 @@ export function SceneStep({ projectId, ready, scenes, approved }: { projectId: s
   const allReady = scenes.length > 0 && scenes.every((item) => item.status === "ready");
   const spent = scenes.reduce((sum, item) => sum + (item.status === "ready" ? item.costUsd : 0), 0);
 
-  // Real clips take a minute or two; poll while any is in progress.
+  // Real clips take a minute or two; demo placeholders are made a couple per poll, so poll faster.
+  const demoWaiting = scenes.some((item) => item.status === "generating" && item.demo);
   useEffect(() => {
     if (!waiting) return;
+    let inFlight = false; // never overlap polls: a slow one would render the same clips twice
     const timer = setInterval(async () => {
-      const { generating: left } = await refreshScenes(projectId);
-      if (left === 0) router.refresh();
-    }, 5000);
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const { generating: left } = await refreshScenes(projectId);
+        if (left === 0) router.refresh();
+      } finally {
+        inFlight = false;
+      }
+    }, demoWaiting ? 1500 : 5000);
     return () => clearInterval(timer);
-  }, [waiting, projectId, router]);
+  }, [waiting, demoWaiting, projectId, router]);
 
   const askPrice = () =>
     startQuote(async () => {

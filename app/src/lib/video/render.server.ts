@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ffmpeg, VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/media/ffmpeg.server";
-import { PLAYBACK_SPEED } from "@/lib/script/hebrew";
+import type { Speed } from "@/lib/script/hebrew";
 import { getMedia } from "@/lib/storage.server";
 import type { TimedWord } from "@/lib/voice/voices";
 import { captionPng, endCardPng } from "./graphics.server";
@@ -15,6 +15,8 @@ export type RenderInput = {
   narrationKey: string;
   words: TimedWord[];
   scenes: { mediaKey: string; caption: string }[];
+  /** Narration speed-up; the scene cuts and captions follow it. */
+  speed: Speed;
 };
 
 export type RenderResult = { video: Uint8Array; timeline: Timeline };
@@ -34,7 +36,7 @@ async function load(key: string, path: string) {
  * branded end card.
  */
 export async function renderVideo(input: RenderInput): Promise<RenderResult> {
-  const timeline = buildTimeline(input.words, input.scenes.map((scene) => scene.caption));
+  const timeline = buildTimeline(input.words, input.scenes.map((scene) => scene.caption), input.speed);
   const dir = await mkdtemp(join(tmpdir(), "reyn-render-"));
   try {
     const narration = join(dir, "narration.mp3");
@@ -88,7 +90,7 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
       );
       current = next;
     });
-    filters.push(`[${audioIndex}:a]atempo=${PLAYBACK_SPEED},apad[a]`);
+    filters.push(`[${audioIndex}:a]atempo=${input.speed},apad[a]`);
 
     const output = join(dir, "video.mp4");
     await ffmpeg([

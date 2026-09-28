@@ -6,6 +6,10 @@
  */
 export const WORDS_PER_SECOND = 1.85;
 export const PLAYBACK_SPEED = 1.25;
+/** Narration speeds the customer can pick at render time; ×1.25 (the default) suits Reels and TikTok. */
+export const SPEEDS = [1, 1.1, 1.25] as const;
+export type Speed = (typeof SPEEDS)[number];
+export const isSpeed = (value: number): value is Speed => (SPEEDS as readonly number[]).includes(value);
 export const END_CARD_SECONDS = 3.8;
 
 export const DURATIONS = [15, 20, 30] as const;

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { project, scene, type Scene } from "@/db/schema";
 import { getOwnedProject, listScenes } from "@/lib/projects.server";
-import { demoSceneClip } from "@/lib/scenes/demo.server";
+import { DEMO_CLIPS_PER_POLL, demoSceneClip } from "@/lib/scenes/demo.server";
 import { estimateScene, isSceneDemoMode, SceneError, sceneStatus, submitScene } from "@/lib/scenes/higgsfield.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
@@ -72,11 +72,11 @@ export async function generateScenes(projectId: string): Promise<{ error?: strin
 
   try {
     if (isSceneDemoMode()) {
-      for (const item of todo) {
-        const key = `projects/${projectId}/scenes/${item.id}-demo.mp4`;
-        await putMedia(key, await demoSceneClip(item.position, item.seconds));
-        await db.update(scene).set({ status: "ready", demo: true, mediaKey: key, costUsd: 0, error: null }).where(eq(scene.id, item.id));
-      }
+      // Queued like real scenes: refreshScenes renders them a couple at a time.
+      await db
+        .update(scene)
+        .set({ status: "generating", demo: true, requestId: null, mediaKey: null, costUsd: 0, error: null })
+        .where(inArray(scene.id, todo.map((item) => item.id)));
     } else {
       const prompts = todo.map((item) => `${item.prompt}. ${NO_TEXT}`);
       const prices = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds)));
@@ -103,8 +103,19 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
   const user = await requireUser();
   const list = await ownedScenes(user.id, projectId);
   if (!list) return { generating: 0 };
-  const running = list.filter((item) => item.status === "generating" && item.requestId);
-  for (const item of running) {
+  const running = list.filter((item) => item.status === "generating");
+  // Demo placeholders are rendered here, a few per poll, so no single request runs long.
+  for (const item of running.filter((entry) => entry.demo).slice(0, DEMO_CLIPS_PER_POLL)) {
+    try {
+      const key = `projects/${projectId}/scenes/${item.id}-demo.mp4`;
+      await putMedia(key, await demoSceneClip(item.position));
+      await db.update(scene).set({ status: "ready", mediaKey: key }).where(eq(scene.id, item.id));
+    } catch (error) {
+      console.error("[scenes] demo clip failed", error instanceof Error ? error.message : error);
+      await db.update(scene).set({ status: "failed", error: "הסצנה לדוגמה לא נוצרה. נסו שוב." }).where(eq(scene.id, item.id));
+    }
+  }
+  for (const item of running.filter((entry) => !entry.demo && entry.requestId)) {
     try {
       const status = await sceneStatus(item.requestId!);
       if (status.state === "completed") {

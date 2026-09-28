@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { renderState, startRender } from "@/app/app/projects/[id]/render-actions";
+import { END_CARD_SECONDS, PLAYBACK_SPEED, SPEEDS, type Speed } from "@/lib/script/hebrew";
 import type { RenderCheck } from "@/lib/video/checks";
 
 export type RenderView = {
@@ -13,8 +14,22 @@ export type RenderView = {
   error: string | null;
 };
 
-export function RenderStep({ projectId, ready, latest }: { projectId: string; ready: boolean; latest: RenderView | null }) {
+const SPEED_LABEL: Record<Speed, string> = { 1: "רגילה", 1.1: "קצת מהירה", 1.25: "מהירה (מומלץ לרילס)" };
+
+export function RenderStep({
+  projectId,
+  ready,
+  latest,
+  narrationSeconds,
+}: {
+  projectId: string;
+  ready: boolean;
+  latest: RenderView | null;
+  /** Length of the approved narration at normal speed, to show what each speed produces. */
+  narrationSeconds: number | null;
+}) {
   const router = useRouter();
+  const [speed, setSpeed] = useState<Speed>(PLAYBACK_SPEED as Speed);
   const [error, setError] = useState<string | null>(null);
   const [starting, startTransition] = useTransition();
   const rendering = latest?.status === "rendering";
@@ -31,7 +46,7 @@ export function RenderStep({ projectId, ready, latest }: { projectId: string; re
   const start = () =>
     startTransition(async () => {
       setError(null);
-      const result = await startRender(projectId);
+      const result = await startRender(projectId, speed);
       if (result.error) setError(result.error);
       router.refresh();
     });
@@ -44,9 +59,37 @@ export function RenderStep({ projectId, ready, latest }: { projectId: string; re
         </h2>
         <p className="text-ink-2">
           {ready
-            ? "מרכיבים הכול: הסצנות לפי הקריינות, כיתובים בעברית ברגע שאומרים אותם, קריינות מואצת ×1.25 וכרטיס סיום. ההרכבה בחינם."
+            ? "מרכיבים הכול: הסצנות לפי הקריינות, כיתובים בעברית ברגע שאומרים אותם וכרטיס סיום. ההרכבה בחינם."
             : "קודם מאשרים את הסצנות."}
         </p>
+        {ready && (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-semibold text-ink-2">מהירות הקריינות</legend>
+            <div className="flex flex-wrap gap-2">
+              {SPEEDS.map((option) => (
+                <label key={option} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="speed"
+                    value={option}
+                    checked={speed === option}
+                    onChange={() => setSpeed(option)}
+                    disabled={starting || rendering}
+                    className="peer sr-only"
+                  />
+                  <span className="well flex flex-col rounded-2xl px-4 py-2 text-sm peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                    <span className="font-semibold">
+                      {SPEED_LABEL[option]} <bdi dir="ltr">×{option}</bdi>
+                    </span>
+                    {narrationSeconds !== null && (
+                      <span className="tabular-nums opacity-80">סרטון של כ־{(narrationSeconds / option + END_CARD_SECONDS).toFixed(0)} שניות</span>
+                    )}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
         {ready && (
           <div className="flex flex-wrap items-center gap-3">
             <button type="button" className="btn btn-primary" disabled={starting || rendering} onClick={start}>
