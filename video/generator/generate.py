@@ -140,7 +140,11 @@ def language_rules(brief: dict, lexicon: dict) -> tuple[str, str]:
         "The script is read by ElevenLabs TTS, which guesses Hebrew vowels. Add niqqud **only** to "
         "words with more than one plausible reading (imperative vs. past tense, noun vs. verb, construct "
         "forms) and to brand/foreign names, which you spell phonetically. Leave every other word unpointed: "
-        "full niqqud adds nothing and invites mistakes. Use the client's register (usually plural "
+        "full niqqud adds nothing and invites mistakes. Dagesh ONLY in ב/כ/פ and only when the word "
+        "needs the hard sound; never a dagesh in any other letter (תַסְרִיט not תַּסְרִיט, נַסוּ not "
+        "נַסּוּ): it shifts the stress. Shuruk (וּ) is a vowel and stays. Niqqud does not mark stress, "
+        "so a word that must be milra is confirmed by listening (docs/HEBREW_PRONUNCIATION.md). "
+        "Use the client's register (usually plural "
         "second person: אתם).\n\nConfirmed fixes. Use them whenever the meaning matches:\n"
         f"{words}\n{brands}")
     return "Hebrew (he)", rules

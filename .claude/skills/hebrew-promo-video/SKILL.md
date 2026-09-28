@@ -40,7 +40,10 @@ Before any VO generation:
 1. Flag every word with more than one plausible reading: imperative vs. past (כתבו, שלחו, קבלו),
    noun vs. verb (ספר, דבר), construct forms, and **every brand or foreign name**.
 2. Add niqqud **only** to the flagged words. Write brand names phonetically, with niqqud where the
-   vowel matters.
+   vowel matters. **Dagesh only in בּ/כּ/פּ, and only when the word needs the hard sound** — never in
+   any other letter (תַסְרִיט, not תַּסְרִיט; נַסוּ, not נַסּוּ): an extra dagesh moves the stress.
+   Shuruk (וּ) is a vowel and stays. Niqqud does not mark stress: confirm milra words by ear.
+   The full rules of thumb: `docs/HEBREW_PRONUNCIATION.md` (read it before every VO).
 3. The user confirms the readings. Whisper can't check vowels.
 4. Captions use normal unpointed spelling and the brand's own spelling. Niqqud goes only into
    `voice.script`.
