@@ -31,6 +31,8 @@ const CAPTION_BOTTOM = 230; // px from the bottom edge, above platform UI on Ree
 // Customer screenshots: top edge and max height, leaving room for the caption and the 4% zoom.
 const SCREEN_TOP = 130;
 const SCREEN_MAX_HEIGHT = 800;
+// Share of a presenter clip's height cut from the bottom, where invented subtitles appear.
+const TALK_BOTTOM_CROP = 0.12;
 
 async function load(key: string, path: string) {
   const bytes = await getMedia(key);
@@ -99,8 +101,10 @@ export async function renderVideo(input: RenderInput): Promise<RenderResult> {
       if (beat.kind === "talking") {
         // Clip time c shows the lips of narration second audioStart + c; this slot plays narration from start × speed.
         const offset = Math.max(0, slot.start * input.speed - beat.audioStart).toFixed(3);
+        // Talking-head models sometimes draw fake subtitles along the bottom edge (they learned
+        // from captioned social videos); that band is cropped away, keeping the face in frame.
         filters.push(
-          `[${index}:v]trim=start=${offset},setpts=(PTS-STARTPTS)/${input.speed},${fit},tpad=stop_mode=clone:stop_duration=2,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
+          `[${index}:v]trim=start=${offset},setpts=(PTS-STARTPTS)/${input.speed},crop=iw:trunc(ih*${1 - TALK_BOTTOM_CROP}/2)*2:0:0,${fit},tpad=stop_mode=clone:stop_duration=2,trim=duration=${duration},setpts=PTS-STARTPTS[s${index}]`,
         );
       } else if (beat.kind === "image") {
         // Blurred, darkened fill behind the whole image, which grows ~4% over its beat.
