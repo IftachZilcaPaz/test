@@ -4,7 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
-import { project, scene, type Project, type Scene } from "@/db/schema";
+import { project, scene, type Project, type Scene, voiceTake } from "@/db/schema";
 import { approvedMaterial, getOwnedProject, listScenes } from "@/lib/projects.server";
 import { publicMediaUrl } from "@/lib/public-media.server";
 import { DEMO_CLIPS_PER_POLL, demoSceneClip } from "@/lib/scenes/demo.server";
@@ -20,11 +20,11 @@ import {
   submitTalk,
 } from "@/lib/scenes/higgsfield.server";
 import { isStale, STALE_MESSAGE } from "@/lib/scenes/stale";
-import { publishSlices, talkGroups, type TalkGroup, talkPrompt, talkSlices, voiceSliceKey } from "@/lib/scenes/presenter.server";
+import { checkTalkClip, publishSlices, talkGroups, type TalkGroup, talkPrompt, talkSlices, voiceSliceKey } from "@/lib/scenes/presenter.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
-import { deleteMedia, putMedia } from "@/lib/storage.server";
+import { deleteMedia, getMedia, putMedia } from "@/lib/storage.server";
 
 const NO_TEXT = "Vertical 9:16 cinematic shot. No text, letters, captions, logos, signs or readable screens.";
 
@@ -222,6 +222,28 @@ export async function generateScenes(
 
 const MAX_DOWNLOADS_PER_POLL = 2;
 
+const OFF_VOICE = "הקול בקליפ הזה לא תואם לקריינות, אז ייתכן שהשפתיים לא מסונכרנות. כדאי ליצור אותו מחדש.";
+
+/**
+ * Checks a finished presenter clip against the narration and re-anchors it to where the
+ * voice actually starts in it, so the render cuts to lips that match. Never blocks: a
+ * check that cannot run keeps the clip as filmed.
+ */
+async function syncPatch(first: Scene, clip: Uint8Array): Promise<Partial<Scene>> {
+  try {
+    const [take] = await db.select({ audioKey: voiceTake.audioKey }).from(voiceTake).where(eq(voiceTake.id, first.takeId!)).limit(1);
+    const narration = take && (await getMedia(take.audioKey));
+    if (!narration || first.audioStart === null) return {};
+    const check = await checkTalkClip(clip, narration, first.audioStart);
+    console.info("[scenes] talk sync", { scene: first.id, ...check });
+    if (check.ok) return { audioStart: check.audioStart, error: null };
+    return check.reason === "mismatch" ? { error: OFF_VOICE } : {};
+  } catch (error) {
+    console.error("[scenes] talk sync check failed", error instanceof Error ? error.message : error);
+    return {};
+  }
+}
+
 /** Polls Higgsfield for scenes in progress and stores finished clips. Safe to call repeatedly. */
 export async function refreshScenes(projectId: string): Promise<{ generating: number }> {
   const user = await requireUser();
@@ -257,8 +279,9 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
         const response = await fetch(status.videoUrl);
         if (!response.ok) continue;
         const key = `projects/${projectId}/scenes/${first.id}.mp4`;
-        await putMedia(key, new Uint8Array(await response.arrayBuffer()));
-        await db.update(scene).set({ status: "ready", mediaKey: key }).where(inArray(scene.id, ids));
+        const clip = new Uint8Array(await response.arrayBuffer());
+        await putMedia(key, clip);
+        await db.update(scene).set({ status: "ready", mediaKey: key, ...(first.takeId ? await syncPatch(first, clip) : {}) }).where(inArray(scene.id, ids));
         if (first.takeId) await deleteMedia(voiceSliceKey(projectId, first.id)).catch(() => undefined);
       } else if (status.state === "failed") {
         // Failed and moderated requests are not billed by Higgsfield, so the customer is refunded too.

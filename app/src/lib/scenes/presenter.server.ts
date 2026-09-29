@@ -1,6 +1,6 @@
 import "server-only";
 import type { Scene, VoiceTake } from "@/db/schema";
-import { sliceAudio } from "@/lib/media/audio.server";
+import { alignEnvelopes, loudnessEnvelope, sliceAudio } from "@/lib/media/audio.server";
 import { publicMediaUrl } from "@/lib/public-media.server";
 import { getMedia, putMedia } from "@/lib/storage.server";
 import { buildTimeline } from "@/lib/video/timeline";
@@ -74,4 +74,27 @@ export async function publishSlices(projectId: string, take: Pick<VoiceTake, "au
       return publicMediaUrl(key);
     }),
   );
+}
+
+// Below this the clip's sound is not our narration (Wan replaced or garbled it).
+const MIN_VOICE_MATCH = 0.6;
+
+export type TalkCheck =
+  | { ok: true; audioStart: number; delay: number; match: number }
+  | { ok: false; reason: "no-audio" | "mismatch"; match?: number };
+
+/**
+ * Checks a finished presenter clip against the narration it was filmed to. Wan returns the
+ * clip with the voice it lip-synced to, so matching that sound to our slice tells exactly
+ * where the lips are: when the voice starts `delay` seconds into the clip, the clip is
+ * re-anchored so the render shows the lips that go with each word.
+ */
+export async function checkTalkClip(clip: Uint8Array, narration: Uint8Array, audioStart: number): Promise<TalkCheck> {
+  const recording = await loudnessEnvelope(clip);
+  if (!recording) return { ok: false, reason: "no-audio" };
+  const reference = await loudnessEnvelope(narration, audioStart, recording.length / 100);
+  if (!reference) return { ok: false, reason: "no-audio" };
+  const { delay, match } = alignEnvelopes(recording, reference);
+  if (match < MIN_VOICE_MATCH) return { ok: false, reason: "mismatch", match };
+  return { ok: true, audioStart: round(audioStart - delay), delay, match };
 }
