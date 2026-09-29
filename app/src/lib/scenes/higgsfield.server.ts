@@ -8,6 +8,9 @@ import "server-only";
 const MODEL_PATH = "bytedance/seedance-2.0/text-to-video";
 // Same model, anchored to one reference image so every scene shows the same person and place.
 const REFERENCE_PATH = "bytedance/seedance-2.0/reference-to-video";
+// Alternative scene engine, on trial against Seedance (docs: kling-o3/image-reference: prompt,
+// image_urls (optional), duration 3-15, aspect_ratio 9:16, sound on|off, mode std|pro|4k).
+const KLING_PATH = "kling-video/o3/image-reference";
 // Photoreal portrait model used for the video's recurring character (docs: soul-2/generate).
 const LOOK_PATH = "higgsfield-ai/soul/v2/standard";
 // Talking presenter, lip-synced to our own narration slice (docs: wan-2-7/image-to-video:
@@ -33,6 +36,20 @@ export const isSceneDemoMode = () => !credential();
  */
 export const RESOLUTIONS = ["480p", "720p"] as const;
 export type Resolution = (typeof RESOLUTIONS)[number];
+
+/** Which model films the scenes. Seedance is the default; Kling is on trial. */
+export const SCENE_MODELS = ["seedance", "kling"] as const;
+export type SceneModel = (typeof SCENE_MODELS)[number];
+
+/** Kling O3 at "std" (720p, the finished video's size), no generated sound: the narration is the soundtrack. */
+const klingRequest = (prompt: string, seconds: number, referenceUrl?: string) => ({
+  prompt,
+  ...(referenceUrl ? { image_urls: [referenceUrl] } : {}),
+  duration: Math.min(15, Math.max(3, Math.round(seconds))),
+  aspect_ratio: "9:16",
+  sound: "off",
+  mode: "std",
+});
 
 export const sceneRequest = (prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string) => ({
   prompt,
@@ -77,16 +94,33 @@ function usdFrom(result: unknown): number | null {
   return null;
 }
 
-const scenePath = (referenceUrl?: string) => (referenceUrl ? REFERENCE_PATH : MODEL_PATH);
+// Kling O3 has no published API price; used only when the estimate carries none, set high so a quote never undercuts.
+const FALLBACK_KLING_USD_PER_SECOND = 0.2;
+
+/** The endpoint and body for one scene clip on the chosen model. */
+function sceneCall(model: SceneModel, prompt: string, seconds: number, resolution: Resolution, referenceUrl?: string) {
+  if (model === "kling") return { path: KLING_PATH, body: klingRequest(prompt, seconds, referenceUrl), perSecond: FALLBACK_KLING_USD_PER_SECOND };
+  return {
+    path: referenceUrl ? REFERENCE_PATH : MODEL_PATH,
+    body: sceneRequest(prompt, seconds, resolution, referenceUrl),
+    perSecond: FALLBACK_USD_PER_SECOND,
+  };
+}
 
 /** Free price check before generating. */
-export async function estimateScene(prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string): Promise<number> {
-  const request = sceneRequest(prompt, seconds, resolution, referenceUrl);
-  const result = await call(`/estimate/${scenePath(referenceUrl)}`, { method: "POST", body: JSON.stringify(request) });
+export async function estimateScene(
+  prompt: string,
+  seconds: number,
+  resolution: Resolution = "720p",
+  referenceUrl?: string,
+  model: SceneModel = "seedance",
+): Promise<number> {
+  const { path, body, perSecond } = sceneCall(model, prompt, seconds, resolution, referenceUrl);
+  const result = await call(`/estimate/${path}`, { method: "POST", body: JSON.stringify(body) });
   const usd = usdFrom(result);
   if (usd !== null) return usd;
-  console.error("[scenes] estimate without a price", { response: JSON.stringify(result).slice(0, 400) });
-  return Math.round(request.duration * FALLBACK_USD_PER_SECOND * 10_000) / 10_000;
+  console.error("[scenes] estimate without a price", { model, response: JSON.stringify(result).slice(0, 400) });
+  return Math.round(body.duration * perSecond * 10_000) / 10_000;
 }
 
 async function submit(path: string, body: unknown): Promise<string> {
@@ -98,8 +132,15 @@ async function submit(path: string, body: unknown): Promise<string> {
   return result.request_id;
 }
 
-export async function submitScene(prompt: string, seconds: number, resolution: Resolution = "720p", referenceUrl?: string): Promise<string> {
-  return submit(scenePath(referenceUrl), sceneRequest(prompt, seconds, resolution, referenceUrl));
+export async function submitScene(
+  prompt: string,
+  seconds: number,
+  resolution: Resolution = "720p",
+  referenceUrl?: string,
+  model: SceneModel = "seedance",
+): Promise<string> {
+  const { path, body } = sceneCall(model, prompt, seconds, resolution, referenceUrl);
+  return submit(path, body);
 }
 
 /** The recurring character/place as one vertical photo, used as every scene's reference. */

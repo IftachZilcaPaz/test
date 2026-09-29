@@ -14,6 +14,8 @@ import {
   isSceneDemoMode,
   RESOLUTIONS,
   type Resolution,
+  SCENE_MODELS,
+  type SceneModel,
   SceneError,
   sceneStatus,
   submitScene,
@@ -42,7 +44,7 @@ class PlanError extends Error {}
  *   scene shows the same person and place. A script written with a look must have that image
  *   first (older scripts without a look are exempt).
  */
-async function planReal(owner: Project, todo: Scene[], resolution: Resolution) {
+async function planReal(owner: Project, todo: Scene[], resolution: Resolution, model: SceneModel = "seedance") {
   const { option, take } = await approvedMaterial(owner.id);
   const lookUrl = owner.lookImageKey ? publicMediaUrl(owner.lookImageKey) : undefined;
 
@@ -81,13 +83,13 @@ async function planReal(owner: Project, todo: Scene[], resolution: Resolution) {
   if (look && !lookUrl) throw new PlanError(NEEDS_LOOK);
   const lead = look ? (lookUrl ? `The same person and place as in the reference image. Setting: ${look.setting}.` : `${look.character}, in ${look.setting}.`) : "";
   const prompts = todo.map((item) => [lead, item.prompt, NO_TEXT].filter(Boolean).join(" "));
-  const usd = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, lookUrl)));
+  const usd = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, lookUrl, model)));
   return {
     usd,
-    label: todo.map((item) => `סצנה ${item.position + 1}`),
+    label: todo.map((item) => `סצנה ${item.position + 1}${model === "kling" ? " (Kling)" : ""}`),
     async submitAll(onSubmitted: (item: Scene, requestId: string, patch: Partial<Scene>) => Promise<void>) {
       for (const [index, item] of todo.entries()) {
-        const requestId = await submitScene(prompts[index]!, item.seconds, resolution, lookUrl);
+        const requestId = await submitScene(prompts[index]!, item.seconds, resolution, lookUrl, model);
         await onSubmitted(item, requestId, { takeId: null, audioStart: null });
       }
     },
@@ -119,6 +121,11 @@ async function workFor(userId: string, projectId: string, mode: SceneMode) {
   const [list, { take }] = await Promise.all([listScenes(projectId), approvedMaterial(projectId)]);
   return { owner, todo: pending(list, mode, take?.id) };
 }
+
+const modelOf = (requested: unknown): SceneModel => {
+  const parsed = z.enum(SCENE_MODELS).safeParse(requested);
+  return parsed.success ? parsed.data : "seedance";
+};
 
 const resolutionOf = (requested: unknown): Resolution => {
   const parsed = z.enum(RESOLUTIONS).safeParse(requested);
@@ -153,7 +160,12 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
 
 export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | { error: string };
 
-export async function quoteScenes(projectId: string, requested: SceneMode = "real", quality: Resolution = "720p"): Promise<SceneQuote> {
+export async function quoteScenes(
+  projectId: string,
+  requested: SceneMode = "real",
+  quality: Resolution = "720p",
+  model: SceneModel = "seedance",
+): Promise<SceneQuote> {
   const user = await requireUser();
   const mode = effectiveMode(requested);
   const work = await workFor(user.id, projectId, mode);
@@ -163,7 +175,7 @@ export async function quoteScenes(projectId: string, requested: SceneMode = "rea
   const balanceIls = await balance(user.id);
   if (mode === "demo") return { demo: true, usd: 0, count: todo.length, priceIls: 0, balanceIls };
   try {
-    const { usd } = await planReal(owner, todo, resolutionOf(quality));
+    const { usd } = await planReal(owner, todo, resolutionOf(quality), modelOf(model));
     const priceIls = usd.reduce((sum, value) => sum + customerPriceIls(value), 0);
     return { demo: false, usd: usd.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
   } catch (error) {
@@ -177,6 +189,7 @@ export async function generateScenes(
   projectId: string,
   requested: SceneMode = "real",
   quality: Resolution = "720p",
+  model: SceneModel = "seedance",
 ): Promise<{ error?: string }> {
   const user = await requireUser();
   const mode = effectiveMode(requested);
@@ -193,7 +206,7 @@ export async function generateScenes(
         .set({ status: "generating", demo: true, requestId: null, mediaKey: null, costUsd: 0, error: null, takeId: null, audioStart: null })
         .where(inArray(scene.id, todo.map((item) => item.id)));
     } else {
-      const plan = await planReal(owner, todo, resolutionOf(quality));
+      const plan = await planReal(owner, todo, resolutionOf(quality), modelOf(model));
       await assertCanPay(user.id, plan.usd.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
       // Clips being replaced are deleted, unless a scene that is not being remade still shows them.
       const remade = new Set(todo.map((item) => item.id));

@@ -13,7 +13,7 @@ import {
 } from "@/app/app/projects/[id]/scene-actions";
 import { LookCard, type LookView } from "@/components/look-card";
 import { canAfford, WalletLine } from "@/components/wallet-line";
-import type { Resolution } from "@/lib/scenes/higgsfield.server";
+import type { Resolution, SceneModel } from "@/lib/scenes/higgsfield.server";
 import { formatCustomerPrice, formatShekels } from "@/lib/pricing";
 
 export type SceneView = {
@@ -31,6 +31,14 @@ export type SceneView = {
   /** A presenter clip lip-synced to an earlier narration take: it must be made again. */
   stale: boolean;
 };
+
+/** Scene model and quality, chosen together: Kling (on trial) films at 720p only. */
+type SceneChoice = { id: string; model: SceneModel; resolution: Resolution; title: string; hint: string };
+const SCENE_CHOICES: SceneChoice[] = [
+  { id: "seedance-720p", model: "seedance", resolution: "720p", title: "Seedance, רגילה (720p)", hint: "חדה לגמרי בסרטון הסופי" },
+  { id: "seedance-480p", model: "seedance", resolution: "480p", title: "Seedance, חסכונית (480p)", hint: "זולה יותר, קצת פחות חדה, טובה לטיוטה" },
+  { id: "kling", model: "kling", resolution: "720p", title: "Kling (בניסוי, 720p)", hint: "מודל אחר לשוטים: תנועה ריאליסטית של אנשים. המחיר מחושב מול Higgsfield" },
+];
 
 const STATUS = {
   draft: { label: "ממתינה ליצירה", className: "bg-well text-ink-2" },
@@ -133,7 +141,7 @@ export function SceneStep({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [quality, setQuality] = useState<Resolution>("720p");
+  const [choice, setChoice] = useState<SceneChoice>(SCENE_CHOICES[0]);
   const [quoting, startQuote] = useTransition();
   const [generating, startGenerate] = useTransition();
   const [approving, startApprove] = useTransition();
@@ -162,24 +170,24 @@ export function SceneStep({
     return () => clearInterval(timer);
   }, [waiting, demoWaiting, projectId, router]);
 
-  const askPrice = (mode: SceneMode, resolution: Resolution = quality) =>
+  const askPrice = (mode: SceneMode, option: SceneChoice = choice) =>
     startQuote(async () => {
       setError(null);
-      const result = await quoteScenes(projectId, mode, resolution);
+      const result = await quoteScenes(projectId, mode, option.resolution, option.model);
       if ("error" in result) return setError(result.error);
       setQuote(result);
       if (!dialogRef.current?.open) dialogRef.current?.showModal();
     });
 
-  const chooseQuality = (resolution: Resolution) => {
-    setQuality(resolution);
-    askPrice("real", resolution); // the price depends on the quality: ask Higgsfield again
+  const choose = (option: SceneChoice) => {
+    setChoice(option);
+    askPrice("real", option); // the price depends on the model and quality: ask Higgsfield again
   };
 
   const generate = (mode: SceneMode) => {
     dialogRef.current?.close();
     startGenerate(async () => {
-      const result = await generateScenes(projectId, mode, quality);
+      const result = await generateScenes(projectId, mode, choice.resolution, choice.model);
       if (result.error) setError(result.error);
       router.refresh();
     });
@@ -270,26 +278,21 @@ export function SceneStep({
                   <p className="text-sm text-ink-2">כל סצנה: הקריינית אומרת את החלק שלה בקריינות שאישרתם, מול המצלמה, עם שפתיים מסונכרנות (720p).</p>
                 ) : (
                   <fieldset className="flex flex-col gap-2">
-                    <legend className="mb-1 text-sm font-semibold text-ink-2">איכות הסצנות</legend>
-                    {(
-                      [
-                        ["720p", "רגילה (720p)", "חדה לגמרי בסרטון הסופי"],
-                        ["480p", "חסכונית (480p)", "זולה יותר, קצת פחות חדה, טובה לטיוטה"],
-                      ] as const
-                    ).map(([value, title, hint]) => (
-                      <label key={value} className="cursor-pointer">
+                    <legend className="mb-1 text-sm font-semibold text-ink-2">איך לצלם את הסצנות</legend>
+                    {SCENE_CHOICES.map((option) => (
+                      <label key={option.id} className="cursor-pointer">
                         <input
                           type="radio"
-                          name="quality"
-                          value={value}
-                          checked={quality === value}
-                          onChange={() => chooseQuality(value)}
+                          name="scene-choice"
+                          value={option.id}
+                          checked={choice.id === option.id}
+                          onChange={() => choose(option)}
                           disabled={quoting}
                           className="peer sr-only"
                         />
                         <span className="well flex flex-col rounded-2xl px-4 py-2 text-sm peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
-                          <span className="font-semibold">{title}</span>
-                          <span className="opacity-80">{hint}</span>
+                          <span className="font-semibold">{option.title}</span>
+                          <span className="opacity-80">{option.hint}</span>
                         </span>
                       </label>
                     ))}
