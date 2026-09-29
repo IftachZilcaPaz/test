@@ -173,7 +173,9 @@ export async function updateScenePrompt(sceneId: string, prompt: string): Promis
   return {};
 }
 
-export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | { error: string };
+/** Presenter style: which of the scenes to film she talks in, and which are silent shots (1-based). */
+export type SceneMix = { talk: number[]; cutaway: number[] };
+export type SceneQuote = { demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number; mix?: SceneMix } | { error: string };
 
 export async function quoteScenes(
   projectId: string,
@@ -192,7 +194,14 @@ export async function quoteScenes(
   try {
     const { usd } = await planReal(owner, todo, resolutionOf(quality), modelOf(model));
     const priceIls = usd.reduce((sum, value) => sum + customerPriceIls(value), 0);
-    return { demo: false, usd: usd.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls };
+    const mix =
+      owner.style === "presenter"
+        ? {
+            talk: todo.filter((item) => !item.cutaway).map((item) => item.position + 1),
+            cutaway: todo.filter((item) => item.cutaway).map((item) => item.position + 1),
+          }
+        : undefined;
+    return { demo: false, usd: usd.reduce((sum, value) => sum + value, 0), count: todo.length, priceIls, balanceIls, mix };
   } catch (error) {
     if (error instanceof PlanError || error instanceof SceneError) return { error: error.message };
     console.error("[scenes] quote failed", error instanceof Error ? error.message : error);

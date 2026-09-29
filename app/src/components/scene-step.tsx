@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import {
   approveScenes,
   type SceneMode,
+  type SceneQuote,
   generateScenes,
   quoteScenes,
   refreshScenes,
@@ -164,7 +165,7 @@ export function SceneStep({
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [quote, setQuote] = useState<{ demo: boolean; usd: number; count: number; priceIls: number; balanceIls: number } | null>(null);
+  const [quote, setQuote] = useState<Exclude<SceneQuote, { error: string }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [choice, setChoice] = useState<SceneChoice>(SCENE_CHOICES[0]);
   const [quoting, startQuote] = useTransition();
@@ -300,10 +301,21 @@ export function SceneStep({
             ) : (
               <>
                 {presenter ? (
-                  <p className="text-sm text-ink-2">
-                    סצנות „מדברת”: הקריינית אומרת את החלק שלה מול המצלמה, עם שפתיים מסונכרנות. סצנות „שוט”: אותה קריינית בלי לדבר, והקול שלה
-                    ממשיך ברקע (720p).
-                  </p>
+                  <div className="flex flex-col gap-2 text-sm text-ink-2">
+                    {quote.mix && (
+                      <ul className="well flex flex-col gap-1 rounded-2xl px-4 py-3">
+                        <li>
+                          <b>מדברת למצלמה:</b> {quote.mix.talk.length > 0 ? <>סצנות <bdi dir="ltr">{quote.mix.talk.join(", ")}</bdi></> : "אף סצנה"}
+                        </li>
+                        <li>
+                          <b>שוט בלי דיבור:</b> {quote.mix.cutaway.length > 0 ? <>סצנות <bdi dir="ltr">{quote.mix.cutaway.join(", ")}</bdi></> : "אף סצנה"}
+                        </li>
+                      </ul>
+                    )}
+                    <p>
+                      רוצים לשנות? סוגרים את החלון ולוחצים בכרטיס הסצנה על „להפוך לשוט” או „שתדבר למצלמה”. לפני הצילום זה בחינם.
+                    </p>
+                  </div>
                 ) : (
                   <fieldset className="flex flex-col gap-2">
                     <legend className="mb-1 text-sm font-semibold text-ink-2">איך לצלם את הסצנות</legend>
