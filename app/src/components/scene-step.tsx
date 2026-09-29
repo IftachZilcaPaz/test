@@ -32,12 +32,15 @@ export type SceneView = {
   stale: boolean;
 };
 
-/** Scene model and quality, chosen together: Kling (on trial) films at 720p only. */
+/**
+ * Scene model and quality, chosen together. Kling is the default: in a side-by-side test it
+ * looked more realistic and cost a little less than Seedance for the same scene.
+ */
 type SceneChoice = { id: string; model: SceneModel; resolution: Resolution; title: string; hint: string };
 const SCENE_CHOICES: SceneChoice[] = [
-  { id: "seedance-720p", model: "seedance", resolution: "720p", title: "Seedance, רגילה (720p)", hint: "חדה לגמרי בסרטון הסופי" },
-  { id: "seedance-480p", model: "seedance", resolution: "480p", title: "Seedance, חסכונית (480p)", hint: "זולה יותר, קצת פחות חדה, טובה לטיוטה" },
-  { id: "kling", model: "kling", resolution: "720p", title: "Kling (בניסוי, 720p)", hint: "מודל אחר לשוטים: תנועה ריאליסטית של אנשים. המחיר מחושב מול Higgsfield" },
+  { id: "kling", model: "kling", resolution: "720p", title: "ריאליסטית (Kling, 720p)", hint: "תנועה טבעית של אנשים, חדה לגמרי בסרטון הסופי" },
+  { id: "seedance-720p", model: "seedance", resolution: "720p", title: "קולנועית (Seedance, 720p)", hint: "מראה קולנועי, חדה לגמרי בסרטון הסופי" },
+  { id: "seedance-480p", model: "seedance", resolution: "480p", title: "חסכונית (Seedance, 480p)", hint: "הכי זולה, קצת פחות חדה, טובה לטיוטה" },
 ];
 
 const STATUS = {

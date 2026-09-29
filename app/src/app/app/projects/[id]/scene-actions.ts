@@ -124,7 +124,7 @@ async function workFor(userId: string, projectId: string, mode: SceneMode) {
 
 const modelOf = (requested: unknown): SceneModel => {
   const parsed = z.enum(SCENE_MODELS).safeParse(requested);
-  return parsed.success ? parsed.data : "seedance";
+  return parsed.success ? parsed.data : "kling";
 };
 
 const resolutionOf = (requested: unknown): Resolution => {
@@ -164,7 +164,7 @@ export async function quoteScenes(
   projectId: string,
   requested: SceneMode = "real",
   quality: Resolution = "720p",
-  model: SceneModel = "seedance",
+  model: SceneModel = "kling",
 ): Promise<SceneQuote> {
   const user = await requireUser();
   const mode = effectiveMode(requested);
@@ -189,7 +189,7 @@ export async function generateScenes(
   projectId: string,
   requested: SceneMode = "real",
   quality: Resolution = "720p",
-  model: SceneModel = "seedance",
+  model: SceneModel = "kling",
 ): Promise<{ error?: string }> {
   const user = await requireUser();
   const mode = effectiveMode(requested);

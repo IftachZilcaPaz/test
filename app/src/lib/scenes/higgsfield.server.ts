@@ -8,7 +8,7 @@ import "server-only";
 const MODEL_PATH = "bytedance/seedance-2.0/text-to-video";
 // Same model, anchored to one reference image so every scene shows the same person and place.
 const REFERENCE_PATH = "bytedance/seedance-2.0/reference-to-video";
-// Alternative scene engine, on trial against Seedance (docs: kling-o3/image-reference: prompt,
+// Default scene engine since a side-by-side test against Seedance (docs: kling-o3/image-reference: prompt,
 // image_urls (optional), duration 3-15, aspect_ratio 9:16, sound on|off, mode std|pro|4k).
 const KLING_PATH = "kling-video/o3/image-reference";
 // Photoreal portrait model used for the video's recurring character (docs: soul-2/generate).
@@ -37,7 +37,7 @@ export const isSceneDemoMode = () => !credential();
 export const RESOLUTIONS = ["480p", "720p"] as const;
 export type Resolution = (typeof RESOLUTIONS)[number];
 
-/** Which model films the scenes. Seedance is the default; Kling is on trial. */
+/** Which model films the scenes. The customer picks; the page offers Kling first. */
 export const SCENE_MODELS = ["seedance", "kling"] as const;
 export type SceneModel = (typeof SCENE_MODELS)[number];
 
@@ -94,7 +94,7 @@ function usdFrom(result: unknown): number | null {
   return null;
 }
 
-// Kling O3 has no published API price; used only when the estimate carries none, set high so a quote never undercuts.
+// Kling O3 has no published API price (the estimate returns it); used only when the estimate carries none, set high so a quote never undercuts.
 const FALLBACK_KLING_USD_PER_SECOND = 0.2;
 
 /** The endpoint and body for one scene clip on the chosen model. */
