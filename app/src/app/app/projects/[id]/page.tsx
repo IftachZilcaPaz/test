@@ -143,6 +143,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
           error: entry.error,
           uploadId: entry.uploadId,
           stale: isStale(entry, approvedTakeId),
+          cutaway: entry.cutaway ?? false,
         }))}
       />
 

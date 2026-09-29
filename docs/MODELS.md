@@ -11,6 +11,7 @@
 | תמונת הדמות / הקריינית | Higgsfield Soul v2 | `app/src/lib/scenes/higgsfield.server.ts` |
 | שוטים (דמות אחת, סצנות + תמונות) | **Kling O3** (ברירת מחדל), Seedance 2.0 כחלופה | אותו קובץ |
 | קריינית מדברת (סנכרון שפתיים) | Wan 2.7 image-to-video | אותו קובץ |
+| שוטים של הקריינית בלי דיבור | Kling O3, תמונת הקריינית כייחוס | `app/src/app/app/projects/[id]/scene-actions.ts` |
 
 ## בדיקות שנעשו
 

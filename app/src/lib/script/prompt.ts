@@ -14,13 +14,16 @@ export const ANGLES = [
 ] as const;
 export type Angle = (typeof ANGLES)[number];
 
-const CHARACTER_RULE = `8. Visual continuity: the whole video follows ONE protagonist in ONE setting, like a short film. Define them in "look": "character" is an English description of one person who fits the audience (age range, appearance, clothing), "setting" is an English description of one place that fits the business, and "summary" is one short Hebrew sentence describing both for the customer. Every scene shows that same person and/or place: its "visual" describes only the action, framing and camera for that moment (e.g. "Close-up of the person smiling at her phone, handheld"). Never introduce a different main character or a crowd of new faces.`;
+const CHARACTER_RULE = `8. Visual continuity: the whole video follows ONE protagonist in ONE setting, like a short film. Define them in "look": "character" is an English description of one person who fits the audience (age range, appearance, clothing), "setting" is an English description of one place that fits the business, and "summary" is one short Hebrew sentence describing both for the customer. Every scene shows that same person and/or place: its "visual" describes only the action, framing and camera for that moment (e.g. "Close-up of the person smiling at her phone, handheld"). Never introduce a different main character or a crowd of new faces. Every "onCamera" is false.`;
 
 // The presenter says the narration on camera, lip-synced, like a creator's own video.
 const PRESENTER_INTRO =
   "This video is UGC style: one presenter films themself on a phone and says the narration straight to the camera. Write it as their own words — first person singular about their experience is welcome — while still addressing the viewers in plural.\n";
 
-const PRESENTER_RULE = `8. Visual continuity: ONE presenter talks to the camera in ONE place for the whole video. Define them in "look": "character" is an English description of the presenter who fits the audience (age range, appearance, clothing), "setting" is an English description of where they film themselves, and "summary" is one short Hebrew sentence describing both for the customer. Each scene's "visual" describes only the presenter's facial expression and gesture while saying that line (e.g. "smiles and leans toward the camera, raising her eyebrows"); the framing never changes (selfie video, face and shoulders).`;
+const PRESENTER_RULE = `8. Visual continuity: ONE presenter talks to the camera in ONE place for the whole video. Define them in "look": "character" is an English description of the presenter who fits the audience (age range, appearance, clothing), "setting" is an English description of where they film themselves, and "summary" is one short Hebrew sentence describing both for the customer. Like a real creator's video, it cuts between two kinds of scenes, set by "onCamera":
+   - true: the presenter says that line to the camera. "visual" describes only her facial expression and gesture (e.g. "smiles and leans toward the camera, raising her eyebrows"); the framing is always the selfie framing (face and shoulders).
+   - false: a silent cutaway of the same presenter in the same place, doing something that shows the line while her voice continues (e.g. "close-up of her thumb scrolling the phone, she smiles at the screen", "she walks to the window with her coffee, handheld"). "visual" describes the action, framing and camera; she is not talking.
+   The first and the last scenes are on camera. Use one to three cutaways, never two in a row.`;
 
 const continuityRule = (style: VideoStyle) => (style === "presenter" ? PRESENTER_RULE : CHARACTER_RULE);
 

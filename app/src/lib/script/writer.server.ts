@@ -58,7 +58,7 @@ function clean(options: ScriptOption[], lexicon: ReturnType<typeof parseLexicon>
         // A screenshot number must exist and appear once; anything else becomes a generated shot.
         const screen = scene.screen && scene.screen >= 1 && scene.screen <= screenCount && !used.has(scene.screen) ? scene.screen : 0;
         if (screen) used.add(screen);
-        return { caption: scene.caption, visual: scene.visual, screen };
+        return { caption: scene.caption, visual: scene.visual, screen, onCamera: Boolean(scene.onCamera) };
       });
     const look = option.look && { ...option.look, summary: noDashes(option.look.summary) };
     return { title: noDashes(option.title), script, look, scenes };

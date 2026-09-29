@@ -201,6 +201,11 @@ export const scene = sqliteTable(
      * second in it where the clip's audio starts. A clip from another take no longer matches.
      */
     takeId: text("take_id"),
+    /**
+     * Presenter style: a silent shot of the presenter (filmed like a character scene) instead of
+     * her talking to the camera. Nullable on purpose: null reads as false.
+     */
+    cutaway: integer("cutaway", { mode: "boolean" }),
     audioStart: real("audio_start"),
     costUsd: real("cost_usd").notNull().default(0),
     error: text("error"),

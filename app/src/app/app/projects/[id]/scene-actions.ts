@@ -51,17 +51,28 @@ async function planReal(owner: Project, todo: Scene[], resolution: Resolution, m
   if (owner.style === "presenter") {
     if (!lookUrl) throw new PlanError(NEEDS_PRESENTER);
     if (!take) throw new PlanError("קודם מאשרים הקראה.");
-    const groups = talkGroups(talkSlices(take, await listScenes(owner.id)), todo);
+    // Lines she says to the camera are lip-synced by Wan; silent cutaways of her are filmed by Kling
+    // from the same presenter image, like a character scene.
+    const cutaways = todo.filter((item) => item.cutaway);
+    const groups = talkGroups(talkSlices(take, await listScenes(owner.id)), todo.filter((item) => !item.cutaway));
     // The price depends on the clip length only; the whole narration stands in for the slice.
     const narrationUrl = publicMediaUrl(take.audioKey);
     const prompt = (group: TalkGroup) => talkPrompt(group.scenes.map((item) => item.prompt).join(" Then: "));
-    const groupUsd = await Promise.all(groups.map((group) => estimateTalk(prompt(group), lookUrl, narrationUrl, group.slice.end - group.slice.start)));
-    // One clip per group: its price sits on the group's first scene, which is what gets charged and refunded.
+    const setting = option?.look ? ` Setting: ${option.look.setting}.` : "";
+    const cutawayPrompt = (item: Scene) =>
+      `The same person and place as in the reference image.${setting} ${item.prompt} She is silent, not talking to the camera. ${NO_TEXT}`;
+    const [groupUsd, cutawayUsd] = await Promise.all([
+      Promise.all(groups.map((group) => estimateTalk(prompt(group), lookUrl, narrationUrl, group.slice.end - group.slice.start))),
+      Promise.all(cutaways.map((item) => estimateScene(cutawayPrompt(item), item.seconds, "720p", lookUrl, "kling"))),
+    ]);
+    // One clip per talking group: its price sits on the group's first scene, which is what gets charged and refunded.
     const usd = todo.map((item) => {
+      if (item.cutaway) return cutawayUsd[cutaways.indexOf(item)]!;
       const index = groups.findIndex((group) => group.scenes[0] === item);
       return index >= 0 ? groupUsd[index]! : 0;
     });
     const label = todo.map((item) => {
+      if (item.cutaway) return `סצנה ${item.position + 1} (שוט)`;
       const group = groups.find((entry) => entry.scenes.includes(item))!;
       const [first, last] = [group.scenes[0]!.position + 1, group.scenes.at(-1)!.position + 1];
       return first === last ? `סצנה ${first}` : `סצנות ${first} עד ${last}`;
@@ -74,6 +85,10 @@ async function planReal(owner: Project, todo: Scene[], resolution: Resolution, m
         for (const [index, group] of groups.entries()) {
           const requestId = await submitTalk(prompt(group), lookUrl, audioUrls[index]!, group.slice.end - group.slice.start);
           for (const item of group.scenes) await onSubmitted(item, requestId, { takeId: take.id, audioStart: group.slice.start });
+        }
+        for (const item of cutaways) {
+          const requestId = await submitScene(cutawayPrompt(item), item.seconds, "720p", lookUrl, "kling");
+          await onSubmitted(item, requestId, { takeId: null, audioStart: null });
         }
       },
     };
@@ -338,6 +353,30 @@ export async function resetScene(sceneId: string): Promise<{ error?: string }> {
   if (row.uploadId) return { error: "הסצנה הזו מציגה תמונה שלכם." };
   if (row.status === "generating") return { error: "הסצנה עדיין בתהליך." };
   await db.update(scene).set({ status: "draft", mediaKey: null, error: null }).where(eq(scene.id, sceneId));
+  refresh(row.projectId);
+  return {};
+}
+
+/** Presenter style: switches a scene between her talking to the camera and a silent cutaway shot of her. */
+export async function setCutaway(sceneId: string, cutaway: boolean): Promise<{ error?: string }> {
+  const user = await requireUser();
+  const id = z.string().uuid().safeParse(sceneId);
+  if (!id.success) return { error: "הסצנה לא נמצאה." };
+  const [row] = await db
+    .select({ projectId: scene.projectId, status: scene.status, demo: scene.demo, uploadId: scene.uploadId, style: project.style })
+    .from(scene)
+    .innerJoin(project, eq(scene.projectId, project.id))
+    .where(and(eq(scene.id, id.data), eq(project.userId, user.id)))
+    .limit(1);
+  if (!row || row.style !== "presenter") return { error: "הסצנה לא נמצאה." };
+  if (row.uploadId) return { error: "הסצנה הזו מציגה תמונה שלכם." };
+  if (row.status === "generating") return { error: "הסצנה בתהליך יצירה. אפשר לשנות אחרי שתסתיים." };
+  // A clip already filmed the other way no longer fits: the scene waits to be filmed again.
+  const refilm = row.status === "ready" && !row.demo;
+  await db
+    .update(scene)
+    .set({ cutaway, takeId: null, audioStart: null, ...(refilm ? { status: "draft" as const, mediaKey: null, error: null } : {}) })
+    .where(eq(scene.id, id.data));
   refresh(row.projectId);
   return {};
 }

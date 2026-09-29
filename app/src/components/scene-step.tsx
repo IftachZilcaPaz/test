@@ -9,6 +9,7 @@ import {
   quoteScenes,
   refreshScenes,
   resetScene,
+  setCutaway,
   updateScenePrompt,
 } from "@/app/app/projects/[id]/scene-actions";
 import { LookCard, type LookView } from "@/components/look-card";
@@ -28,6 +29,8 @@ export type SceneView = {
   error: string | null;
   /** Shows one of the customer's own images instead of a generated clip. */
   uploadId: string | null;
+  /** Presenter style: a silent shot of her instead of her talking to the camera. */
+  cutaway: boolean;
   /** A presenter clip lip-synced to an earlier narration take: it must be made again. */
   stale: boolean;
 };
@@ -67,7 +70,12 @@ function SceneCard({ item, presenter, onError }: { item: SceneView; presenter: b
   return (
     <li className="clay flex min-w-0 flex-col gap-3 p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-round text-lg">סצנה {item.position + 1}</span>
+        <span className="flex items-center gap-2">
+          <span className="font-round text-lg">סצנה {item.position + 1}</span>
+          {presenter && !item.uploadId && (
+            <span className="rounded-full bg-tint-1 px-2.5 py-0.5 text-xs font-semibold text-accent">{item.cutaway ? "שוט" : "מדברת"}</span>
+          )}
+        </span>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
           {item.uploadId ? "התמונה שלכם" : item.stale ? "צריך לצלם מחדש" : item.demo && item.status === "ready" ? "דוגמה" : status.label}
         </span>
@@ -91,7 +99,7 @@ function SceneCard({ item, presenter, onError }: { item: SceneView; presenter: b
       ) : (
       <>
       <label className="flex flex-col gap-1.5 text-xs font-medium text-ink-2">
-        {presenter ? "הבעה ותנועה של הקריינית (באנגלית)" : "מה רואים (באנגלית, בלי טקסט על המסך)"}
+        {presenter && !item.cutaway ? "הבעה ותנועה של הקריינית (באנגלית)" : "מה רואים (באנגלית, בלי טקסט על המסך)"}
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
@@ -111,6 +119,20 @@ function SceneCard({ item, presenter, onError }: { item: SceneView; presenter: b
         {item.status === "ready" && !dirty && (
           <button type="button" className="btn btn-ghost px-4 py-2 text-sm" disabled={pending} onClick={() => run(() => resetScene(item.id))}>
             ליצור מחדש
+          </button>
+        )}
+        {presenter && item.status !== "generating" && !dirty && (
+          <button
+            type="button"
+            className="btn btn-ghost px-4 py-2 text-sm"
+            disabled={pending}
+            onClick={() => {
+              const real = item.status === "ready" && !item.demo;
+              if (real && !window.confirm("הסצנה כבר צולמה. אחרי ההחלפה צריך לצלם אותה מחדש (בתשלום). להחליף?")) return;
+              run(() => setCutaway(item.id, !item.cutaway));
+            }}
+          >
+            {item.cutaway ? "שתדבר למצלמה" : "להפוך לשוט"}
           </button>
         )}
       </div>
@@ -278,7 +300,10 @@ export function SceneStep({
             ) : (
               <>
                 {presenter ? (
-                  <p className="text-sm text-ink-2">כל סצנה: הקריינית אומרת את החלק שלה בקריינות שאישרתם, מול המצלמה, עם שפתיים מסונכרנות (720p).</p>
+                  <p className="text-sm text-ink-2">
+                    סצנות „מדברת”: הקריינית אומרת את החלק שלה מול המצלמה, עם שפתיים מסונכרנות. סצנות „שוט”: אותה קריינית בלי לדבר, והקול שלה
+                    ממשיך ברקע (720p).
+                  </p>
                 ) : (
                   <fieldset className="flex flex-col gap-2">
                     <legend className="mb-1 text-sm font-semibold text-ink-2">איך לצלם את הסצנות</legend>

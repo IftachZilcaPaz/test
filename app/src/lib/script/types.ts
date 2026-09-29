@@ -18,11 +18,15 @@ export const scriptOptionSchema = z.object({
   title: z.string(),
   script: z.string(),
   look: z.object({ summary: z.string(), character: z.string(), setting: z.string() }),
-  scenes: z.array(z.object({ caption: z.string(), visual: z.string(), screen: z.number().int() })),
+  scenes: z.array(z.object({ caption: z.string(), visual: z.string(), screen: z.number().int(), onCamera: z.boolean() })),
 });
 
-/** `screen` is the 1-based number of the customer's screenshot shown in this beat; 0 (or absent) = generated shot. */
-export type ScriptScene = { caption: string; visual: string; screen?: number };
+/**
+ * `screen` is the 1-based number of the customer's screenshot shown in this beat; 0 (or absent) = generated shot.
+ * `onCamera` (presenter style) is true when the presenter says the line to the camera; false for a silent
+ * cutaway shot of her while her voice continues. Absent on older scripts, which were all on camera.
+ */
+export type ScriptScene = { caption: string; visual: string; screen?: number; onCamera?: boolean };
 /**
  * The one character and place the whole video follows. `summary` is Hebrew for the
  * customer; `character` and `setting` are English prompts. Absent on drafts written

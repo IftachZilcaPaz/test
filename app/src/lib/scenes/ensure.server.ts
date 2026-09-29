@@ -28,7 +28,8 @@ export async function ensureScenes(projectId: string): Promise<void> {
   suggestions = suggestions.slice(0, MAX_SCENES);
   const timeline = buildTimeline(take.words, suggestions.map((item) => item.caption));
   // A beat the script tied to one of the customer's screenshots shows it as-is: ready, and free.
-  const uploads = usesUploads(await getProjectStyle(projectId)) ? await listUploads(projectId) : [];
+  const style = await getProjectStyle(projectId);
+  const uploads = usesUploads(style) ? await listUploads(projectId) : [];
   await db.insert(scene).values(
     suggestions.map((item, position) => {
       const shown = item.screen ? uploads[item.screen - 1] : undefined;
@@ -39,6 +40,7 @@ export async function ensureScenes(projectId: string): Promise<void> {
         prompt: shown ? `Screenshot: ${shown.label || "customer image"}` : item.visual,
         seconds: clipSecondsFor((timeline.scenes[position]?.end ?? 5) - (timeline.scenes[position]?.start ?? 0)),
         demo: shown ? false : isSceneDemoMode(),
+        cutaway: style === "presenter" && !shown && item.onCamera === false,
         ...(shown ? { uploadId: shown.id, mediaKey: shown.mediaKey, status: "ready" as const } : {}),
       };
     }),

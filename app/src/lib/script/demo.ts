@@ -47,6 +47,11 @@ export function demoOptions(brief: Brief, screenCount = 0): ScriptOption[] {
   return options.map((option) => ({
     ...option,
     look: DEMO_LOOK,
-    scenes: option.scenes.map((scene, index) => ({ ...scene, screen: index > 0 && index <= screenCount ? index : 0 })),
+    // In the presenter style, the middle beat is a silent cutaway.
+    scenes: option.scenes.map((scene, index) => ({
+      ...scene,
+      screen: index > 0 && index <= screenCount ? index : 0,
+      onCamera: index !== 1,
+    })),
   }));
 }
