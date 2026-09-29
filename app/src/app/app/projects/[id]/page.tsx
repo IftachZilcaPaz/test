@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BriefForm } from "@/components/brief-form";
 import { ScriptStep } from "@/components/script-step";
 import { RenderStep } from "@/components/render-step";
+import { QuickFlow, type QuickView } from "@/components/quick-flow";
 import { SceneStep } from "@/components/scene-step";
 import { VoiceStep } from "@/components/voice-step";
 import { STEPS } from "@/lib/brand";
@@ -42,6 +43,19 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
   const current = STEPS.findIndex((step) => step.key === item.status);
   const chosenDraft = drafts.find((draft) => draft.chosenIndex !== null && draft.chosenScript);
   const chosenLook = chosenDraft ? chosenDraft.options[chosenDraft.chosenIndex!]?.look : undefined;
+  // The fast track picks up where the project stands: listening, filming, or done.
+  const currentTake = takes.find((take) => take.spokenText === narration) ?? null;
+  const producing = scenes.some((entry) => entry.status === "generating") || lastRender?.status === "rendering";
+  const quickView: QuickView =
+    lastRender?.status === "done" && item.status === "done"
+      ? "done"
+      : currentTake?.approved && producing
+        ? "producing"
+        : currentTake && !currentTake.approved && (item.lookImageKey || isSceneDemoMode())
+          ? "listen"
+          : "idle";
+  // Projects worked step by step (three versions per writing) keep the detailed steps open.
+  const advancedOpen = drafts.some((draft) => draft.options.length > 1);
   const voice = VOICES.find((entry) => item.voiceId && isVoiceId(item.voiceId) && entry.id === item.voiceId) ?? VOICES[0];
 
   return (
@@ -88,64 +102,81 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
         }}
       />
 
-      <ScriptStep
+      <QuickFlow
         projectId={item.id}
         ready={item.status !== "brief"}
-        seconds={item.seconds}
-        lexicon={spokenLexicon}
-        narrated={takes.length > 0}
-        drafts={drafts.map((draft) => ({
-          id: draft.id,
-          options: draft.options,
-          chosenIndex: draft.chosenIndex,
-          chosenScript: draft.chosenScript,
-          costUsd: draft.costUsd,
-          demo: draft.demo,
-          createdAt: draft.createdAt.toISOString(),
-        }))}
-      />
-
-      <VoiceStep
-        projectId={item.id}
-        ready={scriptApproved}
-        selectedVoiceId={item.voiceId}
-        takes={takes.map((take) => ({
-          id: take.id,
-          voiceId: take.voiceId,
-          durationSeconds: take.durationSeconds,
-          words: take.words,
-          costUsd: take.costUsd,
-          approved: take.approved,
-          stale: take.spokenText !== narration,
-        }))}
-      />
-
-      <SceneStep
-        projectId={item.id}
-        realAvailable={!isSceneDemoMode()}
+        initialView={quickView}
+        take={currentTake && { id: currentTake.id }}
+        look={{ imageVersion: item.lookImageKey, summary: chosenLook?.summary ?? null }}
+        script={chosenDraft?.chosenScript ?? null}
         presenter={item.style === "presenter"}
-        look={
-          chosenLook
-            ? { summary: chosenLook.summary, imageVersion: item.lookImageKey, generating: Boolean(item.lookRequestId) }
-            : null
-        }
-        ready={takeApproved}
-        approved={item.status === "render" || item.status === "done"}
-        scenes={scenes.map((entry) => ({
-          id: entry.id,
-          position: entry.position,
-          caption: entry.caption,
-          prompt: entry.prompt,
-          seconds: entry.seconds,
-          status: entry.status,
-          demo: entry.demo,
-          costUsd: entry.costUsd,
-          error: entry.error,
-          uploadId: entry.uploadId,
-          stale: isStale(entry, approvedTakeId),
-          cutaway: entry.cutaway ?? false,
-        }))}
+        realScenes={!isSceneDemoMode()}
       />
+
+      <details open={advancedOpen} className="group flex flex-col gap-6">
+        <summary className="clay cursor-pointer px-6 py-4 font-semibold text-ink-2">מצב מתקדם: לעשות כל שלב בעצמי (תסריט, קול, סצנות)</summary>
+        <div className="mt-6 flex flex-col gap-6">
+          <ScriptStep
+            projectId={item.id}
+            ready={item.status !== "brief"}
+            seconds={item.seconds}
+            lexicon={spokenLexicon}
+            narrated={takes.length > 0}
+            drafts={drafts.map((draft) => ({
+              id: draft.id,
+              options: draft.options,
+              chosenIndex: draft.chosenIndex,
+              chosenScript: draft.chosenScript,
+              costUsd: draft.costUsd,
+              demo: draft.demo,
+              createdAt: draft.createdAt.toISOString(),
+            }))}
+          />
+
+          <VoiceStep
+            projectId={item.id}
+            ready={scriptApproved}
+            selectedVoiceId={item.voiceId}
+            takes={takes.map((take) => ({
+              id: take.id,
+              voiceId: take.voiceId,
+              durationSeconds: take.durationSeconds,
+              words: take.words,
+              costUsd: take.costUsd,
+              approved: take.approved,
+              stale: take.spokenText !== narration,
+            }))}
+          />
+
+          <SceneStep
+            projectId={item.id}
+            realAvailable={!isSceneDemoMode()}
+            presenter={item.style === "presenter"}
+            look={
+              chosenLook
+                ? { summary: chosenLook.summary, imageVersion: item.lookImageKey, generating: Boolean(item.lookRequestId) }
+                : null
+            }
+            ready={takeApproved}
+            approved={item.status === "render" || item.status === "done"}
+            scenes={scenes.map((entry) => ({
+              id: entry.id,
+              position: entry.position,
+              caption: entry.caption,
+              prompt: entry.prompt,
+              seconds: entry.seconds,
+              status: entry.status,
+              demo: entry.demo,
+              costUsd: entry.costUsd,
+              error: entry.error,
+              uploadId: entry.uploadId,
+              stale: isStale(entry, approvedTakeId),
+              cutaway: entry.cutaway ?? false,
+            }))}
+          />
+
+        </div>
+      </details>
 
       <RenderStep
         projectId={item.id}

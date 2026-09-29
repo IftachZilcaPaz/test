@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { project, scene, scriptDraft, upload, VIDEO_STYLES } from "@/db/schema";
-import { narrationLexicon, vouch } from "@/lib/pronunciation/shared.server";
+import { vouch } from "@/lib/pronunciation/shared.server";
+import { writerBrief } from "@/lib/projects/brief.server";
 import { approvedScript, getOwnedProject, scriptScreens } from "@/lib/projects.server";
 import { deleteMedia } from "@/lib/storage.server";
 import { rewindProject } from "@/lib/projects/rewind.server";
@@ -24,24 +25,6 @@ export type BriefState = {
   /** Echo of what was submitted, so a failed save doesn't wipe the form (React resets it after an action). */
   values?: Record<string, string>;
 };
-
-function briefFromProject(item: NonNullable<Awaited<ReturnType<typeof getOwnedProject>>>) {
-  return briefSchema.safeParse({
-    business: item.business ?? "",
-    about: item.about ?? "",
-    audience: item.audience ?? "",
-    callToAction: item.callToAction ?? "",
-    tone: item.tone,
-    seconds: item.seconds,
-    lexicon: item.lexicon,
-  });
-}
-
-/** The brief as Claude receives it: the lexicon includes the shared pronunciations the narrator will use. */
-async function writerBrief(item: NonNullable<Awaited<ReturnType<typeof getOwnedProject>>>): Promise<Brief | null> {
-  const brief = briefFromProject(item);
-  return brief.success ? { ...brief.data, lexicon: await narrationLexicon(brief.data.lexicon) } : null;
-}
 
 export async function saveBrief(projectId: string, _previous: BriefState, formData: FormData): Promise<BriefState> {
   const user = await requireUser();

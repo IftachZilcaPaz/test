@@ -32,14 +32,19 @@ const request = (brief: Brief, angle: Angle, screens: string[], style: VideoStyl
 };
 
 /** Upper-bound price quote shown before the user confirms. Counting tokens is free. */
-export async function estimateScripts(brief: Brief, screens: string[] = [], style: VideoStyle = "character"): Promise<{ demo: boolean; maxUsd: number }> {
+export async function estimateScripts(
+  brief: Brief,
+  screens: string[] = [],
+  style: VideoStyle = "character",
+  angles: readonly Angle[] = ANGLES,
+): Promise<{ demo: boolean; maxUsd: number }> {
   const anthropic = client();
   if (!anthropic) return { demo: true, maxUsd: 0 };
   const { system, messages } = request(brief, ANGLES[0], screens, style);
   const { input_tokens } = await anthropic.messages.countTokens({ model: SCRIPT_MODEL, system, messages });
   // +400 tokens covers the structured-output schema the real request adds; angles differ by a few tokens.
   const perScript = (input_tokens + 400) * INPUT_USD + MAX_OUTPUT_TOKENS * OUTPUT_USD;
-  return { demo: false, maxUsd: perScript * ANGLES.length };
+  return { demo: false, maxUsd: perScript * angles.length };
 }
 
 // Long dashes read as foreign in Hebrew copy; a comma does the same job. Applied to the
@@ -130,6 +135,7 @@ export async function writeScripts(
   brief: Brief,
   screens: string[] = [],
   style: VideoStyle = "character",
+  angles: readonly Angle[] = ANGLES,
 ): Promise<{ options: ScriptOption[]; usage: ScriptUsage }> {
   const lexicon = parseLexicon(brief.lexicon);
   const anthropic = client();
@@ -141,7 +147,7 @@ export async function writeScripts(
   }
 
   const started = Date.now();
-  const results = await Promise.allSettled(ANGLES.map((angle) => writeOne(anthropic, brief, angle, screens, style)));
+  const results = await Promise.allSettled(angles.map((angle) => writeOne(anthropic, brief, angle, screens, style)));
   const written = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
   const failures = results.flatMap((result) => (result.status === "rejected" ? [writerError(result.reason)] : []));
   console.info("[scripts] written", { ok: written.length, failed: failures.length, ms: Date.now() - started });
