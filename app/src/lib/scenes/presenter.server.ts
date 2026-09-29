@@ -28,6 +28,32 @@ export function talkSlices(take: Pick<VoiceTake, "words" | "durationSeconds">, s
 
 const round = (seconds: number) => Math.round(seconds * 1000) / 1000;
 
+/**
+ * Wan follows the voice best over a longer take (a clip starts from the still image, so
+ * a very short one barely gets going before the cut). Consecutive scenes are therefore
+ * filmed as one clip of up to this many seconds, and each scene is cut from inside it.
+ */
+const MAX_TALK_SECONDS = 14;
+
+export type TalkGroup = { scenes: Scene[]; slice: TalkSlice };
+
+/** Groups the scenes to film (in order) into as few clips as fit, never across a scene that is not being filmed. */
+export function talkGroups(slices: TalkSlice[], scenes: Scene[]): TalkGroup[] {
+  const groups: TalkGroup[] = [];
+  for (const item of [...scenes].sort((a, b) => a.position - b.position)) {
+    const slice = slices[item.position] ?? { start: 0, end: 2 };
+    const last = groups.at(-1);
+    const adjacent = last && last.scenes.at(-1)!.position === item.position - 1;
+    if (last && adjacent && slice.end - last.slice.start <= MAX_TALK_SECONDS) {
+      last.scenes.push(item);
+      last.slice = { start: last.slice.start, end: Math.max(last.slice.end, slice.end) };
+    } else {
+      groups.push({ scenes: [item], slice });
+    }
+  }
+  return groups;
+}
+
 export const talkPrompt = (visual: string) =>
   [
     "The person in the image talks directly to the camera, lips moving in sync with the speech.",

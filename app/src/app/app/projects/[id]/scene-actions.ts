@@ -20,7 +20,7 @@ import {
   submitTalk,
 } from "@/lib/scenes/higgsfield.server";
 import { isStale, STALE_MESSAGE } from "@/lib/scenes/stale";
-import { publishSlices, talkPrompt, talkSlices, voiceSliceKey } from "@/lib/scenes/presenter.server";
+import { publishSlices, talkGroups, type TalkGroup, talkPrompt, talkSlices, voiceSliceKey } from "@/lib/scenes/presenter.server";
 import { customerPriceIls } from "@/lib/pricing";
 import { requireUser } from "@/lib/session";
 import { assertCanPay, balance, charge, InsufficientFunds, refund } from "@/lib/wallet.server";
@@ -49,22 +49,29 @@ async function planReal(owner: Project, todo: Scene[], resolution: Resolution) {
   if (owner.style === "presenter") {
     if (!lookUrl) throw new PlanError(NEEDS_PRESENTER);
     if (!take) throw new PlanError("קודם מאשרים הקראה.");
-    const slices = talkSlices(take, await listScenes(owner.id));
-    const sliceOf = (item: Scene) => slices[item.position] ?? { start: 0, end: take.durationSeconds };
-    const prompts = todo.map((item) => talkPrompt(item.prompt));
+    const groups = talkGroups(talkSlices(take, await listScenes(owner.id)), todo);
     // The price depends on the clip length only; the whole narration stands in for the slice.
     const narrationUrl = publicMediaUrl(take.audioKey);
-    const usd = await Promise.all(
-      todo.map((item, index) => estimateTalk(prompts[index]!, lookUrl, narrationUrl, sliceOf(item).end - sliceOf(item).start)),
-    );
+    const prompt = (group: TalkGroup) => talkPrompt(group.scenes.map((item) => item.prompt).join(" Then: "));
+    const groupUsd = await Promise.all(groups.map((group) => estimateTalk(prompt(group), lookUrl, narrationUrl, group.slice.end - group.slice.start)));
+    // One clip per group: its price sits on the group's first scene, which is what gets charged and refunded.
+    const usd = todo.map((item) => {
+      const index = groups.findIndex((group) => group.scenes[0] === item);
+      return index >= 0 ? groupUsd[index]! : 0;
+    });
+    const label = todo.map((item) => {
+      const group = groups.find((entry) => entry.scenes.includes(item))!;
+      const [first, last] = [group.scenes[0]!.position + 1, group.scenes.at(-1)!.position + 1];
+      return first === last ? `סצנה ${first}` : `סצנות ${first} עד ${last}`;
+    });
     return {
       usd,
+      label,
       async submitAll(onSubmitted: (item: Scene, requestId: string, patch: Partial<Scene>) => Promise<void>) {
-        const audioUrls = await publishSlices(owner.id, take, todo.map((item) => ({ sceneId: item.id, slice: sliceOf(item) })));
-        for (const [index, item] of todo.entries()) {
-          const slice = sliceOf(item);
-          const requestId = await submitTalk(prompts[index]!, lookUrl, audioUrls[index]!, slice.end - slice.start);
-          await onSubmitted(item, requestId, { takeId: take.id, audioStart: slice.start });
+        const audioUrls = await publishSlices(owner.id, take, groups.map((group) => ({ sceneId: group.scenes[0]!.id, slice: group.slice })));
+        for (const [index, group] of groups.entries()) {
+          const requestId = await submitTalk(prompt(group), lookUrl, audioUrls[index]!, group.slice.end - group.slice.start);
+          for (const item of group.scenes) await onSubmitted(item, requestId, { takeId: take.id, audioStart: group.slice.start });
         }
       },
     };
@@ -77,6 +84,7 @@ async function planReal(owner: Project, todo: Scene[], resolution: Resolution) {
   const usd = await Promise.all(todo.map((item, index) => estimateScene(prompts[index]!, item.seconds, resolution, lookUrl)));
   return {
     usd,
+    label: todo.map((item) => `סצנה ${item.position + 1}`),
     async submitAll(onSubmitted: (item: Scene, requestId: string, patch: Partial<Scene>) => Promise<void>) {
       for (const [index, item] of todo.entries()) {
         const requestId = await submitScene(prompts[index]!, item.seconds, resolution, lookUrl);
@@ -187,16 +195,19 @@ export async function generateScenes(
     } else {
       const plan = await planReal(owner, todo, resolutionOf(quality));
       await assertCanPay(user.id, plan.usd.reduce((sum, usd) => sum + customerPriceIls(usd), 0));
+      // Clips being replaced are deleted, unless a scene that is not being remade still shows them.
+      const remade = new Set(todo.map((item) => item.id));
+      const kept = new Set((await listScenes(projectId)).flatMap((entry) => (!remade.has(entry.id) && entry.mediaKey ? [entry.mediaKey] : [])));
       await plan.submitAll(async (item, requestId, patch) => {
-        const usd = plan.usd[todo.indexOf(item)]!;
+        const index = todo.indexOf(item);
+        const usd = plan.usd[index]!;
         await db
           .update(scene)
           .set({ status: "generating", demo: false, requestId, mediaKey: null, costUsd: usd, error: null, ...patch })
           .where(eq(scene.id, item.id));
-        // A placeholder or outdated clip being replaced is no longer needed.
-        if (item.mediaKey && !item.uploadId) await deleteMedia(item.mediaKey).catch(() => undefined);
+        if (item.mediaKey && !item.uploadId && !kept.has(item.mediaKey)) await deleteMedia(item.mediaKey).catch(() => undefined);
         // Keyed by our scene id too: a charge must never be skipped because a provider id repeated.
-        await charge(user.id, customerPriceIls(usd), `סצנה ${item.position + 1}`, projectId, `scene:${item.id}:${requestId}`);
+        if (usd > 0) await charge(user.id, customerPriceIls(usd), plan.label[index]!, projectId, `scene:${item.id}:${requestId}`);
       });
     }
   } catch (error) {
@@ -229,23 +240,32 @@ export async function refreshScenes(projectId: string): Promise<{ generating: nu
     }
   }
   // Finished clips are a few MB each; download a couple per poll so a request stays short.
+  // Presenter scenes can share one clip (one request); each request is handled once.
   let downloads = 0;
+  const requests = new Map<string, Scene[]>();
   for (const item of running.filter((entry) => !entry.demo && entry.requestId)) {
+    requests.set(item.requestId!, [...(requests.get(item.requestId!) ?? []), item]);
+  }
+  for (const [requestId, items] of requests) {
+    const ids = items.map((item) => item.id);
+    const first = items[0]!;
     try {
-      const status = await sceneStatus(item.requestId!);
+      const status = await sceneStatus(requestId);
       if (status.state === "completed") {
         if (downloads >= MAX_DOWNLOADS_PER_POLL) continue;
         downloads++;
         const response = await fetch(status.videoUrl);
         if (!response.ok) continue;
-        const key = `projects/${projectId}/scenes/${item.id}.mp4`;
+        const key = `projects/${projectId}/scenes/${first.id}.mp4`;
         await putMedia(key, new Uint8Array(await response.arrayBuffer()));
-        await db.update(scene).set({ status: "ready", mediaKey: key }).where(eq(scene.id, item.id));
-        if (item.takeId) await deleteMedia(voiceSliceKey(projectId, item.id)).catch(() => undefined);
+        await db.update(scene).set({ status: "ready", mediaKey: key }).where(inArray(scene.id, ids));
+        if (first.takeId) await deleteMedia(voiceSliceKey(projectId, first.id)).catch(() => undefined);
       } else if (status.state === "failed") {
         // Failed and moderated requests are not billed by Higgsfield, so the customer is refunded too.
-        await db.update(scene).set({ status: "failed", error: status.reason, costUsd: 0 }).where(eq(scene.id, item.id));
-        await refund(user.id, customerPriceIls(item.costUsd), `החזר: סצנה ${item.position + 1} לא נוצרה`, projectId, `refund:scene:${item.id}:${item.requestId}`);
+        const usd = items.reduce((sum, item) => sum + item.costUsd, 0);
+        await db.update(scene).set({ status: "failed", error: status.reason, costUsd: 0 }).where(inArray(scene.id, ids));
+        const what = items.length === 1 ? `סצנה ${first.position + 1}` : `סצנות ${first.position + 1} עד ${items.at(-1)!.position + 1}`;
+        if (usd > 0) await refund(user.id, customerPriceIls(usd), `החזר: ${what} לא נוצרה`, projectId, `refund:scene:${first.id}:${requestId}`);
       }
     } catch (error) {
       console.error("[scenes] poll failed", error instanceof Error ? error.message : error);

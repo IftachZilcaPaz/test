@@ -148,6 +148,7 @@ export default async function ProjectPage({ params }: PageProps<"/app/projects/[
 
       <RenderStep
         projectId={item.id}
+        presenter={item.style === "presenter"}
         narrationSeconds={takes.find((take) => take.approved)?.durationSeconds ?? null}
         ready={item.status === "render" || item.status === "done"}
         latest={

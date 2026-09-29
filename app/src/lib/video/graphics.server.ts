@@ -3,12 +3,15 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/media/ffmpeg.server";
+import { stripNiqqud } from "@/lib/script/hebrew";
 
 /**
  * Hebrew text is rasterized with Pango (via sharp) using the bundled Rubik font,
  * so bidi, shaping and line wrapping are correct on every machine.
  */
-const FONT_FILE = join(process.cwd(), "assets", "fonts", "Rubik-Hebrew-Bold.ttf");
+// Hebrew and Latin subsets of Rubik Bold merged into one file: Pango takes a single font file,
+// and captions need the Latin part for punctuation and digits (",", ".", "!", "30").
+const FONT_FILE = join(process.cwd(), "assets", "fonts", "Rubik-Bold.ttf");
 
 const escapeMarkup = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -36,7 +39,8 @@ const svg = (width: number, height: number, body: string) =>
 
 /** Caption plate: white Rubik on a soft ink pill, sized to the text. */
 export async function captionPng(text: string): Promise<{ png: Buffer; width: number; height: number }> {
-  const label = await textImage(text, { size: 46, color: "#FFFFFF", width: VIDEO_WIDTH - 140 });
+  // Niqqud is for the narrator only; on screen the caption is plain Hebrew (docs/HEBREW_PRONUNCIATION.md, rule 5).
+  const label = await textImage(stripNiqqud(text), { size: 46, color: "#FFFFFF", width: VIDEO_WIDTH - 140 });
   const width = label.info.width + 64;
   const height = label.info.height + 44;
   const png = await sharp(svg(width, height, `<rect width="100%" height="100%" rx="34" fill="#2C2548" fill-opacity="0.78"/>`))
