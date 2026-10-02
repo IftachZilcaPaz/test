@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HowItWorks } from "@/components/how-it-works";
 import { Mascot } from "@/components/mascot";
 import { SignOutButton } from "@/components/sign-out-button";
 import { formatShekels } from "@/lib/pricing";
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
           <span className="text-sm text-ink-2">הארנק</span>
           <span className="font-semibold tabular-nums">{formatShekels(available)}</span>
         </Link>
+        <HowItWorks />
         <SignOutButton />
       </aside>
       <main className="min-w-0">{children}</main>
